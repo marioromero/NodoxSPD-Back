@@ -1,0 +1,60 @@
+###
+# Paso 1: Registro de usuario
+POST http://localhost:8000/api/register
+Content-Type: application/json
+Accept: application/json
+Origin: http://localhost:8000
+
+{
+    "email": "contacto@empresa.com",
+    "password": "SecretPassword123",
+    "password_confirmation": "SecretPassword123",
+    "type": "company",
+    "business_name": "Tech Solutions Latam"
+}
+
+###
+# Paso 2: Obtener cookie CSRF y capturar el Token
+GET http://localhost:8000/sanctum/csrf-cookie
+Accept: application/json
+Origin: http://localhost:8000
+
+> {%
+    // Script de PhpStorm para capturar la cookie, limpiarla y guardarla en memoria
+    let cookies = response.headers.valuesOf("Set-Cookie");
+    for (let cookie of cookies) {
+        if (cookie.startsWith("XSRF-TOKEN=")) {
+            // Laravel envía el token codificado (URL encoded), debemos decodificarlo
+            let rawToken = cookie.split(";")[0].substring(11);
+            client.global.set("xsrf_token", decodeURIComponent(rawToken));
+        }
+    }
+%}
+
+###
+# Paso 3: Login real inyectando el Token
+POST http://localhost:8000/api/login
+Content-Type: application/json
+Accept: application/json
+Origin: http://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+
+{
+    "email": "contacto@empresa.com",
+    "password": "SecretPassword123",
+    "type": "company"
+}
+
+###
+# Paso 4: Obtener usuario actual (Validar que la sesión existe)
+GET http://localhost:8000/api/me
+Accept: application/json
+Origin: http://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+
+###
+# Paso 5: Logout y destrucción de sesión
+POST http://localhost:8000/api/logout
+Accept: application/json
+Origin: http://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
