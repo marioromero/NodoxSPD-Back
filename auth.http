@@ -1,60 +1,82 @@
 ###
-# Paso 1: Registro de usuario
-POST http://localhost:8000/api/register
+# 1. Obtener cookie CSRF y capturar Token + Sesión
+GET https://spd-service.nodox.cl/sanctum/csrf-cookie
+Accept: application/json
+Origin: https://localhost:8000
+
+> {%
+    let cookies = response.headers.valuesOf("Set-Cookie");
+    for (let cookie of cookies) {
+        if (cookie.startsWith("XSRF-TOKEN=")) {
+            let rawToken = cookie.split(";")[0].substring(11);
+            client.global.set("xsrf_token", decodeURIComponent(rawToken));
+        }
+        if (cookie.startsWith("nodoxspd-session=")) {
+            let rawSession = cookie.split(";")[0].substring(17); // 17 es la longitud de "nodoxspd-session="
+            client.global.set("session_cookie", rawSession);
+        }
+    }
+%}
+
+###
+# Paso 2: Registro de usuario (Inyectando Cookie forzada)
+POST https://spd-service.nodox.cl/api/register
 Content-Type: application/json
 Accept: application/json
-Origin: http://localhost:8000
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
 
 {
-    "email": "contacto@empresa.com",
+    "email": "contacto_qa_final@empresa.com",
     "password": "SecretPassword123",
     "password_confirmation": "SecretPassword123",
     "type": "company",
     "business_name": "Tech Solutions Latam"
 }
 
+
 ###
-# Paso 2: Obtener cookie CSRF y capturar el Token
-GET http://localhost:8000/sanctum/csrf-cookie
+# Paso 3: Login real (Actualizando Token y Sesión)
+POST https://spd-service.nodox.cl/api/login
+Content-Type: application/json
 Accept: application/json
-Origin: http://localhost:8000
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "email": "contacto_qa_final@empresa.com",
+    "password": "SecretPassword123",
+    "type": "company"
+}
 
 > {%
-    // Script de PhpStorm para capturar la cookie, limpiarla y guardarla en memoria
     let cookies = response.headers.valuesOf("Set-Cookie");
     for (let cookie of cookies) {
         if (cookie.startsWith("XSRF-TOKEN=")) {
-            // Laravel envía el token codificado (URL encoded), debemos decodificarlo
             let rawToken = cookie.split(";")[0].substring(11);
             client.global.set("xsrf_token", decodeURIComponent(rawToken));
+        }
+        if (cookie.startsWith("nodoxspd-session=")) {
+            let rawSession = cookie.split(";")[0].substring(17);
+            client.global.set("session_cookie", rawSession);
         }
     }
 %}
 
 ###
-# Paso 3: Login real inyectando el Token
-POST http://localhost:8000/api/login
-Content-Type: application/json
+# Paso 4: Obtener usuario actual
+GET https://spd-service.nodox.cl/api/me
 Accept: application/json
-Origin: http://localhost:8000
+Origin: https://localhost:8000
 X-XSRF-TOKEN: {{xsrf_token}}
-
-{
-    "email": "contacto@empresa.com",
-    "password": "SecretPassword123",
-    "type": "company"
-}
+Cookie: nodoxspd-session={{session_cookie}}
 
 ###
-# Paso 4: Obtener usuario actual (Validar que la sesión existe)
-GET http://localhost:8000/api/me
+# Paso 5: Logout
+POST https://spd-service.nodox.cl/api/logout
 Accept: application/json
-Origin: http://localhost:8000
+Origin: https://localhost:8000
 X-XSRF-TOKEN: {{xsrf_token}}
-
-###
-# Paso 5: Logout y destrucción de sesión
-POST http://localhost:8000/api/logout
-Accept: application/json
-Origin: http://localhost:8000
-X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}

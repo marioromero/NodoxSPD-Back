@@ -10,8 +10,8 @@ use App\Http\Middleware\ForceJsonResponse;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        api: __DIR__.'/../routes/api.php',
-        commands: __DIR__.'/../routes/console.php',
+        api: __DIR__ . '/../routes/api.php',
+        commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -24,14 +24,17 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // 3. Alias básicos del sistema de autenticación de Laravel
         $middleware->alias([
-            'auth' => \App\Http\Middleware\Authenticate::class,
+            'auth' => \Illuminate\Auth\Middleware\Authenticate::class,
             'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+            // Spatie
+            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
 
         // Forzamos a que las excepciones siempre intenten renderizarse como JSON
-        $exceptions->shouldRenderJsonWhen(fn () => true);
+        $exceptions->shouldRenderJsonWhen(fn() => true);
 
         // Capturar el error 404 (El error que acabas de tener)
         $exceptions->renderable(function (NotFoundHttpException $e, Request $request) {
