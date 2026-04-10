@@ -1,25 +1,57 @@
 <?php
 
-use App\Http\Controllers\Auth\AuthController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Billing\PlanController;
 use App\Http\Controllers\Billing\SubscriptionController;
 use App\Http\Controllers\Billing\PaymentController;
 
-
+/*
+|--------------------------------------------------------------------------
+| 1. Rutas Públicas
+|--------------------------------------------------------------------------
+*/
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-// Catálogo de planes (Puede ser pública o requerir login según decidas, usualmente es pública)
-Route::get('/plans', [PlanController::class, 'index']);
+Route::get('/plans', [PlanController::class, 'index']); // Catálogo de planes
 
-// Rutas protegidas de facturación
-Route::middleware('auth:sanctum')->prefix('billing')->group(function () {
+/*
+|--------------------------------------------------------------------------
+| 2. Rutas Protegidas (Cualquier usuario logueado)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function () {
+
+    // Perfil y Logout (Tanto Empresas como Personas usan esto)
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    Route::get('/subscription', [SubscriptionController::class, 'current']);
-    Route::post('/subscribe', [SubscriptionController::class, 'store']);
+    /*
+    |----------------------------------------------------------------------
+    | 3. Módulo de Empresa (Solo Admins de Empresa)
+    |----------------------------------------------------------------------
+    */
+    Route::middleware('role:company_admin')->prefix('company')->group(function () {
 
-    Route::get('/payments', [PaymentController::class, 'index']);
+        // Facturación
+        Route::get('/billing/subscription', [SubscriptionController::class, 'current']);
+        Route::post('/billing/subscribe', [SubscriptionController::class, 'store']);
+        Route::get('/billing/payments', [PaymentController::class, 'index']);
+
+        // Futuras rutas de la empresa:
+        // Route::post('/legal-settings', [LegalController::class, 'update']);
+    });
+
+    /*
+    |----------------------------------------------------------------------
+    | 4. Módulo de Cliente Final (Solo Personas)
+    |----------------------------------------------------------------------
+    */
+    Route::middleware('role:person')->prefix('portal')->group(function () {
+
+        // Futuras rutas de la ticketera:
+        // Route::get('/tickets', [TicketController::class, 'index']);
+        // Route::post('/tickets', [TicketController::class, 'store']);
+    });
+
 });

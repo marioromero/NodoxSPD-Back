@@ -41,8 +41,8 @@ class AuthController extends Controller
                         'business_name' => $request->business_name,
                     ]);
 
-                    // Aquí, más adelante, puedes asignarle el rol de Spatie:
-                    // $user->assignRole('company_admin');
+                    //  asignarle el rol de Spatie:
+                    $user->assignRole('company_admin');
                 } else {
                     $user->persona()->create([
                         'first_name' => $request->first_name,
