@@ -4,19 +4,21 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('people', function (Blueprint $table) {
-$table->id();
+            $table->id();
             $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete();
 
             // Relación recursiva para Tutor Legal (menores de 14 años)
-            $table->foreignId('guardian_id')->nullable()->constrained('personas')->nullOnDelete();
+            $table->foreignId('guardian_id')
+                ->nullable()
+                ->constrained('people')
+                ->nullOnDelete();
 
             // Datos de Identidad
             $table->string('first_name');
