@@ -74,9 +74,39 @@ X-XSRF-TOKEN: {{xsrf_token}}
 Cookie: nodoxspd-session={{session_cookie}}
 
 ###
-# Paso 5: Logout
-POST https://spd-service.nodox.cl/api/logout
+# Paso 5: Obtener Rubros (Sectores de Actividades)
+GET https://spd-service.nodox.cl/api/company/activities/sectors
 Accept: application/json
 Origin: https://localhost:8000
 X-XSRF-TOKEN: {{xsrf_token}}
 Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# Paso 6: Completar Onboarding (Actualizado con Ley 21.719)
+POST https://spd-service.nodox.cl/api/company/onboarding
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "tax_id": "US-123456789",
+    "sector_ids": [1, 2],
+    "legal_address": "123 Tech Boulevard, Silicon Valley, CA, USA",
+    "arco_contact_email": "privacy@techsolutions.global",
+    "legal_representative_name": "John Doe",
+    "legal_representative_tax_id": "US-987654321",
+    "is_foreign_entity": true,
+    "local_contact_for_foreign_entity": {
+        "name": "Estudio Jurídico Pérez & Cía",
+        "rut": "77.123.456-7",
+        "email": "representacion@perezcia.cl",
+        "address": "Huérfanos 1160, Santiago"
+    },
+    "dpo_contact": {
+        "name": "Roberto Gómez",
+        "email": "dpo@techsolutions.global",
+        "phone": "+15551234567"
+    }
+}

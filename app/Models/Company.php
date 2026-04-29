@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -14,13 +15,12 @@ class Company extends Model
         'public_uuid',
         'business_name',
         'tax_id',
-        'industry_type',
         'legal_address',
+        'arco_contact_email',
         'legal_representative_name',
         'legal_representative_tax_id',
         'is_foreign_entity',
         'local_contact_for_foreign_entity',
-        'sectors',
         'dpo_designation_act',
         'dpo_contact',
         'legal_settings',
@@ -53,8 +53,13 @@ class Company extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function sectors(): BelongsToMany
+    {
+        return $this->belongsToMany(Sector::class)->withTimestamps();
+    }
+
     public function hasCompletedOnboarding(): bool
     {
-        return !is_null($this->onboarding_completed_at);
+        return ! is_null($this->onboarding_completed_at);
     }
 }

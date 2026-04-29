@@ -13,13 +13,15 @@ return new class extends Migration
     {
         Schema::create('business_activities', function (Blueprint $table) {
             // Clave primaria tipo string (no autoincremental)
-            $table->string('codigo', 10)->primary();
+            $table->string('code', 10)->primary();
 
-            $table->string('rubro', 150);
-            $table->string('descripcion', 255);
-            $table->string('afecto_iva', 5);
-            $table->string('categoria_tributaria', 5);
-            $table->string('disponible_internet', 5);
+            // FK al sector/rubro
+            $table->foreignId('sector_id')->constrained()->cascadeOnDelete();
+
+            $table->string('description', 255);
+            $table->string('subject_to_vat', 5);
+            $table->string('tax_category', 5);
+            $table->string('available_online', 5);
 
             // Nota: No incluimos $table->timestamps() porque en el modelo
             // establecimos public $timestamps = false; al ser un catálogo estático.

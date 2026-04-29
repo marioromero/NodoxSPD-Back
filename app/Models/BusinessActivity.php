@@ -3,32 +3,52 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BusinessActivity extends Model
 {
-    // 1. Indicamos la tabla (opcional, pero buena práctica)
+    /**
+     * Catálogo estático de actividades económicas del SII.
+     */
     protected $table = 'business_activities';
 
-    // 2. Definimos nuestra clave primaria personalizada
-    protected $primaryKey = 'codigo';
+    /**
+     * Clave primaria personalizada (código SII).
+     */
+    protected $primaryKey = 'code';
 
-    // 3. Eloquent asume que las PK son enteros autoincrementales. Lo desactivamos.
+    /**
+     * La PK no es autoincremental.
+     */
     public $incrementing = false;
 
-    // 4. Le decimos que nuestra PK es un string
+    /**
+     * La PK es un string.
+     */
     protected $keyType = 'string';
 
-    // 5. Como es un catálogo estático del SII, desactivamos los timestamps
-    // (a menos que los hayas agregado a tu migración, en cuyo caso borra esta línea)
+    /**
+     * Catálogo estático, sin timestamps.
+     */
     public $timestamps = false;
 
-    // 6. Los campos que se pueden asignar masivamente
+    /**
+     * Campos asignables masivamente.
+     */
     protected $fillable = [
-        'codigo',
-        'rubro',
-        'descripcion',
-        'afecto_iva',
-        'categoria_tributaria',
-        'disponible_internet',
+        'code',
+        'sector_id',
+        'description',
+        'subject_to_vat',
+        'tax_category',
+        'available_online',
     ];
+
+    /**
+     * Relación con Sector.
+     */
+    public function sector(): BelongsTo
+    {
+        return $this->belongsTo(Sector::class);
+    }
 }

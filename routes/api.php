@@ -1,12 +1,12 @@
 <?php
 
-use App\Http\Controllers\BusinessactivityController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Billing\PaymentController;
 use App\Http\Controllers\Billing\PlanController;
 use App\Http\Controllers\Billing\SubscriptionController;
-use App\Http\Controllers\Billing\PaymentController;
+use App\Http\Controllers\BusinessActivityController;
 use App\Http\Controllers\Company\OnboardingController;
+use Illuminate\Support\Facades\Route;
 
 // 1. Rutas Públicas
 Route::post('/register', [AuthController::class, 'register']);
@@ -23,14 +23,17 @@ Route::middleware('auth:sanctum')->group(function () {
     // 3. Módulo de Empresa (Solo Admins de Empresa)
     Route::middleware('role:company_admin')->prefix('company')->group(function () {
 
-        // Obtener todos
+        // Obtener todos los giros/actividades
         Route::get('/activities', [BusinessActivityController::class, 'index']);
 
         // Endpoint para completar el onboarding (DEBE estar fuera de la validación)
         Route::post('/onboarding', [OnboardingController::class, 'complete']);
-        Route::get('/activities/sectors', [BusinessActivityController::class, 'getRubros']);
-        // Obtener por sector (Ej: /activities/sector/CONSTRUCCIÓN)
-        Route::get('/activities/sector/{rubro}', [BusinessActivityController::class, 'filterByRubro']);
+
+        // Obtener todos los sectores/rubros
+        Route::get('/activities/sectors', [BusinessActivityController::class, 'getSectors']);
+
+        // Obtener actividades por sector ID
+        Route::get('/activities/sector/{sectorId}', [BusinessActivityController::class, 'filterBySector']);
 
         // Facturación (Fuera del bloqueo de onboarding para no frenar pagos)
         Route::prefix('billing')->group(function () {
