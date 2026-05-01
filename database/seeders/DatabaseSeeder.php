@@ -21,7 +21,11 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             PlansSeeder::class,
             SectorsSeeder::class,
+            UsersSeeder::class,
+            CompaniesSeeder::class,
+            CompanySectorSeeder::class,
             BusinessActivitiesSeeder::class,
+            LegalTemplateSeeder::class
         ]);
     }
 }
