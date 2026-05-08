@@ -9,6 +9,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -60,10 +61,21 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 401);
         });
 
+        // Capturar errores de validación (422)
+        $exceptions->renderable(function (ValidationException $e, Request $request) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+                'data' => [
+                    'errors' => $e->errors(),
+                ],
+            ], 422);
+        });
+
         // Capturar errores generales del servidor (500)
         // Ocultamos el trace si estamos en producción por seguridad
         $exceptions->renderable(function (Throwable $e, Request $request) {
-            $isProduction = config('app.env') === 'production';
+            $isProduction = app()->isProduction();
 
             return response()->json([
                 'status' => false,

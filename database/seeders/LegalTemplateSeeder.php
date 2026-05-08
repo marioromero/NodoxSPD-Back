@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\LegalTemplate;
+use Illuminate\Database\Seeder;
 
 class LegalTemplateSeeder extends Seeder
 {
@@ -311,7 +311,7 @@ BLADE_WEB;
                 'name' => 'Política de Privacidad Web y Tratamiento de Datos',
                 'content' => trim($webPrivacyContent),
                 'wizard_schema' => [
-                    'steps' => ['website_functions', 'sensitive_data', 'minors', 'providers', 'ai', 'retention']
+                    'steps' => ['Funciones de la plataforma', 'Datos sensibles', 'Menores de edad', 'Proveedores y terceros', 'Inteligencia artificial', 'Plazos de retención'],
                 ],
                 'is_active' => true,
             ]
@@ -516,7 +516,7 @@ BLADE_COOKIE;
                 'name' => 'Política de Cookies y Tecnologías de Rastreo',
                 'content' => trim($cookiePolicyContent),
                 'wizard_schema' => [
-                    'steps' => ['analytics', 'marketing', 'functionality']
+                    'steps' => ['Cookies analíticas', 'Cookies de marketing', 'Cookies de funcionalidad'],
                 ],
                 'is_active' => true,
             ]
@@ -645,7 +645,7 @@ BLADE_WORKERS;
                 'name' => 'Política de Privacidad y Protección de Datos para Trabajadores',
                 'content' => trim($workersPolicyContent),
                 'wizard_schema' => [
-                    'steps' => ['monitoring', 'health_benefits', 'sharing']
+                    'steps' => ['Monitoreo laboral', 'Datos de salud y beneficios', 'Cesión de datos a terceros'],
                 ],
                 'is_active' => true,
             ]
@@ -707,7 +707,7 @@ BLADE_CUSTOM;
                 'name' => 'Documento Legal Personalizado / Aviso Específico',
                 'content' => trim($customPolicyContent),
                 'wizard_schema' => [
-                    'steps' => ['is_privacy_related', 'free_text', 'context', 'data_categories', 'purposes', 'legal_basis', 'recipients', 'international_transfers', 'retention_period']
+                    'steps' => ['Clasificación legal', 'Redacción libre', 'Contexto de tratamiento', 'Categorías de datos', 'Finalidades', 'Base de licitud', 'Destinatarios', 'Transferencias internacionales', 'Plazos de retención'],
                 ],
                 'is_active' => true,
             ]

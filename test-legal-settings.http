@@ -1,0 +1,14 @@
+PATCH https://spd-service.nodox.cl/api/company/legal-settings
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "module_slug": "policies",
+    "answers": {
+        "has_employees": true,
+        "has_digital_presence": true
+    }
+}

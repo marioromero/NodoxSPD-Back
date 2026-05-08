@@ -1,0 +1,246 @@
+###
+# 1. Obtener cookie CSRF y capturar Token + Sesión
+GET https://spd-service.nodox.cl/sanctum/csrf-cookie
+Accept: application/json
+Origin: https://localhost:8000
+
+> {%
+    let cookies = response.headers.valuesOf("Set-Cookie");
+    for (let cookie of cookies) {
+        if (cookie.startsWith("XSRF-TOKEN=")) {
+            let rawToken = cookie.split(";")[0].substring(11);
+            client.global.set("xsrf_token", decodeURIComponent(rawToken));
+        }
+        if (cookie.startsWith("nodoxspd-session=")) {
+            let rawSession = cookie.split(";")[0].substring(17);
+            client.global.set("session_cookie", rawSession);
+        }
+    }
+%}
+
+###
+# 2. Login real (Actualizando Token y Sesión)
+POST https://spd-service.nodox.cl/api/login
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "email": "contacto_qa_final@empresa.com",
+    "password": "SecretPassword123",
+    "type": "company"
+}
+
+> {%
+    let cookies = response.headers.valuesOf("Set-Cookie");
+    for (let cookie of cookies) {
+        if (cookie.startsWith("XSRF-TOKEN=")) {
+            let rawToken = cookie.split(";")[0].substring(11);
+            client.global.set("xsrf_token", decodeURIComponent(rawToken));
+        }
+        if (cookie.startsWith("nodoxspd-session=")) {
+            let rawSession = cookie.split(";")[0].substring(17);
+            client.global.set("session_cookie", rawSession);
+        }
+    }
+%}
+
+# ==============================================================================
+# FLUJO DE TRIAGE (NUEVA ARQUITECTURA MULTI-MÓDULO)
+# ==============================================================================
+
+###
+# 3. Angular pide las preguntas del Triage específicas para "Políticas"
+GET https://spd-service.nodox.cl/api/company/triage-questions?module=policies
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 4. El usuario responde el modal y Angular guarda el Triage anidado
+PUT https://spd-service.nodox.cl/api/company/legal-settings
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "module_slug": "policies",
+    "answers": {
+        "has_employees": true,
+        "has_digital_presence": true
+    }
+}
+
+
+### ==============================================================================
+# FLUJO DEL WIZARD (FRONTEND) - POLÍTICA DE PRIVACIDAD WEB
+# ==============================================================================
+
+###
+# 5. Obtener Catálogo de Plantillas (Ahora vendrán filtradas según el Paso 4)
+GET https://spd-service.nodox.cl/api/company/legal-templates
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 6. Iniciar Wizard: Crear el "Cascarón" Vacío (Borrador de Política Web)
+POST https://spd-service.nodox.cl/api/company/policies
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "document_type": "privacy_policy"
+}
+
+> {%
+    // Capturamos el ID del borrador recién creado
+    if (response.status === 201) {
+        client.global.set("policy_web_id", response.body.data.id);
+    }
+%}
+
+###
+# 7. Autoguardado Paso 1: El usuario llena los primeros datos y le da "Siguiente"
+PUT https://spd-service.nodox.cl/api/company/policies/{{policy_web_id}}
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "wizard_data": {
+        "website_functions": {
+            "informative": true,
+            "ecommerce": true
+        }
+    }
+}
+
+###
+# 8. Autoguardado Final: El usuario termina todos los pasos del Wizard
+PUT https://spd-service.nodox.cl/api/company/policies/{{policy_web_id}}
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "wizard_data": {
+        "website_functions": { "informative": true, "ecommerce": true },
+        "sensitive_data": { "collects_health": false },
+        "retention": { "commercial_days": 30 }
+    }
+}
+
+###
+# 9. Previsualizar el HTML generado (Antes de firmar)
+GET https://spd-service.nodox.cl/api/company/policies/{{policy_web_id}}/render
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 10. "Firmar" y Publicar la Política (Generar Sello de Inmutabilidad)
+POST https://spd-service.nodox.cl/api/company/policies/{{policy_web_id}}/publish
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+
+# ==============================================================================
+# OTROS CASOS DE USO Y GESTIÓN DE POLÍTICAS
+# ==============================================================================
+
+###
+# 11. Iniciar Wizard: Política de Cookies (Cascarón vacío)
+POST https://spd-service.nodox.cl/api/company/policies
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "document_type": "cookie_policy"
+}
+
+> {%
+    if (response.status === 201) {
+        client.global.set("policy_cookie_id", response.body.data.id);
+    }
+%}
+
+###
+# 12. Listar TODO el historial de políticas de la empresa (Dashboard)
+GET https://spd-service.nodox.cl/api/company/policies
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 13. Listar políticas filtradas (Solo Privacidad Web)
+GET https://spd-service.nodox.cl/api/company/policies?type=privacy_policy
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 14. Retomar un Borrador a medias (Obtener la política de cookies cruda)
+GET https://spd-service.nodox.cl/api/company/policies/{{policy_cookie_id}}
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 15. Publicar Política de Cookies (Para luego archivarla)
+POST https://spd-service.nodox.cl/api/company/policies/{{policy_cookie_id}}/publish
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 16. Archivar una Política (Cambiar estado de published a archived)
+PATCH https://spd-service.nodox.cl/api/company/policies/{{policy_cookie_id}}/archive
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 17. Eliminar (Hard Delete) una Política Archivada
+DELETE https://spd-service.nodox.cl/api/company/policies/{{policy_cookie_id}}
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 18. Error Esperado: Intentar actualizar una política ya publicada (Debería dar 403)
+PUT https://spd-service.nodox.cl/api/company/policies/{{policy_web_id}}
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "wizard_data": { "hacked": true }
+}

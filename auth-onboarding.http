@@ -110,3 +110,17 @@ Cookie: nodoxspd-session={{session_cookie}}
         "phone": "+15551234567"
     }
 }
+
+###
+# Paso 7: Actualizar configuración legal (Triage)
+PATCH https://spd-service.nodox.cl/api/company/company/legal-settings
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "has_employees": true,
+    "has_digital_presence": true
+}

@@ -6,6 +6,10 @@ use App\Http\Controllers\Billing\PlanController;
 use App\Http\Controllers\Billing\SubscriptionController;
 use App\Http\Controllers\BusinessActivityController;
 use App\Http\Controllers\Company\OnboardingController;
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CompanyPolicyController;
+use App\Http\Controllers\LegalTemplateController;
+use App\Http\Controllers\TriageQuestionController;
 use Illuminate\Support\Facades\Route;
 
 // 1. Rutas Públicas
@@ -22,6 +26,22 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // 3. Módulo de Empresa (Solo Admins de Empresa)
     Route::middleware('role:company_admin')->prefix('company')->group(function () {
+        Route::apiResource('policies', CompanyPolicyController::class);
+
+        // Ruta para compilar y devolver el HTML final al frontend
+        Route::get('policies/{policy}/render', [CompanyPolicyController::class, 'render']);
+
+        // Ruta para "Firmar/Publicar" y congelar la política con su Hash
+        Route::post('policies/{policy}/publish', [CompanyPolicyController::class, 'publish']);
+
+        // Ruta para archivar políticas antiguas
+        Route::patch('policies/{policy}/archive', [CompanyPolicyController::class, 'archive']);
+
+        // Nuevas rutas para plantillas legales
+        Route::get('legal-templates', [LegalTemplateController::class, 'index']);
+
+        // Triage Questions - filtrado por módulo
+        Route::get('triage-questions', [TriageQuestionController::class, 'index']);
 
         // Obtener todos los giros/actividades
         Route::get('/activities', [BusinessActivityController::class, 'index']);
@@ -34,6 +54,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Obtener actividades por sector ID
         Route::get('/activities/sector/{sectorId}', [BusinessActivityController::class, 'filterBySector']);
+
+        Route::put('legal-settings', [CompanyController::class, 'updateLegalSettings']);
 
         // Facturación (Fuera del bloqueo de onboarding para no frenar pagos)
         Route::prefix('billing')->group(function () {

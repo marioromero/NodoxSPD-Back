@@ -25,7 +25,8 @@ class DatabaseSeeder extends Seeder
             CompaniesSeeder::class,
             CompanySectorSeeder::class,
             BusinessActivitiesSeeder::class,
-            LegalTemplateSeeder::class
+            LegalTemplateSeeder::class,
+            TriageQuestionSeeder::class,
         ]);
     }
 }
