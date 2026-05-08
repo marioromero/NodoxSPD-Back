@@ -9,6 +9,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
@@ -40,11 +41,14 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
 
-        // Forzamos a que las excepciones siempre intenten renderizarse como JSON
         $exceptions->shouldRenderJsonWhen(fn () => true);
 
-        // Capturar el error 404 (El error que acabas de tener)
         $exceptions->renderable(function (NotFoundHttpException $e, Request $request) {
+            Log::warning('404 Not Found', [
+                'path' => $request->path(),
+                'method' => $request->method(),
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'El endpoint o recurso solicitado no existe.',
@@ -52,8 +56,12 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 404);
         });
 
-        // Capturar intentos de acceso sin estar logueado (401)
         $exceptions->renderable(function (AuthenticationException $e, Request $request) {
+            Log::warning('401 Unauthorized', [
+                'path' => $request->path(),
+                'method' => $request->method(),
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => 'No autorizado. Se requiere iniciar sesión.',
@@ -61,8 +69,13 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 401);
         });
 
-        // Capturar errores de validación (422)
         $exceptions->renderable(function (ValidationException $e, Request $request) {
+            Log::info('422 Validation failed', [
+                'path' => $request->path(),
+                'method' => $request->method(),
+                'errors' => $e->errors(),
+            ]);
+
             return response()->json([
                 'status' => false,
                 'message' => $e->getMessage(),
@@ -72,9 +85,15 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 422);
         });
 
-        // Capturar errores generales del servidor (500)
-        // Ocultamos el trace si estamos en producción por seguridad
         $exceptions->renderable(function (Throwable $e, Request $request) {
+            Log::error('500 Internal Server Error', [
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'path' => $request->path(),
+                'method' => $request->method(),
+                'file' => $e->getFile().':'.$e->getLine(),
+            ]);
+
             $isProduction = app()->isProduction();
 
             return response()->json([
