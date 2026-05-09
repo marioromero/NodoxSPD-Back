@@ -7,55 +7,33 @@ use App\Models\User;
 
 class CompanyPolicyPolicy
 {
-    /**
-     * Determina si el usuario puede actualizar la política.
-     */
+    protected function belongsToCompany(User $user, CompanyPolicy $policy): bool
+    {
+        return (int) $user->company?->id === (int) $policy->company_id;
+    }
+
     public function update(User $user, CompanyPolicy $policy): bool
     {
-        $belongsToCompany = $user->company->id === $policy->company_id;
-        $isDraft = $policy->status === 'draft';
-
-        return $belongsToCompany && $isDraft;
+        return $this->belongsToCompany($user, $policy) && $policy->status === 'draft';
     }
 
-    /**
-     * Determina si el usuario puede archivar la política.
-     */
     public function archive(User $user, CompanyPolicy $policy): bool
     {
-        $belongsToCompany = $user->company->id === $policy->company_id;
-        $isPublished = $policy->status === 'published';
-
-        return $belongsToCompany && $isPublished;
+        return $this->belongsToCompany($user, $policy) && $policy->status === 'published';
     }
 
-    /**
-     * Determina si el usuario puede ver la política.
-     */
     public function view(User $user, CompanyPolicy $policy): bool
     {
-        return $user->company->id === $policy->company_id;
+        return $this->belongsToCompany($user, $policy);
     }
 
-    /**
-     * Determina si el usuario puede publicar la política.
-     */
     public function publish(User $user, CompanyPolicy $policy): bool
     {
-        $belongsToCompany = $user->company->id === $policy->company_id;
-        $isDraft = $policy->status === 'draft';
-
-        return $belongsToCompany && $isDraft;
+        return $this->belongsToCompany($user, $policy) && $policy->status === 'draft';
     }
 
-    /**
-     * Determina si el usuario puede eliminar la política.
-     */
     public function delete(User $user, CompanyPolicy $policy): bool
     {
-        $belongsToCompany = $user->company->id === $policy->company_id;
-        $isArchived = $policy->status === 'archived';
-
-        return $belongsToCompany && $isArchived;
+        return $this->belongsToCompany($user, $policy) && $policy->status === 'archived';
     }
 }

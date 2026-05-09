@@ -1,3 +1,9 @@
+GET https://spd-service.nodox.cl/api/me
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
 ###
 # 1. Obtener cookie CSRF y capturar Token + Sesión
 GET https://spd-service.nodox.cl/sanctum/csrf-cookie
@@ -61,7 +67,7 @@ Cookie: nodoxspd-session={{session_cookie}}
 
 ###
 # 4. El usuario responde el modal y Angular guarda el Triage anidado
-PUT https://spd-service.nodox.cl/api/company/legal-settings
+PATCH https://spd-service.nodox.cl/api/company/legal-settings
 Content-Type: application/json
 Accept: application/json
 Origin: https://localhost:8000

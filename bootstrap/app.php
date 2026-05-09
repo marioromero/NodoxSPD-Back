@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckCompanyOnboarding;
 use App\Http\Middleware\ForceJsonResponse;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
@@ -67,6 +68,20 @@ return Application::configure(basePath: dirname(__DIR__))
                 'message' => 'No autorizado. Se requiere iniciar sesión.',
                 'data' => null,
             ], 401);
+        });
+
+        $exceptions->renderable(function (AuthorizationException $e, Request $request) {
+            Log::warning('403 Forbidden', [
+                'path' => $request->path(),
+                'method' => $request->method(),
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'No tienes permisos para realizar esta acción.',
+                'data' => null,
+            ], 403);
         });
 
         $exceptions->renderable(function (ValidationException $e, Request $request) {

@@ -55,7 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Obtener actividades por sector ID
         Route::get('/activities/sector/{sectorId}', [BusinessActivityController::class, 'filterBySector']);
 
-        Route::put('legal-settings', [CompanyController::class, 'updateLegalSettings']);
+        Route::patch('legal-settings', [CompanyController::class, 'updateLegalSettings']);
 
         // Facturación (Fuera del bloqueo de onboarding para no frenar pagos)
         Route::prefix('billing')->group(function () {
