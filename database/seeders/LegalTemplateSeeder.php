@@ -571,7 +571,32 @@ BLADE_COOKIE;
                 'name' => 'Política de Cookies y Tecnologías de Rastreo',
                 'content' => trim($cookiePolicyContent),
                 'wizard_schema' => [
-                    'steps' => ['Cookies analíticas', 'Cookies de marketing', 'Cookies de funcionalidad'],
+                    'steps' => [
+                        [
+                            'title' => 'Cookies Analíticas',
+                            'fields' => [
+                                ['key' => 'step_2_analytics_active', 'label' => '¿Utiliza cookies de análisis estadístico?', 'type' => 'boolean', 'help_text' => 'Art. 14 ter: Requiere consentimiento para medir tráfico y comportamiento.'],
+                                ['key' => 'step_2_analytics_provider_google_analytics', 'label' => '¿Usa Google Analytics?', 'type' => 'boolean', 'help_text' => 'Implica transferencia internacional (Google LLC).'],
+                                ['key' => 'step_2_analytics_provider_hotjar', 'label' => '¿Usa Hotjar (Mapas de calor)?', 'type' => 'boolean', 'help_text' => 'Graba interacciones anónimas en pantalla.'],
+                            ],
+                        ],
+                        [
+                            'title' => 'Cookies de Marketing',
+                            'fields' => [
+                                ['key' => 'step_3_marketing_active', 'label' => '¿Utiliza cookies de publicidad o remarketing?', 'type' => 'boolean', 'help_text' => 'Art. 8 bis: Perfilamiento publicitario. Requiere consentimiento explícito.'],
+                                ['key' => 'step_3_marketing_provider_meta_pixel', 'label' => '¿Usa Píxel de Meta (Facebook/Instagram)?', 'type' => 'boolean', 'help_text' => 'Rastreo de conversiones y audiencias personalizadas.'],
+                                ['key' => 'step_3_marketing_provider_google_ads', 'label' => '¿Usa Google Ads?', 'type' => 'boolean', 'help_text' => 'Medición de campañas y remarketing en red de búsqueda/display.'],
+                            ],
+                        ],
+                        [
+                            'title' => 'Cookies de Funcionalidad',
+                            'fields' => [
+                                ['key' => 'step_4_functionality_active', 'label' => '¿Integra widgets de terceros (Videos, Mapas, Chats)?', 'type' => 'boolean', 'help_text' => 'Art. 14 quáter: Privacidad por diseño. Bloqueo de widgets hasta aceptar.'],
+                                ['key' => 'step_4_functionality_provider_youtube', 'label' => '¿Incrusta videos de YouTube/Vimeo?', 'type' => 'boolean', 'help_text' => 'El reproductor puede instalar rastreadores de Google.'],
+                                ['key' => 'step_4_functionality_provider_whatsapp', 'label' => '¿Usa botón de WhatsApp o Chats en vivo?', 'type' => 'boolean', 'help_text' => 'Conecta con servidores de Meta u otros proveedores de soporte.'],
+                            ],
+                        ],
+                    ],
                 ],
                 'is_active' => true,
             ]
@@ -716,7 +741,30 @@ BLADE_WORKERS;
                 'name' => 'Política de Privacidad y Protección de Datos para Trabajadores',
                 'content' => trim($workersPolicyContent),
                 'wizard_schema' => [
-                    'steps' => ['Monitoreo laboral', 'Datos de salud y beneficios', 'Cesión de datos a terceros'],
+                    'steps' => [
+                        [
+                            'title' => 'Monitoreo laboral',
+                            'fields' => [
+                                ['key' => 'step_1_monitoring_video', 'label' => '¿Utiliza cámaras de videovigilancia?', 'type' => 'boolean', 'help_text' => 'Art. 5 Código del Trabajo: Solo para seguridad, prohibido en baños o vestuarios.'],
+                                ['key' => 'step_1_monitoring_biometrics', 'label' => '¿Usa control de asistencia biométrico?', 'type' => 'boolean', 'help_text' => 'Art. 16 ter: Requiere alternativa no invasiva si el trabajador no consiente.'],
+                                ['key' => 'step_1_monitoring_gps', 'label' => '¿Usa GPS en vehículos corporativos?', 'type' => 'boolean', 'help_text' => 'Art. 16 sexies: Geolocalización. Monitoreo limitado a jornada laboral.'],
+                            ],
+                        ],
+                        [
+                            'title' => 'Datos de salud y beneficios',
+                            'fields' => [
+                                ['key' => 'step_2_health_benefits_health_active', 'label' => '¿Gestiona licencias médicas y accidentes laborales?', 'type' => 'boolean', 'help_text' => 'Tratamiento lícito por obligación de seguridad social (Art. 16 letra e).'],
+                                ['key' => 'step_2_health_benefits_benefits_active', 'label' => '¿Ofrece seguros de salud o cajas de compensación?', 'type' => 'boolean', 'help_text' => 'Implica tratamiento de datos de cargas familiares (Menores - Art. 16 quáter).'],
+                            ],
+                        ],
+                        [
+                            'title' => 'Cesión de datos a terceros',
+                            'fields' => [
+                                ['key' => 'step_3_sharing_none', 'label' => '¿El cálculo de nómina es 100% interno (Sin software externo)?', 'type' => 'boolean', 'help_text' => 'Marcar si no usa ERPs en la nube para remuneraciones.'],
+                                ['key' => 'step_3_sharing_hr_software', 'label' => '¿Utiliza software externo de RRHH o remuneraciones (SaaS)?', 'type' => 'boolean', 'help_text' => 'Art. 15 bis: El proveedor actúa como mandatario del tratamiento.'],
+                            ],
+                        ],
+                    ],
                 ],
                 'required_condition' => ['key' => 'has_employees'],
                 'is_active' => true,
@@ -779,7 +827,29 @@ BLADE_CUSTOM;
                 'name' => 'Documento Legal Personalizado / Aviso Específico',
                 'content' => trim($customPolicyContent),
                 'wizard_schema' => [
-                    'steps' => ['Clasificación legal', 'Redacción libre', 'Contexto de tratamiento', 'Categorías de datos', 'Finalidades', 'Base de licitud', 'Destinatarios', 'Transferencias internacionales', 'Plazos de retención'],
+                    'steps' => [
+                        [
+                            'title' => 'Clasificación legal',
+                            'fields' => [
+                                ['key' => 'custom_policy_title', 'label' => 'Título del documento', 'type' => 'text', 'help_text' => 'Ej: Términos y Condiciones, Política de Devoluciones, etc.'],
+                                ['key' => 'custom_policy_is_privacy_related', 'label' => '¿Es un aviso de privacidad bajo la Ley 21.719?', 'type' => 'boolean', 'help_text' => 'Activa la estructura obligatoria de Finalidades y Base de Licitud.'],
+                            ],
+                        ],
+                        [
+                            'title' => 'Redacción libre',
+                            'fields' => [
+                                ['key' => 'custom_policy_free_text_html', 'label' => 'Contenido libre (HTML)', 'type' => 'text', 'help_text' => 'Párrafos personalizados si no se usa el formato estricto de la ley.'],
+                            ],
+                        ],
+                        [
+                            'title' => 'Parámetros Ley 21.719 (Si aplica)',
+                            'fields' => [
+                                ['key' => 'custom_policy_context', 'label' => 'Contexto del tratamiento', 'type' => 'text', 'help_text' => 'Ej: "Proceso de selección de personal".'],
+                                ['key' => 'custom_policy_purposes', 'label' => 'Finalidad de los datos', 'type' => 'text', 'help_text' => 'Ej: "Evaluar sus aptitudes para el cargo".'],
+                                ['key' => 'custom_policy_legal_basis', 'label' => 'Base de licitud (Art. 13)', 'type' => 'text', 'help_text' => 'Ej: "Consentimiento" o "Ejecución de contrato".'],
+                            ],
+                        ],
+                    ],
                 ],
                 'is_active' => true,
             ]
