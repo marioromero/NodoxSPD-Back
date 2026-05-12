@@ -283,21 +283,6 @@ class CompanyPolicyController extends Controller
 
     private function normalizePrivacyPolicy(array $d): array
     {
-        if (isset($d['website_functions']) || isset($d['sensitive_data'])) {
-            return array_merge($d, [
-                'step_1_website_functions' => $this->mapWebsiteFunctions($d['website_functions'] ?? []),
-                'step_2_sensitive_data' => $d['sensitive_data'] ?? [],
-                'step_2_sensitive_data_other' => $d['sensitive_data_other'] ?? null,
-                'step_2_health_basis' => $d['health_basis'] ?? null,
-                'step_2_group_basis' => $d['group_basis'] ?? null,
-                'step_3_minors' => $d['minors'] ?? [],
-                'step_4_providers' => $d['providers'] ?? [],
-                'step_4_other_provider' => $d['other_provider'] ?? null,
-                'step_5_ai' => $d['ai'] ?? [],
-                'step_6_retention' => $d['retention'] ?? [],
-            ]);
-        }
-
         $websiteFunctions = [];
         $map = ['informative' => 'informativa', 'ecommerce' => 'ecommerce', 'saas' => 'saas'];
         foreach ($map as $flat => $blade) {
@@ -330,12 +315,10 @@ class CompanyPolicyController extends Controller
         }
 
         $providers = [];
-        if ($d['step_4_providers_foreign'] ?? false) {
-            $providerKeys = ['google_analytics', 'meta', 'shopify', 'wix', 'mailchimp', 'hubspot', 'aws', 'azure', 'google_cloud'];
-            foreach ($providerKeys as $key) {
-                if ($d["step_4_providers_{$key}"] ?? false) {
-                    $providers[] = $key;
-                }
+        $providerKeys = ['google_analytics', 'meta', 'shopify', 'wix', 'mailchimp', 'hubspot', 'aws', 'azure', 'google_cloud'];
+        foreach ($providerKeys as $key) {
+            if ($d["step_4_providers_{$key}"] ?? false) {
+                $providers[] = $key;
             }
         }
         if ($d['step_4_providers_local'] ?? false) {
@@ -382,14 +365,6 @@ class CompanyPolicyController extends Controller
 
     private function normalizeCookiePolicy(array $d): array
     {
-        if (isset($d['analytics']['active']) || isset($d['marketing']['active'])) {
-            return array_merge($d, [
-                'step_2_analytics' => $d['analytics'] ?? [],
-                'step_3_marketing' => $d['marketing'] ?? [],
-                'step_4_functionality' => $d['functionality'] ?? [],
-            ]);
-        }
-
         $analytics = [];
         if ($d['step_2_analytics_active'] ?? false) {
             $analytics['active'] = true;
@@ -441,14 +416,6 @@ class CompanyPolicyController extends Controller
 
     private function normalizeWorkersPolicy(array $d): array
     {
-        if (isset($d['monitoring']['video']) || isset($d['health_benefits']['health_active'])) {
-            return array_merge($d, [
-                'step_1_monitoring' => $d['monitoring'] ?? [],
-                'step_2_health_benefits' => $d['health_benefits'] ?? [],
-                'step_3_sharing' => $d['sharing'] ?? [],
-            ]);
-        }
-
         $monitoring = [];
         if ($d['step_1_monitoring_video'] ?? false) {
             $monitoring['video'] = true;
