@@ -30,9 +30,11 @@ class CompanyPolicyController extends Controller
             $query->where('document_type', $request->input('type'));
         }
 
-        $policies = $query->with('template:id,name,version') // Traemos info básica de la plantilla
+        $perPage = min((int) $request->input('per_page', 15), 100);
+
+        $policies = $query->with('template:id,name,version')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate($perPage);
 
         return $this->success('Historial de políticas obtenido exitosamente.', $policies);
     }
