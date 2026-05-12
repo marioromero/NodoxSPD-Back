@@ -53,11 +53,6 @@ class CompanyController extends Controller
      */
     public function updateLegalSettings(UpdateLegalSettingsRequest $request)
     {
-        // Debug: Log what we're receiving
-        \Log::debug('UpdateLegalSettings - All input:', $request->all());
-        \Log::debug('UpdateLegalSettings - Module slug:', $request->input('module_slug'));
-        \Log::debug('UpdateLegalSettings - Answers:', $request->input('answers'));
-
         $company = $request->user()->company;
 
         $module = $request->validated('module_slug');
@@ -69,7 +64,8 @@ class CompanyController extends Controller
         $currentSettings[$module] = array_merge($currentSettings[$module] ?? [], $answers);
 
         $company->update([
-            'legal_settings' => $currentSettings,]);
+            'legal_settings' => $currentSettings,
+        ]);
 
         return response()->json([
             'status' => true,

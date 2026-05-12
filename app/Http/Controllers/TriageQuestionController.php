@@ -21,6 +21,7 @@ class TriageQuestionController extends Controller
 
         return response()->json([
             'status' => true,
+            'message' => 'Preguntas de triage obtenidas exitosamente.',
             'data' => $questions,
         ]);
     }

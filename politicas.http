@@ -1,0 +1,466 @@
+GET https://spd-service.nodox.cl/api/me
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 1. Obtener cookie CSRF y capturar Token + Sesión
+GET https://spd-service.nodox.cl/sanctum/csrf-cookie
+Accept: application/json
+Origin: https://localhost:8000
+
+> {%
+    let cookies = response.headers.valuesOf("Set-Cookie");
+    for (let cookie of cookies) {
+        if (cookie.startsWith("XSRF-TOKEN=")) {
+            let rawToken = cookie.split(";")[0].substring(11);
+            client.global.set("xsrf_token", decodeURIComponent(rawToken));
+        }
+        if (cookie.startsWith("nodoxspd-session=")) {
+            let rawSession = cookie.split(";")[0].substring(17);
+            client.global.set("session_cookie", rawSession);
+        }
+    }
+%}
+
+###
+# 2. Login real (Actualizando Token y Sesión)
+POST https://spd-service.nodox.cl/api/login
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "email": "contacto_qa_final@empresa.com",
+    "password": "SecretPassword123",
+    "type": "company"
+}
+
+> {%
+    let cookies = response.headers.valuesOf("Set-Cookie");
+    for (let cookie of cookies) {
+        if (cookie.startsWith("XSRF-TOKEN=")) {
+            let rawToken = cookie.split(";")[0].substring(11);
+            client.global.set("xsrf_token", decodeURIComponent(rawToken));
+        }
+        if (cookie.startsWith("nodoxspd-session=")) {
+            let rawSession = cookie.split(";")[0].substring(17);
+            client.global.set("session_cookie", rawSession);
+        }
+    }
+%}
+
+# ==============================================================================
+# FLUJO DE TRIAGE (NUEVA ARQUITECTURA MULTI-MÓDULO)
+# ==============================================================================
+
+###
+# 3. Angular pide las preguntas del Triage específicas para "Políticas"
+GET https://spd-service.nodox.cl/api/company/triage-questions?module=policies
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 4. El usuario responde el modal y Angular guarda el Triage anidado
+PATCH https://spd-service.nodox.cl/api/company/legal-settings
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "module_slug": "policies",
+    "answers": {
+        "has_employees": true,
+        "has_digital_presence": true
+    }
+}
+
+
+### ==============================================================================
+# FLUJO DEL WIZARD (FRONTEND) - POLÍTICA DE PRIVACIDAD WEB
+# ==============================================================================
+
+###
+# 5. Obtener Catálogo de Plantillas (Ahora vendrán filtradas según el Paso 4)
+GET https://spd-service.nodox.cl/api/company/legal-templates
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 6. Iniciar Wizard: Crear el "Cascarón" Vacío (Borrador de Política Web)
+POST https://spd-service.nodox.cl/api/company/policies
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "document_type": "privacy_policy"
+}
+
+> {%
+    // Capturamos el ID del borrador recién creado
+    if (response.status === 201) {
+        client.global.set("policy_web_id", response.body.data.id);
+    }
+%}
+
+###
+# 7. Autoguardado Paso 1: El usuario llena los primeros datos (Formato plano)
+PUT https://spd-service.nodox.cl/api/company/policies/{{policy_web_id}}
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "wizard_data": {
+        "step_1_website_functions_informative": true,
+        "step_1_website_functions_ecommerce": true,
+        "step_1_website_functions_saas": false
+    }
+}
+
+###
+# 8. Autoguardado Final: El usuario termina todos los pasos (Merge profundo lo une con el Paso 1)
+PUT https://spd-service.nodox.cl/api/company/policies/{{policy_web_id}}
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "wizard_data": {
+        "step_2_sensitive_data_salud": true,
+        "step_2_health_basis": "medical_care",
+        "step_2_sensitive_data_biometria": false,
+        "step_6_retention_tax_commercial": true,
+        "step_6_retention_user_accounts": true,
+        "step_6_retention_account_days": 30
+    }
+}
+
+###
+# 9. Previsualizar el HTML generado (Antes de firmar)
+GET https://spd-service.nodox.cl/api/company/policies/{{policy_web_id}}/render
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 10. "Firmar" y Publicar la Política (Generar Sello de Inmutabilidad)
+POST https://spd-service.nodox.cl/api/company/policies/{{policy_web_id}}/publish
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+
+# ==============================================================================
+# OTROS CASOS DE USO Y GESTIÓN DE POLÍTICAS
+# ==============================================================================
+
+###
+# 11. Iniciar Wizard: Política de Cookies (Cascarón vacío)
+POST https://spd-service.nodox.cl/api/company/policies
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "document_type": "cookie_policy"
+}
+
+> {%
+    if (response.status === 201) {
+        client.global.set("policy_cookie_id", response.body.data.id);
+    }
+%}
+
+###
+# 12. Listar TODO el historial de políticas de la empresa (Dashboard)
+GET https://spd-service.nodox.cl/api/company/policies
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 13. Listar políticas filtradas (Solo Privacidad Web)
+GET https://spd-service.nodox.cl/api/company/policies?type=privacy_policy
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 14. Retomar un Borrador a medias (Obtener la política de cookies cruda)
+GET https://spd-service.nodox.cl/api/company/policies/{{policy_cookie_id}}
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 15. Publicar Política de Cookies (Para luego archivarla)
+POST https://spd-service.nodox.cl/api/company/policies/{{policy_cookie_id}}/publish
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 16. Archivar una Política (Cambiar estado de published a archived)
+PATCH https://spd-service.nodox.cl/api/company/policies/{{policy_cookie_id}}/archive
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 17. Eliminar (Hard Delete) una Política Archivada
+DELETE https://spd-service.nodox.cl/api/company/policies/{{policy_cookie_id}}
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 18. Error Esperado: Intentar actualizar una política ya publicada (Debería dar 403)
+PUT https://spd-service.nodox.cl/api/company/policies/{{policy_web_id}}
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "wizard_data": { "hacked": true }
+}
+
+# ==============================================================================
+# FLUJO DEL WIZARD - POLÍTICA PARA TRABAJADORES (RRHH)
+# ==============================================================================
+
+###
+# 19. Iniciar Wizard: Política para Trabajadores (Cascarón vacío)
+POST https://spd-service.nodox.cl/api/company/policies
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "document_type": "workers_policy"
+}
+
+> {%
+    if (response.status === 201) {
+        client.global.set("policy_workers_id", response.body.data.id);
+    }
+%}
+
+###
+# 20. Autoguardado Paso 1 - Monitoreo laboral
+PUT https://spd-service.nodox.cl/api/company/policies/{{policy_workers_id}}
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "wizard_data": {
+        "step_1_monitoring_video": true,
+        "step_1_monitoring_biometrics": true,
+        "step_1_monitoring_biometrics_system": "Lector de huella digital",
+        "step_1_monitoring_gps": false,
+        "step_1_monitoring_digital": true
+    }
+}
+
+###
+# 21. Autoguardado Paso 2 - Salud y beneficios laborales
+PUT https://spd-service.nodox.cl/api/company/policies/{{policy_workers_id}}
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "wizard_data": {
+        "step_2_health_benefits_health_active": true,
+        "step_2_health_benefits_benefits_active": true
+    }
+}
+
+###
+# 22. Autoguardado Paso 3 - Cesión de datos a terceros
+PUT https://spd-service.nodox.cl/api/company/policies/{{policy_workers_id}}
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "wizard_data": {
+        "step_3_sharing_none": false,
+        "step_3_sharing_social_security": true,
+        "step_3_sharing_hr_software": true,
+        "step_3_sharing_hr_software_names": "BambooHR, TalentSoft",
+        "step_3_sharing_external_advisors": false,
+        "step_3_sharing_others": false
+    }
+}
+
+###
+# 23. Previsualizar HTML de la Política de Trabajadores
+GET https://spd-service.nodox.cl/api/company/policies/{{policy_workers_id}}/render
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 24. Publicar y sellar la Política de Trabajadores
+POST https://spd-service.nodox.cl/api/company/policies/{{policy_workers_id}}/publish
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+
+# ==============================================================================
+# FLUJO DEL WIZARD - DOCUMENTO LEGAL PERSONALIZADO
+# ==============================================================================
+
+###
+# 25. Iniciar Wizard: Documento Personalizado (Cascarón vacío)
+POST https://spd-service.nodox.cl/api/company/policies
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "document_type": "custom_policy"
+}
+
+> {%
+    if (response.status === 201) {
+        client.global.set("policy_custom_id", response.body.data.id);
+    }
+%}
+
+###
+# 26. Autoguardado Paso 1 - Clasificación legal (Aviso de privacidad bajo Ley 21.719)
+PUT https://spd-service.nodox.cl/api/company/policies/{{policy_custom_id}}
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "wizard_data": {
+        "custom_policy_title": "Aviso de Privacidad - Proceso de Selección",
+        "custom_policy_is_privacy_related": true
+    }
+}
+
+###
+# 27. Autoguardado Paso 3 - Parámetros Ley 21.719
+PUT https://spd-service.nodox.cl/api/company/policies/{{policy_custom_id}}
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "wizard_data": {
+        "custom_policy_context": "Proceso de selección de personal",
+        "custom_policy_data_categories": "Datos de identificación, contacto y formación académica",
+        "custom_policy_purposes": "Evaluar aptitudes para el cargo",
+        "custom_policy_legal_basis": "Consentimiento del titular (Art. 13, letra a)",
+        "custom_policy_recipients": "Ningún tercero, salvo obligación legal",
+        "custom_policy_international_transfers": "",
+        "custom_policy_retention_period": "2 años desde la última interacción"
+    }
+}
+
+###
+# 28. Previsualizar HTML del Documento Personalizado
+GET https://spd-service.nodox.cl/api/company/policies/{{policy_custom_id}}/render
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 29. Publicar y sellar el Documento Personalizado
+POST https://spd-service.nodox.cl/api/company/policies/{{policy_custom_id}}/publish
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+
+# ==============================================================================
+# FLUJO ALTERNATIVO - Documento libre (No sujeto a Ley 21.719)
+# ==============================================================================
+
+###
+# 30. Crear Documento Libre (Términos y Condiciones)
+POST https://spd-service.nodox.cl/api/company/policies
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "document_type": "custom_policy"
+}
+
+> {%
+    if (response.status === 201) {
+        client.global.set("policy_free_id", response.body.data.id);
+    }
+%}
+
+###
+# 31. Autoguardado - Documento libre con HTML personalizado
+PUT https://spd-service.nodox.cl/api/company/policies/{{policy_free_id}}
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "wizard_data": {
+        "custom_policy_title": "Términos y Condiciones de Uso",
+        "custom_policy_is_privacy_related": false,
+        "custom_policy_free_text_html": "<h2>1. Aceptación de los Términos</h2><p>Al acceder a esta plataforma, usted acepta los presentes términos.</p><h2>2. Uso Permitido</h2><p>La plataforma se proporciona exclusivamente para fines lícitos conforme a la legislación chilena.</p>"
+    }
+}

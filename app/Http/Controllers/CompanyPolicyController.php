@@ -6,6 +6,7 @@ use App\Http\Requests\StoreCompanyPolicyRequest;
 use App\Http\Requests\UpdateCompanyPolicyRequest;
 use App\Models\CompanyPolicy;
 use App\Models\LegalTemplate;
+use App\Traits\ApiResponse;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 
 class CompanyPolicyController extends Controller
 {
+    use ApiResponse;
     use AuthorizesRequests;
 
     /**
@@ -32,7 +34,7 @@ class CompanyPolicyController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json(['data' => $policies]);
+        return $this->success('Historial de políticas obtenido exitosamente.', $policies);
     }
 
     /**
@@ -67,10 +69,7 @@ class CompanyPolicyController extends Controller
             'status' => 'draft',
         ]);
 
-        return response()->json([
-            'message' => 'Política generada exitosamente en borrador.',
-            'data' => $policy->fresh(),
-        ], 201);
+        return $this->success('Política generada exitosamente en borrador.', $policy->fresh(), 201);
     }
 
     /**
@@ -95,14 +94,11 @@ class CompanyPolicyController extends Controller
                 'wizard_data' => $wizardData,
             ]);
 
-            return response()->json([
-                'status' => true,
-                'data' => [
-                    'html' => $htmlOutput,
-                    'document_type' => $policy->document_type,
-                    'version' => $policy->company_version,
-                    'status' => $policy->status,
-                ],
+            return $this->success('Documento compilado exitosamente.', [
+                'html' => $htmlOutput,
+                'document_type' => $policy->document_type,
+                'version' => $policy->company_version,
+                'status' => $policy->status,
             ]);
 
         } catch (\Throwable $e) {
@@ -112,11 +108,7 @@ class CompanyPolicyController extends Controller
                 'file' => $e->getFile().':'.$e->getLine(),
             ]);
 
-            return response()->json([
-                'status' => false,
-                'message' => 'Error al compilar el documento legal.',
-                'data' => null,
-            ], 500);
+            return $this->error('Error al compilar el documento legal.', null, 500);
         }
     }
 
@@ -129,14 +121,7 @@ class CompanyPolicyController extends Controller
 
         // Solo se pueden publicar políticas en estado draft
         if ($policy->status !== 'draft') {
-            return response()->json([
-                'status' => false,
-                'message' => 'Solo se pueden publicar políticas en estado borrador.',
-            ], 403);
-        }
-
-        if ($policy->status === 'published') {
-            return response()->json(['message' => 'La política ya está publicada.'], 400);
+            return $this->error('Solo se pueden publicar políticas en estado borrador.', null, 403);
         }
 
         $policy->load(['company', 'template']);
@@ -160,11 +145,10 @@ class CompanyPolicyController extends Controller
             'integrity_hash' => $integrityHash,
         ]);
 
-        return response()->json([
-            'message' => 'Política publicada y sellada legalmente.',
+        return $this->success('Política publicada y sellada legalmente.', [
+            'policy' => $policy->fresh(),
             'integrity_hash' => $integrityHash,
             'published_at' => $policy->published_at,
-            'data' => $policy->fresh(),
         ]);
     }
 
@@ -178,10 +162,7 @@ class CompanyPolicyController extends Controller
         // Cargar la relación con la plantilla para devolver información completa
         $policy->load('template');
 
-        return response()->json([
-            'status' => true,
-            'data' => $policy->fresh(),
-        ]);
+        return $this->success('Política obtenida exitosamente.', $policy->fresh());
     }
 
     /**
@@ -193,10 +174,7 @@ class CompanyPolicyController extends Controller
 
         // Validar que el borrador esté en estado draft
         if ($policy->status !== 'draft') {
-            return response()->json([
-                'status' => false,
-                'message' => 'Solo se pueden actualizar políticas en estado borrador.',
-            ], 403);
+            return $this->error('Solo se pueden actualizar políticas en estado borrador.', null, 403);
         }
 
         // Obtener los datos validados (pueden ser parciales para el flujo de wizard)
@@ -210,11 +188,7 @@ class CompanyPolicyController extends Controller
             ]);
         }
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Borrador actualizado exitosamente.',
-            'data' => $policy->fresh(), // Devolver el modelo actualizado
-        ]);
+        return $this->success('Borrador actualizado exitosamente.', $policy->fresh());
     }
 
     /**
@@ -226,10 +200,7 @@ class CompanyPolicyController extends Controller
 
         // Solo permitir archivar políticas publicadas
         if ($policy->status !== 'published') {
-            return response()->json([
-                'status' => false,
-                'message' => 'Solo se pueden archivar políticas publicadas.',
-            ], 403);
+            return $this->error('Solo se pueden archivar políticas publicadas.', null, 403);
         }
 
         // Actualizar el estado a 'archived'
@@ -237,11 +208,7 @@ class CompanyPolicyController extends Controller
             'status' => 'archived',
         ]);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Política archivada exitosamente.',
-            'data' => $policy->fresh(),
-        ]);
+        return $this->success('Política archivada exitosamente.', $policy->fresh());
     }
 
     /**
@@ -253,19 +220,13 @@ class CompanyPolicyController extends Controller
 
         // Solo permitir eliminar políticas archivadas
         if ($policy->status !== 'archived') {
-            return response()->json([
-                'status' => false,
-                'message' => 'Solo se pueden eliminar políticas archivadas.',
-            ], 403);
+            return $this->error('Solo se pueden eliminar políticas archivadas.', null, 403);
         }
 
         // Eliminar el registro
         $policy->delete();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Política eliminada exitosamente.',
-        ]);
+        return $this->success('Política eliminada exitosamente.');
     }
 
     private function normalizeWizardData(array $wizardData, string $documentType): array
