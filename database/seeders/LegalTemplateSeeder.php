@@ -289,6 +289,20 @@ class LegalTemplateSeeder extends Seeder
 
 <hr>
 
+<h2>7. Ejercicio de los Derechos ARCO+P</h2>
+<p>En conformidad con los Artículos 8 y 8 bis de la Ley 21.719, usted tiene el derecho inalienable de ejercer en cualquier momento los siguientes derechos frente al Responsable del Tratamiento:</p>
+<ul>
+    <li><strong>Derecho de Acceso:</strong> Solicitar y obtener información clara y completa sobre la existencia de sus datos personales en nuestros registros, su origen, las finalidades del tratamiento, las categorías de datos tratados y los destinatarios de las comunicaciones realizadas.</li>
+    <li><strong>Derecho de Rectificación:</strong> Solicitar la corrección o actualización de sus datos personales que resulten inexactos, incompletos o desactualizados, para garantizar su conformidad con la realidad.</li>
+    <li><strong>Derecho de Cancelación (Supresión):</strong> Solicitar la eliminación de sus datos personales de nuestras bases de datos cuando el tratamiento no se ajuste a la ley, haya cesado la finalidad que lo motivó, o cuando usted retire su consentimiento siendo este la única base de licitud aplicable.</li>
+    <li><strong>Derecho de Oposición:</strong> Oponerse al tratamiento de sus datos personales cuando existan motivos legítimos relativos a su situación particular, o cuando el tratamiento tenga como finalidad la mercadotecnia directa o la elaboración de perfiles.</li>
+    <li><strong>Derecho de Portabilidad:</strong> Solicitar la transferencia de sus datos personales a otro Responsable del Tratamiento, en formato estructurado, de uso común y lectura mecánica, cuando el tratamiento se base en el consentimiento o en la ejecución de un contrato y se realice por medios automatizados.</li>
+</ul>
+<p><strong>Forma de Ejercicio:</strong> Para ejercer cualquiera de estos derechos, podrá dirigir su solicitud formal y fundamentada al correo electrónico <strong>{{ $company->arco_contact_email }}</strong>, identificándose debidamente e indicando el derecho que desea ejercer. El Responsable atenderá su solicitud dentro del plazo máximo de 10 días hábiles contados desde la recepción de la misma, conforme al Art. 12 de la Ley.</p>
+<p>En caso de no recibir respuesta dentro del plazo legal, o si la respuesta fuese desfavorable, usted tiene el derecho a recurrir ante la Agencia de Protección de Datos Personales para que ésta Knownozca y resuelva su reclamación.</p>
+
+<hr>
+
 <div class="policy-footer">
     <h2>Aceptación y Cambios a la Política</h2>
     <p>El titular declara haber sido informado de las condiciones de tratamiento de sus datos y otorga su consentimiento expreso en los términos aquí expresados cuando dicha base de licitud sea aplicable. {{ $company->business_name }} se reserva el derecho de modificar esta política para adaptarla a novedades legislativas, jurisprudenciales o de la Agencia de Protección de Datos Personales, lo cual será debidamente notificado a través de esta plataforma.</p>
@@ -637,6 +651,22 @@ BLADE_COOKIE;
         <strong>Nota de Cumplimiento Institucional (Art. 15 bis y Transferencias Internacionales):</strong> El Empleador declara que toda comunicación de datos a proveedores tecnológicos o externos se encuentra regulada por un Contrato de Mandato para el Tratamiento de Datos. Asimismo, si alguno de los proveedores de software (SaaS) mencionados almacena información fuera del territorio nacional de Chile, dicha transferencia internacional se realiza bajo cláusulas contractuales tipo u otros mecanismos lícitos establecidos en los Artículos 27 y 28 de la Ley 21.719, asumiendo el Empleador la responsabilidad solidaria frente al titular por eventuales infracciones del mandatario.
     </div>
 @endif
+
+<hr>
+
+<h2>4. Ejercicio de los Derechos ARCO+P del Trabajador</h2>
+<p>En conformidad con los Artículos 8 y 8 bis de la Ley 21.719 y sin perjuicio de los derechos laborales consagrados en el Código del Trabajo, el trabajador tiene el derecho inalienable de ejercer en cualquier momento los siguientes derechos frente al Empleador en su calidad de Responsable del Tratamiento:</p>
+<ul>
+    <li><strong>Derecho de Acceso:</strong> Solicitar y obtener información completa sobre los datos personales que el Empleador mantiene en sus registros, su origen, finalidades del tratamiento y los posibles destinatarios de comunicaciones.</li>
+    <li><strong>Derecho de Rectificación:</strong> Solicitar la corrección de datos personales inexactos, incompletos o desactualizados, especialmente aquellos relativos a información previsional, remuneracional y de contacto.</li>
+    <li><strong>Derecho de Cancelación (Supresión):</strong> Solicitar la eliminación de datos personales cuyo tratamiento no se ajuste a la ley o haya cesado la finalidad que lo motivó, sin perjuicio de las obligaciones legales de conservación de registros laborales y previsionales.</li>
+    <li><strong>Derecho de Oposición:</strong> Oponerse al tratamiento de sus datos para finalidades distintas a las estrictamente laborales o legales, particularmente en lo referente a monitoreo tecnológico y comunicaciones no relacionadas con la relación laboral.</li>
+    <li><strong>Derecho de Portabilidad:</strong> Solicitar la transferencia de sus datos personales a otro Responsable en formato estructurado y de uso común, cuando el tratamiento se realice por medios automatizados.</li>
+</ul>
+<p><strong>Forma de Ejercicio:</strong> El trabajador podrá dirigir su solicitud formal al correo electrónico <strong>{{ $company->arco_contact_email }}</strong> o directamente ante el departamento de Recursos Humanos, identificándose debidamente e indicando el derecho que desea ejercer. El Empleador responderá dentro del plazo máximo de 10 días hábiles, conforme al Art. 12 de la Ley. En caso de respuesta desfavorable o silencio, el trabajador podrá recurrir ante la Agencia de Protección de Datos Personales.</p>
+
+<p><strong>Garantía de No Represalias:</strong> El ejercicio de cualquiera de estos derechos no generará consecuencia adversa alguna en la relación laboral, siendo nulo cualquier acto de represalia conforme al Artículo 154 bis del Código del Trabajo.</p>
+
 BLADE_WORKERS;
 
         LegalTemplate::updateOrCreate(
@@ -647,6 +677,7 @@ BLADE_WORKERS;
                 'wizard_schema' => [
                     'steps' => ['Monitoreo laboral', 'Datos de salud y beneficios', 'Cesión de datos a terceros'],
                 ],
+                'required_condition' => ['key' => 'has_employees'],
                 'is_active' => true,
             ]
         );

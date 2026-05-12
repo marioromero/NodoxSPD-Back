@@ -204,8 +204,7 @@ class CompanyPolicyController extends Controller
 
         // Si hay wizard_data en la solicitud, fusionarlo con los datos existentes
         if (array_key_exists('wizard_data', $validatedData)) {
-            // Fusionar los datos existentes con los nuevos datos parciales
-            $mergedData = array_merge($policy->wizard_data, $validatedData['wizard_data']);
+            $mergedData = array_replace_recursive($policy->wizard_data ?? [], $validatedData['wizard_data']);
             $policy->update([
                 'wizard_data' => $mergedData,
             ]);
