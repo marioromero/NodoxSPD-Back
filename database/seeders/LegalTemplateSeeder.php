@@ -325,7 +325,48 @@ BLADE_WEB;
                 'name' => 'Política de Privacidad Web y Tratamiento de Datos',
                 'content' => trim($webPrivacyContent),
                 'wizard_schema' => [
-                    'steps' => ['Funciones de la plataforma', 'Datos sensibles', 'Menores de edad', 'Proveedores y terceros', 'Inteligencia artificial', 'Plazos de retención'],
+                    'steps' => [
+                        [
+                            'title' => 'Funciones de la plataforma',
+                            'fields' => [
+                                ['key' => 'step_1_website_functions_informative', 'label' => '¿El sitio tiene un fin puramente informativo?', 'type' => 'boolean', 'help_text' => 'Según el Art. 13 letra c de la Ley 21.719, esto permite el tratamiento de datos para medidas precontractuales.'],
+                                ['key' => 'step_1_website_functions_ecommerce', 'label' => '¿La plataforma cuenta con E-commerce o venta online?', 'type' => 'boolean', 'help_text' => 'Obliga al cumplimiento de normativas tributarias y de entrega de productos (Art. 13 letra b).'],
+                                ['key' => 'step_1_website_functions_saas', 'label' => '¿Los usuarios pueden crear cuentas (SaaS)?', 'type' => 'boolean', 'help_text' => 'Requiere el tratamiento de credenciales y logs bajo el contrato de servicios digitales.'],
+                            ],
+                        ],
+                        [
+                            'title' => 'Datos sensibles',
+                            'fields' => [
+                                ['key' => 'step_2_sensitive_data_salud', 'label' => '¿Recopila datos de salud?', 'type' => 'boolean', 'help_text' => 'Art. 16 letra b: Datos sobre prevención, diagnóstico y asistencia sanitaria.'],
+                                ['key' => 'step_2_sensitive_data_biometria', 'label' => '¿Utiliza biometría (huella/rostro)?', 'type' => 'boolean', 'help_text' => 'Art. 16 ter: Requiere consentimiento expreso para identificación o autenticación.'],
+                                ['key' => 'step_2_sensitive_data_racial', 'label' => '¿Recopila datos de origen racial o étnico?', 'type' => 'boolean', 'help_text' => 'Categoría especial bajo el Art. 16 que requiere consentimiento específico.'],
+                            ],
+                        ],
+                        [
+                            'title' => 'Menores de edad',
+                            'fields' => [
+                                ['key' => 'step_3_minors_active', 'label' => '¿Trata datos de menores de 18 años?', 'type' => 'boolean', 'help_text' => 'Art. 16 quáter: El tratamiento debe respetar el interés superior del niño y su autonomía progresiva.'],
+                            ],
+                        ],
+                        [
+                            'title' => 'Proveedores y terceros',
+                            'fields' => [
+                                ['key' => 'step_4_providers_foreign', 'label' => '¿Utiliza proveedores de infraestructura extranjeros?', 'type' => 'boolean', 'help_text' => 'Art. 27: Las transferencias internacionales requieren garantías adecuadas de protección.'],
+                            ],
+                        ],
+                        [
+                            'title' => 'Inteligencia artificial',
+                            'fields' => [
+                                ['key' => 'step_5_ai_active', 'label' => '¿Utiliza IA para toma de decisiones automatizadas?', 'type' => 'boolean', 'help_text' => 'Art. 14 ter letra l: El titular tiene derecho a una explicación sobre la lógica aplicada.'],
+                            ],
+                        ],
+                        [
+                            'title' => 'Plazos de retención',
+                            'fields' => [
+                                ['key' => 'step_6_retention_tax_commercial', 'label' => '¿Guarda datos por obligaciones tributarias/comerciales?', 'type' => 'boolean', 'help_text' => 'Principio de Proporcionalidad: Los datos se conservan solo el tiempo necesario para el cumplimiento legal.'],
+                            ],
+                        ],
+                    ],
                 ],
                 'is_active' => true,
             ]

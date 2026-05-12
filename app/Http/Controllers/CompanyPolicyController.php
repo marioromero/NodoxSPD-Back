@@ -271,28 +271,9 @@ class CompanyPolicyController extends Controller
     private function normalizeWizardData(array $wizardData, string $documentType): array
     {
         return match ($documentType) {
-            'privacy_policy' => array_merge($wizardData, [
-                'step_1_website_functions' => $this->mapWebsiteFunctions($wizardData['website_functions'] ?? []),
-                'step_2_sensitive_data' => $wizardData['sensitive_data'] ?? [],
-                'step_2_sensitive_data_other' => $wizardData['sensitive_data_other'] ?? null,
-                'step_2_health_basis' => $wizardData['health_basis'] ?? null,
-                'step_2_group_basis' => $wizardData['group_basis'] ?? null,
-                'step_3_minors' => $wizardData['minors'] ?? [],
-                'step_4_providers' => $wizardData['providers'] ?? [],
-                'step_4_other_provider' => $wizardData['other_provider'] ?? null,
-                'step_5_ai' => $wizardData['ai'] ?? [],
-                'step_6_retention' => $wizardData['retention'] ?? [],
-            ]),
-            'cookie_policy' => array_merge($wizardData, [
-                'step_2_analytics' => $wizardData['analytics'] ?? [],
-                'step_3_marketing' => $wizardData['marketing'] ?? [],
-                'step_4_functionality' => $wizardData['functionality'] ?? [],
-            ]),
-            'workers_policy' => array_merge($wizardData, [
-                'step_1_monitoring' => $wizardData['monitoring'] ?? [],
-                'step_2_health_benefits' => $wizardData['health_benefits'] ?? [],
-                'step_3_sharing' => $wizardData['sharing'] ?? [],
-            ]),
+            'privacy_policy' => $this->normalizePrivacyPolicy($wizardData),
+            'cookie_policy' => $this->normalizeCookiePolicy($wizardData),
+            'workers_policy' => $this->normalizeWorkersPolicy($wizardData),
             'custom_policy' => array_merge($wizardData, [
                 'custom_policy' => $wizardData['custom_policy'] ?? [],
             ]),
@@ -300,21 +281,120 @@ class CompanyPolicyController extends Controller
         };
     }
 
-    private function mapWebsiteFunctions(array $functions): array
+    private function normalizePrivacyPolicy(array $d): array
     {
-        $frontendToTemplate = [
-            'informative' => 'informativa',
-            'ecommerce' => 'ecommerce',
-            'saas' => 'saas',
-        ];
+        if (isset($d['website_functions']) || isset($d['sensitive_data'])) {
+            return array_merge($d, [
+                'step_1_website_functions' => $this->mapWebsiteFunctions($d['website_functions'] ?? []),
+                'step_2_sensitive_data' => $d['sensitive_data'] ?? [],
+                'step_2_sensitive_data_other' => $d['sensitive_data_other'] ?? null,
+                'step_2_health_basis' => $d['health_basis'] ?? null,
+                'step_2_group_basis' => $d['group_basis'] ?? null,
+                'step_3_minors' => $d['minors'] ?? [],
+                'step_4_providers' => $d['providers'] ?? [],
+                'step_4_other_provider' => $d['other_provider'] ?? null,
+                'step_5_ai' => $d['ai'] ?? [],
+                'step_6_retention' => $d['retention'] ?? [],
+            ]);
+        }
 
-        $result = [];
-        foreach ($functions as $key => $value) {
-            if ($value && isset($frontendToTemplate[$key])) {
-                $result[] = $frontendToTemplate[$key];
+        $websiteFunctions = [];
+        $map = ['informative' => 'informativa', 'ecommerce' => 'ecommerce', 'saas' => 'saas'];
+        foreach ($map as $flat => $blade) {
+            if ($d["step_1_website_functions_{$flat}"] ?? false) {
+                $websiteFunctions[] = $blade;
             }
         }
 
-        return $result;
+        $sensitiveData = [];
+        $sensitiveKeys = ['salud', 'biometria', 'politica', 'sindical', 'religion', 'sexual', 'racial', 'otros', 'ninguna'];
+        foreach ($sensitiveKeys as $key) {
+            if ($d["step_2_sensitive_data_{$key}"] ?? false) {
+                $sensitiveData[] = $key;
+            }
+        }
+
+        $minors = [];
+        if ($d['step_3_minors_active'] ?? false) {
+            $minors['active'] = true;
+            $purposes = [];
+            $purposeKeys = ['servicio', 'seguridad', 'legal', 'marketing', 'otros'];
+            foreach ($purposeKeys as $key) {
+                if ($d["step_3_minors_purposes_{$key}"] ?? false) {
+                    $purposes[] = $key;
+                }
+            }
+            $minors['purposes'] = $purposes;
+            $minors['other_purpose'] = $d['step_3_minors_other_purpose'] ?? null;
+            $minors['verification_method'] = $d['step_3_minors_verification_method'] ?? null;
+        }
+
+        $providers = [];
+        if ($d['step_4_providers_foreign'] ?? false) {
+            $providerKeys = ['google_analytics', 'meta', 'shopify', 'wix', 'mailchimp', 'hubspot', 'aws', 'azure', 'google_cloud'];
+            foreach ($providerKeys as $key) {
+                if ($d["step_4_providers_{$key}"] ?? false) {
+                    $providers[] = $key;
+                }
+            }
+        }
+        if ($d['step_4_providers_local'] ?? false) {
+            $providers[] = 'local';
+        }
+
+        $ai = [];
+        if ($d['step_5_ai_active'] ?? false) {
+            $ai['active'] = true;
+            $ai['parameters'] = $d['step_5_ai_parameters'] ?? null;
+            $ai['logic'] = $d['step_5_ai_logic'] ?? null;
+            $ai['consequences'] = $d['step_5_ai_consequences'] ?? null;
+        }
+
+        $retention = [];
+        if ($d['step_6_retention_tax_commercial'] ?? false) {
+            $retention['tax_commercial'] = true;
+        }
+        if ($d['step_6_retention_user_accounts'] ?? false) {
+            $retention['user_accounts'] = true;
+            $retention['account_days'] = $d['step_6_retention_account_days'] ?? '30';
+        }
+        if ($d['step_6_retention_marketing'] ?? false) {
+            $retention['marketing'] = true;
+        }
+        if ($d['step_6_retention_custom'] ?? false) {
+            $retention['custom'] = true;
+            $retention['custom_period'] = $d['step_6_retention_custom_period'] ?? null;
+        }
+
+        return array_merge($d, [
+            'step_1_website_functions' => $websiteFunctions,
+            'step_2_sensitive_data' => $sensitiveData,
+            'step_2_sensitive_data_other' => $d['step_2_sensitive_data_other'] ?? null,
+            'step_2_health_basis' => $d['step_2_health_basis'] ?? null,
+            'step_2_group_basis' => $d['step_2_group_basis'] ?? null,
+            'step_3_minors' => $minors,
+            'step_4_providers' => $providers,
+            'step_4_other_provider' => $d['step_4_other_provider'] ?? null,
+            'step_5_ai' => $ai,
+            'step_6_retention' => $retention,
+        ]);
+    }
+
+    private function normalizeCookiePolicy(array $d): array
+    {
+        return array_merge($d, [
+            'step_2_analytics' => $d['analytics'] ?? $d['step_2_analytics'] ?? [],
+            'step_3_marketing' => $d['marketing'] ?? $d['step_3_marketing'] ?? [],
+            'step_4_functionality' => $d['functionality'] ?? $d['step_4_functionality'] ?? [],
+        ]);
+    }
+
+    private function normalizeWorkersPolicy(array $d): array
+    {
+        return array_merge($d, [
+            'step_1_monitoring' => $d['monitoring'] ?? $d['step_1_monitoring'] ?? [],
+            'step_2_health_benefits' => $d['health_benefits'] ?? $d['step_2_health_benefits'] ?? [],
+            'step_3_sharing' => $d['sharing'] ?? $d['step_3_sharing'] ?? [],
+        ]);
     }
 }
