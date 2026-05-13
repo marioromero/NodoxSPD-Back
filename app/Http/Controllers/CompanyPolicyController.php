@@ -275,7 +275,7 @@ class CompanyPolicyController extends Controller
         }
 
         $providers = [];
-        $providerKeys = ['google_analytics', 'meta', 'shopify', 'wix', 'mailchimp', 'hubspot', 'aws', 'azure', 'google_cloud'];
+        $providerKeys = ['google_analytics', 'meta', 'shopify', 'wix', 'mailchimp', 'hubspot', 'aws', 'azure', 'google_cloud', 'otros'];
         foreach ($providerKeys as $key) {
             if ($d["step_4_providers_{$key}"] ?? false) {
                 $providers[] = $key;
@@ -329,7 +329,7 @@ class CompanyPolicyController extends Controller
         if ($d['step_2_analytics_active'] ?? false) {
             $analytics['active'] = true;
             $providers = [];
-            $providerKeys = ['google_analytics', 'hotjar', 'mixpanel', 'clarity', 'matomo'];
+            $providerKeys = ['google_analytics', 'hotjar', 'mixpanel', 'clarity', 'matomo', 'otros'];
             foreach ($providerKeys as $key) {
                 if ($d["step_2_analytics_provider_{$key}"] ?? false) {
                     $providers[] = $key;
@@ -343,7 +343,7 @@ class CompanyPolicyController extends Controller
         if ($d['step_3_marketing_active'] ?? false) {
             $marketing['active'] = true;
             $providers = [];
-            $providerKeys = ['meta_pixel', 'google_ads', 'tiktok_pixel', 'linkedin_insight', 'twitter_pixel'];
+            $providerKeys = ['meta_pixel', 'google_ads', 'tiktok_pixel', 'linkedin_insight', 'twitter_pixel', 'otros'];
             foreach ($providerKeys as $key) {
                 if ($d["step_3_marketing_provider_{$key}"] ?? false) {
                     $providers[] = $key;
@@ -357,7 +357,7 @@ class CompanyPolicyController extends Controller
         if ($d['step_4_functionality_active'] ?? false) {
             $functionality['active'] = true;
             $providers = [];
-            $providerKeys = ['youtube', 'maps', 'whatsapp', 'social', 'fonts'];
+            $providerKeys = ['youtube', 'maps', 'whatsapp', 'social', 'fonts', 'otros'];
             foreach ($providerKeys as $key) {
                 if ($d["step_4_functionality_provider_{$key}"] ?? false) {
                     $providers[] = $key;

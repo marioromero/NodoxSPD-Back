@@ -404,6 +404,7 @@ BLADE_WEB;
                     ],
                 ],
                 'required_condition' => ['key' => 'has_digital_presence'],
+                'is_active' => true,
             ]
         );
 
@@ -916,6 +917,7 @@ BLADE_CUSTOM;
                     ],
                 ],
                 'required_condition' => null,
+                'is_active' => true,
             ]
         );
         $this->command->info('Legal Templates seeded successfully!');
