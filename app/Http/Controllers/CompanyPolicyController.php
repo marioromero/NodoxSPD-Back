@@ -41,9 +41,16 @@ class CompanyPolicyController extends Controller
         $company = $request->user()->company;
         $query = CompanyPolicy::where('company_id', $company->id);
 
-        // Filtrar por tipo de documento si se proporciona
         if ($request->has('type')) {
             $query->where('document_type', $request->input('type'));
+        }
+
+        if ($request->has('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->has('id')) {
+            $query->where('id', $request->input('id'));
         }
 
         $perPage = min((int) $request->input('per_page', 15), 100);
@@ -127,6 +134,38 @@ class CompanyPolicyController extends Controller
             ]);
 
             return $this->error('Error al compilar el documento legal.', null, 500);
+        }
+    }
+
+    /**
+     * Render público de una política publicada (compartir/incrustar).
+     */
+    public function publicRender(string $integrityHash)
+    {
+        $policy = CompanyPolicy::where('integrity_hash', $integrityHash)
+            ->where('status', 'published')
+            ->with(['company', 'template'])
+            ->firstOrFail();
+
+        try {
+            $wizardData = $this->normalizeWizardData($policy->wizard_data ?? [], $policy->document_type);
+
+            $htmlOutput = Blade::render($policy->template->content, [
+                'company' => $policy->company,
+                'policy' => $policy,
+                'wizard_data' => $wizardData,
+            ]);
+
+            return response($htmlOutput, 200, ['Content-Type' => 'text/html']);
+
+        } catch (\Throwable $e) {
+            Log::error('Error compilando documento legal público', [
+                'integrity_hash' => $integrityHash,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile().':'.$e->getLine(),
+            ]);
+
+            return response('Error al cargar el documento.', 500);
         }
     }
 

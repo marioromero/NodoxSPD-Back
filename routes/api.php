@@ -17,6 +17,9 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/plans', [PlanController::class, 'index']); // Catálogo de planes
 
+// Ruta pública para compartir/incrustar políticas legalmente selladas
+Route::get('/public/policies/{integrityHash}', [CompanyPolicyController::class, 'publicRender']);
+
 // 2. Rutas Protegidas (Cualquier usuario autenticado)
 Route::middleware('auth:sanctum')->group(function () {
 
