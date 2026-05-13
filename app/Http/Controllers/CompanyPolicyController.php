@@ -6,6 +6,7 @@ use App\Http\Requests\StoreCompanyPolicyRequest;
 use App\Http\Requests\UpdateCompanyPolicyRequest;
 use App\Models\CompanyPolicy;
 use App\Models\LegalTemplate;
+use App\Services\PolicyMetricsService;
 use App\Traits\ApiResponse;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -16,6 +17,21 @@ class CompanyPolicyController extends Controller
 {
     use ApiResponse;
     use AuthorizesRequests;
+
+    /**
+     * Métricas de políticas de la empresa.
+     */
+    public function metrics(Request $request)
+    {
+        $company = $request->user()->company;
+
+        $metrics = PolicyMetricsService::count(
+            (int) $company->id,
+            $request->input('type')
+        );
+
+        return $this->success('Métricas de políticas obtenidas exitosamente.', $metrics);
+    }
 
     /**
      * Lista el historial de políticas de la empresa.

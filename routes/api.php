@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // 3. Módulo de Empresa (Solo Admins de Empresa)
     Route::middleware('role:company_admin')->prefix('company')->group(function () {
+        Route::get('policies/metrics', [CompanyPolicyController::class, 'metrics']);
         Route::apiResource('policies', CompanyPolicyController::class);
 
         // Ruta para compilar y devolver el HTML final al frontend

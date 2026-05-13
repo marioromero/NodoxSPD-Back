@@ -5,6 +5,23 @@ X-XSRF-TOKEN: {{xsrf_token}}
 Cookie: nodoxspd-session={{session_cookie}}
 
 ###
+
+POST https://spd-service.nodox.cl/api/register
+Content-Type: application/json
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+{
+    "email": "contacto_qa_final@empresa.com",
+    "password": "SecretPassword123",
+    "password_confirmation": "SecretPassword123",
+    "type": "company",
+    "business_name": "Tech Solutions Latam"
+}
+
+###
 # 1. Obtener cookie CSRF y capturar Token + Sesión
 GET https://spd-service.nodox.cl/sanctum/csrf-cookie
 Accept: application/json
@@ -133,7 +150,15 @@ Cookie: nodoxspd-session={{session_cookie}}
 }
 
 ###
-# 8. Autoguardado Final: El usuario termina todos los pasos (Merge profundo lo une con el Paso 1)
+# 8. Retomar el borrador a medio llenar (Ver el raw de la política antes del merge)
+GET https://spd-service.nodox.cl/api/company/policies/{{policy_web_id}}
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 9. Autoguardado Final: El usuario termina todos los pasos (Merge profundo lo une con el Paso 1)
 PUT https://spd-service.nodox.cl/api/company/policies/{{policy_web_id}}
 Content-Type: application/json
 Accept: application/json
@@ -153,7 +178,7 @@ Cookie: nodoxspd-session={{session_cookie}}
 }
 
 ###
-# 9. Previsualizar el HTML generado (Antes de firmar)
+# 10. Previsualizar el HTML generado (Antes de firmar)
 GET https://spd-service.nodox.cl/api/company/policies/{{policy_web_id}}/render
 Accept: application/json
 Origin: https://localhost:8000
@@ -161,7 +186,7 @@ X-XSRF-TOKEN: {{xsrf_token}}
 Cookie: nodoxspd-session={{session_cookie}}
 
 ###
-# 10. "Firmar" y Publicar la Política (Generar Sello de Inmutabilidad)
+# 11. "Firmar" y Publicar la Política (Generar Sello de Inmutabilidad)
 POST https://spd-service.nodox.cl/api/company/policies/{{policy_web_id}}/publish
 Accept: application/json
 Origin: https://localhost:8000
@@ -174,7 +199,7 @@ Cookie: nodoxspd-session={{session_cookie}}
 # ==============================================================================
 
 ###
-# 11. Iniciar Wizard: Política de Cookies (Cascarón vacío)
+# 12. Iniciar Wizard: Política de Cookies (Cascarón vacío)
 POST https://spd-service.nodox.cl/api/company/policies
 Content-Type: application/json
 Accept: application/json
@@ -193,7 +218,23 @@ Cookie: nodoxspd-session={{session_cookie}}
 %}
 
 ###
-# 12. Listar TODO el historial de políticas de la empresa (Dashboard)
+# 13. Métricas globales de políticas (Dashboard)
+GET https://spd-service.nodox.cl/api/company/policies/metrics
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 14. Métricas filtradas por tipo de documento
+GET https://spd-service.nodox.cl/api/company/policies/metrics?type=cookie_policy
+Accept: application/json
+Origin: https://localhost:8000
+X-XSRF-TOKEN: {{xsrf_token}}
+Cookie: nodoxspd-session={{session_cookie}}
+
+###
+# 15. Listar TODO el historial de políticas de la empresa (Dashboard)
 GET https://spd-service.nodox.cl/api/company/policies
 Accept: application/json
 Origin: https://localhost:8000
@@ -201,7 +242,7 @@ X-XSRF-TOKEN: {{xsrf_token}}
 Cookie: nodoxspd-session={{session_cookie}}
 
 ###
-# 13. Listar políticas filtradas (Solo Privacidad Web)
+# 16. Listar políticas filtradas (Solo Privacidad Web)
 GET https://spd-service.nodox.cl/api/company/policies?type=privacy_policy
 Accept: application/json
 Origin: https://localhost:8000
@@ -209,7 +250,7 @@ X-XSRF-TOKEN: {{xsrf_token}}
 Cookie: nodoxspd-session={{session_cookie}}
 
 ###
-# 14. Retomar un Borrador a medias (Obtener la política de cookies cruda)
+# 17. Retomar un Borrador a medias (Obtener la política de cookies cruda)
 GET https://spd-service.nodox.cl/api/company/policies/{{policy_cookie_id}}
 Accept: application/json
 Origin: https://localhost:8000
@@ -217,7 +258,7 @@ X-XSRF-TOKEN: {{xsrf_token}}
 Cookie: nodoxspd-session={{session_cookie}}
 
 ###
-# 15. Publicar Política de Cookies (Para luego archivarla)
+# 18. Publicar Política de Cookies (Para luego archivarla)
 POST https://spd-service.nodox.cl/api/company/policies/{{policy_cookie_id}}/publish
 Accept: application/json
 Origin: https://localhost:8000
@@ -225,7 +266,7 @@ X-XSRF-TOKEN: {{xsrf_token}}
 Cookie: nodoxspd-session={{session_cookie}}
 
 ###
-# 16. Archivar una Política (Cambiar estado de published a archived)
+# 19. Archivar una Política (Cambiar estado de published a archived)
 PATCH https://spd-service.nodox.cl/api/company/policies/{{policy_cookie_id}}/archive
 Accept: application/json
 Origin: https://localhost:8000
@@ -233,7 +274,7 @@ X-XSRF-TOKEN: {{xsrf_token}}
 Cookie: nodoxspd-session={{session_cookie}}
 
 ###
-# 17. Eliminar (Hard Delete) una Política Archivada
+# 20. Eliminar (Hard Delete) una Política Archivada
 DELETE https://spd-service.nodox.cl/api/company/policies/{{policy_cookie_id}}
 Accept: application/json
 Origin: https://localhost:8000
@@ -241,7 +282,7 @@ X-XSRF-TOKEN: {{xsrf_token}}
 Cookie: nodoxspd-session={{session_cookie}}
 
 ###
-# 18. Error Esperado: Intentar actualizar una política ya publicada (Debería dar 403)
+# 21. Error Esperado: Intentar actualizar una política ya publicada (Debería dar 403)
 PUT https://spd-service.nodox.cl/api/company/policies/{{policy_web_id}}
 Content-Type: application/json
 Accept: application/json
@@ -258,7 +299,7 @@ Cookie: nodoxspd-session={{session_cookie}}
 # ==============================================================================
 
 ###
-# 19. Iniciar Wizard: Política para Trabajadores (Cascarón vacío)
+# 22. Iniciar Wizard: Política para Trabajadores (Cascarón vacío)
 POST https://spd-service.nodox.cl/api/company/policies
 Content-Type: application/json
 Accept: application/json
@@ -277,7 +318,7 @@ Cookie: nodoxspd-session={{session_cookie}}
 %}
 
 ###
-# 20. Autoguardado Paso 1 - Monitoreo laboral
+# 23. Autoguardado Paso 1 - Monitoreo laboral
 PUT https://spd-service.nodox.cl/api/company/policies/{{policy_workers_id}}
 Content-Type: application/json
 Accept: application/json
@@ -296,7 +337,7 @@ Cookie: nodoxspd-session={{session_cookie}}
 }
 
 ###
-# 21. Autoguardado Paso 2 - Salud y beneficios laborales
+# 24. Autoguardado Paso 2 - Salud y beneficios laborales
 PUT https://spd-service.nodox.cl/api/company/policies/{{policy_workers_id}}
 Content-Type: application/json
 Accept: application/json
@@ -312,7 +353,7 @@ Cookie: nodoxspd-session={{session_cookie}}
 }
 
 ###
-# 22. Autoguardado Paso 3 - Cesión de datos a terceros
+# 25. Autoguardado Paso 3 - Cesión de datos a terceros
 PUT https://spd-service.nodox.cl/api/company/policies/{{policy_workers_id}}
 Content-Type: application/json
 Accept: application/json
@@ -332,7 +373,7 @@ Cookie: nodoxspd-session={{session_cookie}}
 }
 
 ###
-# 23. Previsualizar HTML de la Política de Trabajadores
+# 26. Previsualizar HTML de la Política de Trabajadores
 GET https://spd-service.nodox.cl/api/company/policies/{{policy_workers_id}}/render
 Accept: application/json
 Origin: https://localhost:8000
@@ -340,7 +381,7 @@ X-XSRF-TOKEN: {{xsrf_token}}
 Cookie: nodoxspd-session={{session_cookie}}
 
 ###
-# 24. Publicar y sellar la Política de Trabajadores
+# 27. Publicar y sellar la Política de Trabajadores
 POST https://spd-service.nodox.cl/api/company/policies/{{policy_workers_id}}/publish
 Accept: application/json
 Origin: https://localhost:8000
@@ -353,7 +394,7 @@ Cookie: nodoxspd-session={{session_cookie}}
 # ==============================================================================
 
 ###
-# 25. Iniciar Wizard: Documento Personalizado (Cascarón vacío)
+# 28. Iniciar Wizard: Documento Personalizado (Cascarón vacío)
 POST https://spd-service.nodox.cl/api/company/policies
 Content-Type: application/json
 Accept: application/json
@@ -372,7 +413,7 @@ Cookie: nodoxspd-session={{session_cookie}}
 %}
 
 ###
-# 26. Autoguardado Paso 1 - Clasificación legal (Aviso de privacidad bajo Ley 21.719)
+# 29. Autoguardado Paso 1 - Clasificación legal (Aviso de privacidad bajo Ley 21.719)
 PUT https://spd-service.nodox.cl/api/company/policies/{{policy_custom_id}}
 Content-Type: application/json
 Accept: application/json
@@ -388,7 +429,7 @@ Cookie: nodoxspd-session={{session_cookie}}
 }
 
 ###
-# 27. Autoguardado Paso 3 - Parámetros Ley 21.719
+# 30. Autoguardado Paso 3 - Parámetros Ley 21.719
 PUT https://spd-service.nodox.cl/api/company/policies/{{policy_custom_id}}
 Content-Type: application/json
 Accept: application/json
@@ -409,7 +450,7 @@ Cookie: nodoxspd-session={{session_cookie}}
 }
 
 ###
-# 28. Previsualizar HTML del Documento Personalizado
+# 31. Previsualizar HTML del Documento Personalizado
 GET https://spd-service.nodox.cl/api/company/policies/{{policy_custom_id}}/render
 Accept: application/json
 Origin: https://localhost:8000
@@ -417,7 +458,7 @@ X-XSRF-TOKEN: {{xsrf_token}}
 Cookie: nodoxspd-session={{session_cookie}}
 
 ###
-# 29. Publicar y sellar el Documento Personalizado
+# 32. Publicar y sellar el Documento Personalizado
 POST https://spd-service.nodox.cl/api/company/policies/{{policy_custom_id}}/publish
 Accept: application/json
 Origin: https://localhost:8000
@@ -430,7 +471,7 @@ Cookie: nodoxspd-session={{session_cookie}}
 # ==============================================================================
 
 ###
-# 30. Crear Documento Libre (Términos y Condiciones)
+# 33. Crear Documento Libre (Términos y Condiciones)
 POST https://spd-service.nodox.cl/api/company/policies
 Content-Type: application/json
 Accept: application/json
@@ -449,7 +490,7 @@ Cookie: nodoxspd-session={{session_cookie}}
 %}
 
 ###
-# 31. Autoguardado - Documento libre con HTML personalizado
+# 34. Autoguardado - Documento libre con HTML personalizado
 PUT https://spd-service.nodox.cl/api/company/policies/{{policy_free_id}}
 Content-Type: application/json
 Accept: application/json
