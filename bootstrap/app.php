@@ -6,6 +6,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -100,6 +101,40 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 422);
         });
 
+        $exceptions->renderable(function (QueryException $e, Request $request) {
+            $sqlState = $e->errorInfo[0] ?? null;
+            $driverCode = $e->errorInfo[1] ?? null;
+
+            if ($sqlState === '23000') {
+                $message = match ($driverCode) {
+                    1062 => 'El recurso ya existe (valor duplicado).',
+                    1451 => 'No se puede eliminar porque está siendo utilizado por otros registros.',
+                    1452 => 'Referencia inválida. El recurso relacionado no existe.',
+                    default => 'Error de integridad de datos.',
+                };
+
+                Log::warning('DB Integrity constraint', [
+                    'path' => $request->path(),
+                    'method' => $request->method(),
+                    'sqlState' => $sqlState,
+                    'driverCode' => $driverCode,
+                    'message' => $e->getMessage(),
+                ]);
+
+                return response()->json([
+                    'status' => false,
+                    'message' => $message,
+                    'data' => null,
+                ], 409);
+            }
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Error en la base de datos.',
+                'data' => null,
+            ], 500);
+        });
+
         $exceptions->renderable(function (Throwable $e, Request $request) {
             Log::error('500 Internal Server Error', [
                 'exception' => get_class($e),
@@ -109,15 +144,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 'file' => $e->getFile().':'.$e->getLine(),
             ]);
 
-            $isProduction = app()->isProduction();
-
             return response()->json([
                 'status' => false,
-                'message' => $isProduction ? 'Error interno del servidor.' : $e->getMessage(),
-                'data' => $isProduction ? null : [
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                ],
+                'message' => 'Error interno del servidor.',
+                'data' => null,
             ], 500);
         });
 

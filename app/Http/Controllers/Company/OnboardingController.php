@@ -7,6 +7,7 @@ use App\Http\Requests\Company\CompleteOnboardingRequest;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OnboardingController extends Controller
 {
@@ -49,7 +50,13 @@ class OnboardingController extends Controller
             return $this->success('Configuración legal completada exitosamente.', $user);
 
         } catch (\Exception $e) {
-            return $this->error('Ocurrió un error al procesar el onboarding: '.$e->getMessage(), null, 500);
+            Log::error('Error en onboarding', [
+                'company_id' => $company->id,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile().':'.$e->getLine(),
+            ]);
+
+            return $this->error('Ocurrió un error al procesar el onboarding.', null, 500);
         }
     }
 }

@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -58,7 +59,13 @@ class AuthController extends Controller
             return $this->success('Registro completado exitosamente. Por favor, verifica tu correo.', null, 201);
 
         } catch (\Exception $e) {
-            return $this->error('Ocurrió un error al registrar el usuario: ' . $e->getMessage(), null, 500);
+            Log::error('Error en registro', [
+                'email' => $request->email,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile().':'.$e->getLine(),
+            ]);
+
+            return $this->error('Ocurrió un error al registrar el usuario.', null, 500);
         }
     }
 
@@ -68,21 +75,23 @@ class AuthController extends Controller
     public function login(LoginRequest $request): JsonResponse
     {
         // 1. Intentamos autenticar con las credenciales dadas
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        if (! Auth::attempt($request->only('email', 'password'))) {
             return $this->error('Credenciales incorrectas.', null, 401);
         }
 
         $user = Auth::user();
 
         // 2. Verificamos que el usuario esté activo en el sistema
-        if (!$user->is_active) {
+        if (! $user->is_active) {
             Auth::logout();
+
             return $this->error('Esta cuenta ha sido suspendida.', null, 403);
         }
 
         // 3. Verificamos que el rol elegido en el frontend coincida con el real
         if ($user->type !== $request->type) {
             Auth::logout();
+
             return $this->error('Tipo de cuenta incorrecto. Intenta iniciar sesión en el portal adecuado.', null, 403);
         }
 
