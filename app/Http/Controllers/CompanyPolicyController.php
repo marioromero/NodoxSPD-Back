@@ -119,12 +119,12 @@ class CompanyPolicyController extends Controller
      */
     public function publish(CompanyPolicy $policy, Request $request)
     {
-        $this->authorize('publish', $policy);
-
-        // Solo se pueden publicar políticas en estado draft
+        // Validar estado antes de authorize para evitar depender del exception handler
         if ($policy->status !== 'draft') {
             return $this->error('Solo se pueden publicar políticas en estado borrador.', null, 403);
         }
+
+        $this->authorize('publish', $policy);
 
         $policy->load(['company', 'template']);
 
@@ -172,12 +172,11 @@ class CompanyPolicyController extends Controller
      */
     public function update(UpdateCompanyPolicyRequest $request, CompanyPolicy $policy)
     {
-        $this->authorize('update', $policy);
-
-        // Validar que el borrador esté en estado draft
         if ($policy->status !== 'draft') {
             return $this->error('Solo se pueden actualizar políticas en estado borrador.', null, 403);
         }
+
+        $this->authorize('update', $policy);
 
         // Obtener los datos validados (pueden ser parciales para el flujo de wizard)
         $validatedData = $request->validated();
@@ -198,12 +197,11 @@ class CompanyPolicyController extends Controller
      */
     public function archive(CompanyPolicy $policy, Request $request)
     {
-        $this->authorize('archive', $policy);
-
-        // Solo permitir archivar políticas publicadas
         if ($policy->status !== 'published') {
             return $this->error('Solo se pueden archivar políticas publicadas.', null, 403);
         }
+
+        $this->authorize('archive', $policy);
 
         // Actualizar el estado a 'archived'
         $policy->update([
@@ -218,12 +216,11 @@ class CompanyPolicyController extends Controller
      */
     public function destroy(CompanyPolicy $policy, Request $request)
     {
-        $this->authorize('delete', $policy);
-
-        // Solo permitir eliminar políticas archivadas
         if ($policy->status !== 'archived') {
             return $this->error('Solo se pueden eliminar políticas archivadas.', null, 403);
         }
+
+        $this->authorize('delete', $policy);
 
         // Eliminar el registro
         $policy->delete();
