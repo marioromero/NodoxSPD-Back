@@ -102,39 +102,26 @@ class CompanyPolicyController extends Controller
      */
     public function render(CompanyPolicy $policy, Request $request)
     {
-        // Seguridad: Asegurar que la política pertenece a la empresa del usuario
         if ((int) $policy->company_id !== (int) $request->user()->company->id) {
             abort(403, 'Acceso no autorizado a este documento.');
         }
 
-        // Cargamos la relación de la empresa y la plantilla
         $policy->load(['company', 'template']);
 
-        try {
-            $wizardData = $this->normalizeWizardData($policy->wizard_data ?? [], $policy->document_type);
+        $wizardData = $this->normalizeWizardData($policy->wizard_data ?? [], $policy->document_type);
 
-            $htmlOutput = Blade::render($policy->template->content, [
-                'company' => $policy->company,
-                'policy' => $policy,
-                'wizard_data' => $wizardData,
-            ]);
+        $htmlOutput = Blade::render($policy->template->content, [
+            'company' => $policy->company,
+            'policy' => $policy,
+            'wizard_data' => $wizardData,
+        ]);
 
-            return $this->success('Documento compilado exitosamente.', [
-                'html' => $htmlOutput,
-                'document_type' => $policy->document_type,
-                'version' => $policy->company_version,
-                'status' => $policy->status,
-            ]);
-
-        } catch (\Throwable $e) {
-            Log::error('Error compilando documento legal', [
-                'policy_id' => $policy->id,
-                'message' => $e->getMessage(),
-                'file' => $e->getFile().':'.$e->getLine(),
-            ]);
-
-            return $this->error('Error al compilar el documento legal.', null, 500);
-        }
+        return $this->success('Documento compilado exitosamente.', [
+            'html' => $htmlOutput,
+            'document_type' => $policy->document_type,
+            'version' => $policy->company_version,
+            'status' => $policy->status,
+        ]);
     }
 
     /**

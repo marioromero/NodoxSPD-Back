@@ -17,6 +17,31 @@ use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
+/**
+ * Parsea un mensaje de error 1062 de MariaDB/MySQL extrayendo el campo
+ * duplicado y devolviendo un mensaje legible.
+ */
+function parseDuplicateError(string $errorMessage): string
+{
+    // "Duplicate entry 'VALOR' for key 'tabla_campo_unique'"
+    if (preg_match("/Duplicate entry '(.+)' for key '(.+)'/", $errorMessage, $m)) {
+        $value = $m[1];
+        $key = $m[2];
+
+        $fieldMap = [
+            'companies_tax_id_unique' => 'RUT',
+            'companies_business_name_unique' => 'Razón social',
+            'users_email_unique' => 'Correo electrónico',
+        ];
+
+        $field = $fieldMap[$key] ?? "el campo «{$key}»";
+
+        return "El valor «{$value}» ya está registrado en el sistema para {$field}.";
+    }
+
+    return 'El recurso ya existe (valor duplicado).';
+}
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         api: __DIR__.'/../routes/api.php',
@@ -106,12 +131,17 @@ return Application::configure(basePath: dirname(__DIR__))
             $driverCode = $e->errorInfo[1] ?? null;
 
             if ($sqlState === '23000') {
-                $message = match ($driverCode) {
-                    1062 => 'El recurso ya existe (valor duplicado).',
-                    1451 => 'No se puede eliminar porque está siendo utilizado por otros registros.',
-                    1452 => 'Referencia inválida. El recurso relacionado no existe.',
-                    default => 'Error de integridad de datos.',
-                };
+                $errors = [];
+
+                if ($driverCode === 1062) {
+                    $errors[] = parseDuplicateError($e->errorInfo[2] ?? '');
+                } elseif ($driverCode === 1451) {
+                    $errors[] = 'No se puede eliminar porque está siendo utilizado por otros registros.';
+                } elseif ($driverCode === 1452) {
+                    $errors[] = 'Referencia inválida. El recurso relacionado no existe.';
+                } else {
+                    $errors[] = 'Error de integridad de datos.';
+                }
 
                 Log::warning('DB Integrity constraint', [
                     'path' => $request->path(),
@@ -123,10 +153,20 @@ return Application::configure(basePath: dirname(__DIR__))
 
                 return response()->json([
                     'status' => false,
-                    'message' => $message,
-                    'data' => null,
+                    'message' => 'Error de integridad de datos.',
+                    'data' => [
+                        'errors' => $errors,
+                    ],
                 ], 409);
             }
+
+            Log::error('DB Query error', [
+                'path' => $request->path(),
+                'method' => $request->method(),
+                'sqlState' => $sqlState,
+                'driverCode' => $driverCode,
+                'message' => $e->getMessage(),
+            ]);
 
             return response()->json([
                 'status' => false,

@@ -12,7 +12,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -24,49 +23,32 @@ class AuthController extends Controller
      */
     public function register(RegisterRequest $request): JsonResponse
     {
-        try {
-            // DB::transaction asegura que si falla la creación del perfil, no se cree el usuario (o viceversa)
-            $user = DB::transaction(function () use ($request) {
+        $user = DB::transaction(function () use ($request) {
 
-                // 1. Crear el núcleo del usuario (Preparado para el futuro con Google)
-                $user = User::create([
-                    'email' => $request->email,
-                    'password' => Hash::make($request->password),
-                    'type' => $request->type,
-                ]);
-
-                // 2. Crear el perfil correspondiente según el tipo
-                if ($request->type === 'company') {
-                    $user->company()->create([
-                        'public_uuid' => Str::uuid(), // Generamos el ID para el Iframe
-                        'business_name' => $request->business_name,
-                    ]);
-
-                    //  asignarle el rol de Spatie:
-                    $user->assignRole('company_admin');
-                } else {
-                    $user->persona()->create([
-                        'first_name' => $request->first_name,
-                        'last_name' => $request->last_name,
-                    ]);
-                }
-
-                return $user;
-            });
-
-            // TODO: Aquí dispararemos el evento de envío de correo de verificación después.
-
-            return $this->success('Registro completado exitosamente. Por favor, verifica tu correo.', null, 201);
-
-        } catch (\Exception $e) {
-            Log::error('Error en registro', [
+            $user = User::create([
                 'email' => $request->email,
-                'message' => $e->getMessage(),
-                'file' => $e->getFile().':'.$e->getLine(),
+                'password' => Hash::make($request->password),
+                'type' => $request->type,
             ]);
 
-            return $this->error('Ocurrió un error al registrar el usuario.', null, 500);
-        }
+            if ($request->type === 'company') {
+                $user->company()->create([
+                    'public_uuid' => Str::uuid(),
+                    'business_name' => $request->business_name,
+                ]);
+
+                $user->assignRole('company_admin');
+            } else {
+                $user->persona()->create([
+                    'first_name' => $request->first_name,
+                    'last_name' => $request->last_name,
+                ]);
+            }
+
+            return $user;
+        });
+
+        return $this->success('Registro completado exitosamente. Por favor, verifica tu correo.', null, 201);
     }
 
     /**
