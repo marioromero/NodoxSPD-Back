@@ -73,30 +73,13 @@ class LegalTemplateSeeder extends Seeder
             $selected_sensitive[] = htmlspecialchars($wizard_data['step_2_sensitive_data_other']);
         }
     }
-
-    // Lógica para determinar la base legal principal
-    $health_medical = in_array('salud', $wizard_data['step_2_sensitive_data']) && isset($wizard_data['step_2_health_basis']) && $wizard_data['step_2_health_basis'] === 'medical_care';
-
-    $group_internal = (in_array('politica', $wizard_data['step_2_sensitive_data']) || in_array('sindical', $wizard_data['step_2_sensitive_data']) || in_array('religion', $wizard_data['step_2_sensitive_data'])) && isset($wizard_data['step_2_group_basis']) && $wizard_data['step_2_group_basis'] === 'internal_members';
 @endphp
 
 <h2>2. Tratamiento de Categorías Especiales de Datos (Datos Sensibles)</h2>
 <p>El Responsable informa que, para la prestación de sus servicios, realiza el tratamiento de las siguientes categorías de datos sensibles: <strong>{{ implode(', ', $selected_sensitive) }}</strong>.</p>
 
 <strong>2.1. Base de Licitud para Datos Sensibles:</strong>
-@if($health_medical)
-    <p>Respecto a los <strong>Datos de Salud</strong>, su tratamiento se fundamenta en la necesidad para la prevención, diagnóstico y prestación de asistencia sanitaria o tratamientos médicos, de conformidad con el Artículo 16 letra b) de la Ley 21.719 y la normativa sanitaria vigente, estando sujeto al estricto deber de secreto profesional.</p>
-@endif
-
-@if($group_internal)
-    <p>Respecto a los datos de <strong>Afiliación o Creencias</strong>, su tratamiento es realizado en el ámbito de las actividades legítimas del Responsable (en su calidad de fundación, asociación o gremio) y se refiere exclusivamente a sus miembros actuales o antiguos, conforme al Artículo 16 letra e) de la Ley 21.719.</p>
-@endif
-
-@if(!$health_medical && !$group_internal)
-    <p>Para el tratamiento de la información sensible recopilada, nuestra base de licitud es su <strong>Consentimiento Expreso, Específico e Informado</strong> (Artículo 16 de la Ley 21.719). Este no se presume ni se obtiene de forma tácita; se recaba mediante una declaración escrita o un medio tecnológico que permite acreditar fehacientemente su voluntad.</p>
-@elseif(($health_medical || $group_internal) && count(array_intersect(['biometria', 'sexual', 'racial', 'otros'], $wizard_data['step_2_sensitive_data'])) > 0)
-    <p>Para las demás categorías de datos sensibles recopiladas que no entran en las excepciones legales mencionadas anteriormente, nuestra base de licitud es su <strong>Consentimiento Expreso, Específico e Informado</strong> (Artículo 16 de la Ley).</p>
-@endif
+<p>Para el tratamiento de la información sensible recopilada, nuestra base de licitud es su <strong>Consentimiento Expreso, Específico e Informado</strong> (Artículo 16 de la Ley 21.719). Este no se presume ni se obtiene de forma tácita; se recaba mediante una declaración escrita o un medio tecnológico que permite acreditar fehacientemente su voluntad.</p>
 
 <p><strong>2.2. Medidas de Seguridad Especiales:</strong> Debido a la naturaleza íntima de estos datos, {{ $company->business_name }} aplica estándares de seguridad superiores, que incluyen:</p>
 <ul>
@@ -114,7 +97,7 @@ class LegalTemplateSeeder extends Seeder
 
 @if(!($wizard_data['step_3_minors']['active'] ?? false))
     <h2>3. Privacidad de Menores de Edad</h2>
-    <p>Los servicios y el sitio web de {{ $company->business_name }} están dirigidos exclusivamente a personas mayores de 18 años. El Responsable no recopila ni solicita intencionadamente datos personales de menores de edad. En caso de que se tome conocimiento de la existencia de datos de un menor en nuestras bases de datos sin la debida autorización de su representante legal, se procederá a su eliminación inmediata de acuerdo con el Principio de Calidad y el Art. 16 quáter de la Ley 21.719.</p>
+    <p>Los servicios y el sitio web de {{ $company->business_name }} están dirigidos exclusivamente a personas mayores de 18 años. El Responsable no recopila ni solicita intencionadamente datos personales de menores de edad. En caso de que se tome conocimiento de la existencia de datos de un menor en nuestras bases de datos sin la debida autorización de su representante legal, se procederá a su eliminación inmediata en cumplimiento de la obligación especial de protección establecida en el Art. 16 quáter de la Ley 21.719 y conforme al Principio de Proporcionalidad (Art. 3, letra c).</p>
 @else
     @php
         $minors_purposes_map = [
@@ -133,6 +116,11 @@ class LegalTemplateSeeder extends Seeder
             }
         }
 
+        $age_groups = $wizard_data['step_3_minors']['age_groups'] ?? ['under_14', '14_to_18'];
+        $has_under_14 = in_array('under_14', $age_groups);
+        $has_14_to_18 = in_array('14_to_18', $age_groups);
+        $adolescents_sensitive = $wizard_data['step_3_minors']['adolescents_sensitive'] ?? false;
+
         // Lógica cruzada: Datos Sensibles + Menores
         $has_sensitive = !in_array('ninguna', $wizard_data['step_2_sensitive_data'] ?? ['ninguna']);
     @endphp
@@ -144,8 +132,15 @@ class LegalTemplateSeeder extends Seeder
 
     <p><strong>3.2. Consentimiento y Validación:</strong></p>
     <ul>
+        @if($has_under_14)
         <li><strong>Niños y Niñas (menores de 14 años):</strong> El tratamiento solo se realiza contando con la autorización previa de sus padres o representantes legales, verificada mediante: <em>{{ $wizard_data['step_3_minors']['verification_method'] ?? 'mecanismo de verificación formal' }}</em>.</li>
-        <li><strong>Adolescentes (14 a 18 años):</strong> Podrán autorizar por sí mismos el tratamiento de sus datos, excepto cuando se trate de datos sensibles de menores de 16 años, en cuyo caso se requerirá obligatoriamente el consentimiento del padre o tutor.</li>
+        @endif
+        @if($has_14_to_18)
+        <li><strong>Adolescentes (14 a 18 años):</strong> Podrán autorizar por sí mismos el tratamiento de sus datos comunes, ejerciendo su autonomía progresiva conforme al Art. 16 quáter.</li>
+            @if($adolescents_sensitive)
+            <li><strong>Adolescentes y Datos Sensibles (menores de 16 años):</strong> Cuando el tratamiento involucre datos sensibles de adolescentes menores de 16 años, se requerirá obligatoriamente el consentimiento expreso del padre, madre o representante legal, conforme al inciso cuarto del Art. 16 quáter de la Ley.</li>
+            @endif
+        @endif
     </ul>
 
     <p><strong>3.3. Obligación de Resguardo:</strong> El Responsable asume la obligación especial de velar por el uso lícito y la protección reforzada de esta información, limitando su acceso solo a personal autorizado.</p>
@@ -172,8 +167,10 @@ class LegalTemplateSeeder extends Seeder
         'meta' => 'Meta Platforms, Inc. (EE.UU.) - Pixel/Ads',
         'shopify' => 'Shopify Inc. (Canadá) - E-commerce',
         'wix' => 'Wix.com Ltd. (Israel) - Plataforma',
+        'squarespace' => 'Squarespace, Inc. (EE.UU.) - Plataforma',
         'mailchimp' => 'The Rocket Science Group LLC (EE.UU.) - Mailchimp',
         'hubspot' => 'HubSpot, Inc. (EE.UU.) - CRM',
+        'salesforce' => 'Salesforce, Inc. (EE.UU.) - CRM',
         'aws' => 'Amazon Web Services, Inc. (EE.UU.) - Cloud Hosting',
         'azure' => 'Microsoft Corporation (EE.UU.) - Azure Cloud',
         'google_cloud' => 'Google LLC (EE.UU.) - Cloud Hosting'
@@ -245,11 +242,9 @@ class LegalTemplateSeeder extends Seeder
     <h2>5. Tratamiento Automatizado y Elaboración de Perfiles</h2>
     <p>En cumplimiento del Art. 14 ter, letra l de la Ley 21.719, {{ $company->business_name }} informa que utiliza sistemas tecnológicos para la toma de decisiones automatizadas y/o elaboración de perfiles de acuerdo con lo siguiente:</p>
 
-    <p><strong>5.1. Lógica del Tratamiento:</strong> El sistema utiliza algoritmos que procesan las siguientes categorías de datos: <em>{{ $wizard_data['step_5_ai']['parameters'] ?? 'datos de comportamiento y transaccionales' }}</em>. La lógica matemática o automatizada aplicada consiste en: <em>{{ $wizard_data['step_5_ai']['logic'] ?? 'análisis y evaluación de perfil' }}</em>.</p>
+    <p><strong>5.1. Lógica del Tratamiento:</strong> <em>{{ $wizard_data['step_5_ai']['logic'] ?? 'análisis y evaluación de perfil' }}</em>.</p>
 
-    <p><strong>5.2. Consecuencias para el Titular:</strong> El resultado de este tratamiento automatizado tiene como consecuencia directa: <em>{{ $wizard_data['step_5_ai']['consequences'] ?? 'la personalización del servicio entregado' }}</em>.</p>
-
-    <p><strong>5.3. Derechos ARCO-P y Garantías Algorítmicas:</strong> De conformidad con el Art. 8 bis de la Ley, usted tiene derecho a no ser objeto de decisiones basadas únicamente en el tratamiento automatizado de sus datos que produzcan efectos jurídicos sobre usted. En consecuencia, podrá ejercer en cualquier momento ante <strong>{{ $company->arco_contact_email }}</strong> los siguientes derechos:</p>
+    <p><strong>5.2. Derechos ARCO-P y Garantías Algorítmicas:</strong> De conformidad con el Art. 8 bis de la Ley, usted tiene derecho a no ser objeto de decisiones basadas únicamente en el tratamiento automatizado de sus datos que produzcan efectos jurídicos sobre usted. En consecuencia, podrá ejercer en cualquier momento ante <strong>{{ $company->arco_contact_email }}</strong> los siguientes derechos:</p>
     <ul>
         <li><strong>Derecho a Explicación:</strong> Solicitar información detallada y comprensible sobre la lógica aplicada en la decisión que le afectó.</li>
         <li><strong>Impugnación e Intervención Humana:</strong> Expresar su punto de vista, solicitar que un operador humano (y no una máquina) revise la decisión adoptada por el algoritmo, e impugnar el resultado si lo considera injusto o erróneo.</li>
@@ -299,7 +294,7 @@ class LegalTemplateSeeder extends Seeder
     <li><strong>Derecho de Portabilidad:</strong> Solicitar la transferencia de sus datos personales a otro Responsable del Tratamiento, en formato estructurado, de uso común y lectura mecánica, cuando el tratamiento se base en el consentimiento o en la ejecución de un contrato y se realice por medios automatizados.</li>
 </ul>
 <p><strong>Forma de Ejercicio:</strong> Para ejercer cualquiera de estos derechos, podrá dirigir su solicitud formal y fundamentada al correo electrónico <strong>{{ $company->arco_contact_email }}</strong>, identificándose debidamente e indicando el derecho que desea ejercer. El Responsable atenderá su solicitud dentro del plazo máximo de 10 días hábiles contados desde la recepción de la misma, conforme al Art. 12 de la Ley.</p>
-<p>En caso de no recibir respuesta dentro del plazo legal, o si la respuesta fuese desfavorable, usted tiene el derecho a recurrir ante la Agencia de Protección de Datos Personales para que ésta Knownozca y resuelva su reclamación.</p>
+<p>En caso de no recibir respuesta dentro del plazo legal, o si la respuesta fuese desfavorable, usted tiene el derecho a recurrir ante la Agencia de Protección de Datos Personales para que ésta conozca y resuelva su reclamación.</p>
 
 <hr>
 
@@ -327,78 +322,49 @@ BLADE_WEB;
                 'wizard_schema' => [
                     'steps' => [
                         [
-                            'title' => 'Funciones de la plataforma',
+                            'title' => 'Funciones de su sitio web',
                             'fields' => [
-                                ['key' => 'step_1_website_functions_informative', 'label' => '¿El sitio tiene un fin puramente informativo?', 'type' => 'boolean', 'help_text' => 'Según el Art. 13 letra c de la Ley 21.719, esto permite el tratamiento de datos para medidas precontractuales.'],
-                                ['key' => 'step_1_website_functions_ecommerce', 'label' => '¿La plataforma cuenta con E-commerce o venta online?', 'type' => 'boolean', 'help_text' => 'Obliga al cumplimiento de normativas tributarias y de entrega de productos (Art. 13 letra b).'],
-                                ['key' => 'step_1_website_functions_saas', 'label' => '¿Los usuarios pueden crear cuentas (SaaS)?', 'type' => 'boolean', 'help_text' => 'Requiere el tratamiento de credenciales y logs bajo el contrato de servicios digitales.'],
+                                ['key' => 'step_1_website_functions', 'label' => '¿Para qué usa su sitio web o aplicación?', 'type' => 'multiselect', 'options' => ['informativa' => 'Informativa / Contacto — Solo tiene formularios de contacto y cotizaciones', 'ecommerce' => 'E-commerce / Ventas — Vende productos o servicios y procesa pagos online', 'saas' => 'SaaS / Plataforma — Los usuarios crean cuentas y suben información'], 'help_text' => 'Seleccione todas las que apliquen. Cada opción agrega las cláusulas legales correspondientes. Base legal: Informativa = medidas precontractuales (Art. 13 letra c); E-commerce = obligaciones tributarias (Art. 13 letra b) y contrato de compraventa (Art. 13 letra c); SaaS = contrato de servicios digitales (Art. 13 letra c).'],
                             ],
                         ],
                         [
                             'title' => 'Datos sensibles',
                             'fields' => [
-                                ['key' => 'step_2_sensitive_data_salud', 'label' => '¿Recopila datos de salud?', 'type' => 'boolean', 'help_text' => 'Art. 16 letra b: Datos sobre prevención, diagnóstico y asistencia sanitaria.'],
-                                ['key' => 'step_2_health_basis', 'label' => 'Base de licitud para datos de salud', 'type' => 'select', 'options' => ['medical_care' => 'Asistencia sanitaria (Art. 16 letra b)', 'consent' => 'Consentimiento expreso'], 'show_if' => ['key' => 'step_2_sensitive_data_salud', 'value' => true], 'help_text' => 'Determina la base legal bajo la cual se tratan datos de salud.'],
-                                ['key' => 'step_2_sensitive_data_biometria', 'label' => '¿Utiliza biometría (huella/rostro)?', 'type' => 'boolean', 'help_text' => 'Art. 16 ter: Requiere consentimiento expreso para identificación o autenticación.'],
-                                ['key' => 'step_2_sensitive_data_politica', 'label' => '¿Trata datos de afiliación política?', 'type' => 'boolean', 'help_text' => 'Dato sensible que requiere base legal especial (Art. 16 letra e).'],
-                                ['key' => 'step_2_sensitive_data_sindical', 'label' => '¿Trata datos de afiliación sindical o gremial?', 'type' => 'boolean', 'help_text' => 'Dato sensible que requiere base legal especial (Art. 16 letra e).'],
-                                ['key' => 'step_2_sensitive_data_religion', 'label' => '¿Trata datos de creencias religiosas?', 'type' => 'boolean', 'help_text' => 'Dato sensible que requiere base legal especial (Art. 16 letra e).'],
-                                ['key' => 'step_2_group_basis', 'label' => 'Base de licitud para datos de afiliación/creencias', 'type' => 'select', 'options' => ['internal_members' => 'Miembros de la organización (Art. 16 letra e)', 'consent' => 'Consentimiento expreso'], 'show_if' => ['key' => 'step_2_sensitive_data_politica', 'value' => true], 'help_text' => 'Se muestra si seleccionó afiliación política, sindical o religiosa.'],
-                                ['key' => 'step_2_sensitive_data_sexual', 'label' => '¿Trata datos de orientación sexual?', 'type' => 'boolean', 'help_text' => 'Categoría especial bajo el Art. 16 que requiere consentimiento específico.'],
-                                ['key' => 'step_2_sensitive_data_racial', 'label' => '¿Recopila datos de origen racial o étnico?', 'type' => 'boolean', 'help_text' => 'Categoría especial bajo el Art. 16 que requiere consentimiento específico.'],
-                                ['key' => 'step_2_sensitive_data_otros', 'label' => '¿Trata otras categorías de datos sensibles?', 'type' => 'boolean', 'help_text' => 'Para categorías no listadas explícitamente.'],
-                                ['key' => 'step_2_sensitive_data_other', 'label' => 'Describa la categoría sensible adicional', 'type' => 'text', 'show_if' => ['key' => 'step_2_sensitive_data_otros', 'value' => true], 'help_text' => 'Especifique el tipo de dato sensible no listado.'],
-                                ['key' => 'step_2_sensitive_data_ninguna', 'label' => 'No trata ninguna categoría de datos sensibles', 'type' => 'boolean', 'help_text' => 'Marque si su organización no recopila datos sensibles.'],
+                                ['key' => 'step_2_sensitive_data', 'label' => '¿Su negocio solicita o almacena algún tipo de dato sensible?', 'type' => 'multiselect', 'options' => ['salud' => 'Datos de Salud — Fichas clínicas, recetas, diagnósticos', 'biometria' => 'Datos Biométricos — Huella digital, reconocimiento facial', 'politica' => 'Afiliación Política', 'sindical' => 'Afiliación Sindical o Gremial', 'religion' => 'Creencias Religiosas', 'sexual' => 'Orientación Sexual', 'racial' => 'Origen Racial o Étnico', 'otros' => 'Otra categoría de dato sensible', 'ninguna' => 'Ninguna de las anteriores'], 'help_text' => 'Los datos sensibles requieren protección reforzada. Si marca cualquiera (salvo "Ninguna"), se agrega una cláusula especial con consentimiento explícito. Base legal: Art. 16 exige consentimiento expreso e informado; Art. 16 ter regula datos biométricos.'],
+                                ['key' => 'step_2_sensitive_data_other', 'label' => 'Describa la categoría sensible adicional', 'type' => 'text', 'show_if' => ['key' => 'step_2_sensitive_data', 'value' => 'otros'], 'help_text' => 'Ej: Datos genéticos, datos sobre vida sexual. Base legal: Toda categoría sensible queda cubierta por el Art. 16.'],
                             ],
                         ],
                         [
                             'title' => 'Menores de edad',
                             'fields' => [
-                                ['key' => 'step_3_minors_active', 'label' => '¿Trata datos de menores de 18 años?', 'type' => 'boolean', 'help_text' => 'Art. 16 quáter: El tratamiento debe respetar el interés superior del niño y su autonomía progresiva.'],
-                                ['key' => 'step_3_minors_purposes_servicio', 'label' => 'Prestación del servicio principal', 'type' => 'boolean', 'show_if' => ['key' => 'step_3_minors_active', 'value' => true], 'help_text' => 'Educación, salud o plataforma dedicada a menores.'],
-                                ['key' => 'step_3_minors_purposes_seguridad', 'label' => 'Control de acceso y seguridad', 'type' => 'boolean', 'show_if' => ['key' => 'step_3_minors_active', 'value' => true], 'help_text' => 'Control de acceso a instalaciones.'],
-                                ['key' => 'step_3_minors_purposes_legal', 'label' => 'Cumplimiento de obligaciones legales', 'type' => 'boolean', 'show_if' => ['key' => 'step_3_minors_active', 'value' => true], 'help_text' => 'Obligaciones ante autoridades.'],
-                                ['key' => 'step_3_minors_purposes_marketing', 'label' => 'Marketing, fidelización y clubes infantiles', 'type' => 'boolean', 'show_if' => ['key' => 'step_3_minors_active', 'value' => true], 'help_text' => 'Art. 16 quáter: Se prohíbe perfilamiento comercial sin PIA.'],
-                                ['key' => 'step_3_minors_purposes_otros', 'label' => 'Otra finalidad', 'type' => 'boolean', 'show_if' => ['key' => 'step_3_minors_active', 'value' => true], 'help_text' => 'Finalidad no listada.'],
-                                ['key' => 'step_3_minors_other_purpose', 'label' => 'Describa la finalidad adicional', 'type' => 'text', 'show_if' => ['key' => 'step_3_minors_purposes_otros', 'value' => true], 'help_text' => 'Especifique la finalidad no listada.'],
-                                ['key' => 'step_3_minors_verification_method', 'label' => 'Método de verificación de edad/tutor', 'type' => 'text', 'show_if' => ['key' => 'step_3_minors_active', 'value' => true], 'help_text' => 'Ej: Verificación notarial, documento de identidad del tutor.'],
+                                ['key' => 'step_3_minors_active', 'label' => '¿Su organización maneja datos personales de menores de 18 años?', 'type' => 'boolean', 'help_text' => 'Incluye cualquier situación donde pida, guarde o use datos de menores. Base legal: Art. 16 quáter exige protección reforzada, respetando el interés superior y autonomía progresiva del menor.'],
+                                ['key' => 'step_3_minors_age_groups', 'label' => '¿Qué rangos de edad de menores trata?', 'type' => 'multiselect', 'options' => ['under_14' => 'Menores de 14 años (Niños/as) — Requieren autorización del padre o tutor', '14_to_18' => 'De 14 a 18 años (Adolescentes) — Pueden autorizar por sí mismos, salvo datos sensibles'], 'show_if' => ['key' => 'step_3_minors_active', 'value' => true], 'help_text' => 'Seleccione todos los que apliquen. Las reglas de consentimiento cambían según el rango de edad. Base legal: Art. 16 quáter — menores de 14 siempre requieren representante legal; de 14 a 18 ejercen autonomía progresiva, pero datos sensibles de menores de 16 requieren consentimiento del padre/tutor.'],
+                                ['key' => 'step_3_minors_purposes', 'label' => '¿Para qué necesita los datos de los menores?', 'type' => 'multiselect', 'options' => ['servicio' => 'Servicio principal — Educación, salud o plataforma para menores', 'seguridad' => 'Seguridad — Control de acceso, videovigilancia, validación de identidad', 'legal' => 'Obligación legal — Requerimientos de autoridades o registros públicos', 'marketing' => 'Marketing — Descuentos, clubes infantiles, concursos', 'otros' => 'Otra finalidad'], 'show_if' => ['key' => 'step_3_minors_active', 'value' => true], 'help_text' => 'Seleccione todas las que apliquen. Aplica para todos los rangos de edad seleccionados.'],
+                                ['key' => 'step_3_minors_other_purpose', 'label' => 'Describa la finalidad adicional', 'type' => 'text', 'show_if' => ['key' => 'step_3_minors_purposes', 'value' => 'otros'], 'help_text' => 'Ej: Actividades recreativas, programas de mentoría.'],
+                                ['key' => 'step_3_minors_verification_method', 'label' => '¿Cómo obtiene la autorización del padre, madre o tutor?', 'type' => 'text', 'show_if' => ['key' => 'step_3_minors_age_groups', 'value' => 'under_14'], 'help_text' => 'Ej: Firma en contrato de matrícula, correo de confirmación del adulto. Base legal: Art. 16 quáter exige verificar la identidad del representante legal para menores de 14.'],
+                                ['key' => 'step_3_minors_adolescents_sensitive', 'label' => '¿Trata datos sensibles (salud, biometría, etc.) de adolescentes entre 14 y 16 años?', 'type' => 'boolean', 'show_if' => ['key' => 'step_3_minors_age_groups', 'value' => '14_to_18'], 'help_text' => 'Si trata datos sensibles de menores de 16, necesita consentimiento expreso del padre o tutor, aunque el adolescente tenga más de 14 años. Base legal: Art. 16 quáter inciso cuarto — datos sensibles de menores de 16 siempre requieren autorización del representante.'],
                             ],
                         ],
                         [
-                            'title' => 'Proveedores y terceros',
+                            'title' => 'Proveedores y infraestructura',
                             'fields' => [
-                                ['key' => 'step_4_providers_local', 'label' => '¿Almacena datos en servidores locales (Chile)?', 'type' => 'boolean', 'help_text' => 'Datos tratados exclusivamente dentro del territorio nacional.'],
-                                ['key' => 'step_4_providers_google_analytics', 'label' => 'Google LLC (Analytics/Ads)', 'type' => 'boolean', 'help_text' => 'Transferencia a EE.UU.'],
-                                ['key' => 'step_4_providers_meta', 'label' => 'Meta Platforms, Inc. (Pixel/Ads)', 'type' => 'boolean', 'help_text' => 'Transferencia a EE.UU.'],
-                                ['key' => 'step_4_providers_shopify', 'label' => 'Shopify Inc. (E-commerce)', 'type' => 'boolean', 'help_text' => 'Transferencia a Canadá.'],
-                                ['key' => 'step_4_providers_wix', 'label' => 'Wix.com Ltd. (Plataforma)', 'type' => 'boolean', 'help_text' => 'Transferencia a Israel.'],
-                                ['key' => 'step_4_providers_mailchimp', 'label' => 'Mailchimp (Email Marketing)', 'type' => 'boolean', 'help_text' => 'Transferencia a EE.UU.'],
-                                ['key' => 'step_4_providers_hubspot', 'label' => 'HubSpot, Inc. (CRM)', 'type' => 'boolean', 'help_text' => 'Transferencia a EE.UU.'],
-                                ['key' => 'step_4_providers_aws', 'label' => 'Amazon Web Services (Cloud)', 'type' => 'boolean', 'help_text' => 'Transferencia a EE.UU.'],
-                                ['key' => 'step_4_providers_azure', 'label' => 'Microsoft Azure (Cloud)', 'type' => 'boolean', 'help_text' => 'Transferencia a EE.UU.'],
-                                ['key' => 'step_4_providers_google_cloud', 'label' => 'Google Cloud (Hosting)', 'type' => 'boolean', 'help_text' => 'Transferencia a EE.UU.'],
-                                ['key' => 'step_4_providers_otros', 'label' => 'Otro proveedor no listado', 'type' => 'boolean', 'help_text' => 'Proveedores adicionales no incluidos en la lista.'],
-                                ['key' => 'step_4_other_provider', 'label' => 'Nombre del proveedor adicional', 'type' => 'text', 'show_if' => ['key' => 'step_4_providers_otros', 'value' => true], 'help_text' => 'Especifique el nombre del proveedor y país.'],
+                                ['key' => 'step_4_providers', 'label' => '¿Qué servicios externos utiliza para operar su sitio web?', 'type' => 'multiselect', 'options' => ['local' => 'Servidor Local en Chile — Los datos se quedan en el país', 'google_analytics' => 'Google Analytics / Google Ads (EE.UU.)', 'meta' => 'Meta Pixel / Facebook Ads (EE.UU.)', 'shopify' => 'Shopify — Plataforma de e-commerce (Canadá)', 'wix' => 'Wix — Plataforma web (Israel)', 'squarespace' => 'Squarespace — Plataforma web (EE.UU.)', 'mailchimp' => 'Mailchimp — Email marketing (EE.UU.)', 'hubspot' => 'HubSpot — CRM y marketing (EE.UU.)', 'salesforce' => 'Salesforce — CRM empresarial (EE.UU.)', 'aws' => 'Amazon Web Services — Cloud (EE.UU.)', 'azure' => 'Microsoft Azure — Cloud (EE.UU.)', 'google_cloud' => 'Google Cloud — Hosting (EE.UU.)', 'otros' => 'Otro proveedor extranjero'], 'help_text' => 'Marque todos los que apliquen. Si selecciona cualquier proveedor extranjero, se agregará la cláusula de transferencias internacionales. Base legal: Art. 14 ter letra h y Arts. 27-28 regulan transferencias internacionales; proveedores actúan como mandatarios bajo el Art. 15 bis.'],
+                                ['key' => 'step_4_other_provider', 'label' => 'Nombre y país del proveedor adicional', 'type' => 'text', 'show_if' => ['key' => 'step_4_providers', 'value' => 'otros'], 'help_text' => 'Ej: Cloudflare (EE.UU.), DataDog (EE.UU.).'],
                             ],
                         ],
                         [
-                            'title' => 'Inteligencia artificial',
+                            'title' => 'Decisiones automatizadas e IA',
                             'fields' => [
-                                ['key' => 'step_5_ai_active', 'label' => '¿Utiliza IA para toma de decisiones automatizadas?', 'type' => 'boolean', 'help_text' => 'Art. 14 ter letra l: El titular tiene derecho a una explicación sobre la lógica aplicada.'],
-                                ['key' => 'step_5_ai_parameters', 'label' => 'Parámetros que procesa el algoritmo', 'type' => 'text', 'show_if' => ['key' => 'step_5_ai_active', 'value' => true], 'help_text' => 'Ej: Datos de comportamiento, transaccionales, de perfil.'],
-                                ['key' => 'step_5_ai_logic', 'label' => 'Lógica matemática o automatizada aplicada', 'type' => 'text', 'show_if' => ['key' => 'step_5_ai_active', 'value' => true], 'help_text' => 'Ej: Análisis y evaluación de perfil, scoring crediticio.'],
-                                ['key' => 'step_5_ai_consequences', 'label' => 'Consecuencias para el titular', 'type' => 'text', 'show_if' => ['key' => 'step_5_ai_active', 'value' => true], 'help_text' => 'Ej: Personalización del servicio, decisión automatizada.'],
+                                ['key' => 'step_5_ai_active', 'label' => '¿Usa algoritmos o inteligencia artificial para tomar decisiones sobre los clientes?', 'type' => 'boolean', 'help_text' => 'Ej: aprobación automática de créditos, scoring de riesgo, precios personalizados. Base legal: Art. 14 ter letra l y Art. 8 bis regulan decisiones automatizadas y dan derecho a explicación e intervención humana.'],
+                                ['key' => 'step_5_ai_logic', 'label' => '¿Qué hace exactamente el sistema? Descríbalo en palabras simples', 'type' => 'text', 'show_if' => ['key' => 'step_5_ai_active', 'value' => true], 'help_text' => 'Ej: Evalúa ingresos e historial comercial para aprobar o rechazar créditos. Base legal: Art. 14 ter letra l exige informar la lógica del tratamiento automatizado.'],
                             ],
                         ],
                         [
-                            'title' => 'Plazos de retención',
+                            'title' => 'Plazos de conservación',
                             'fields' => [
-                                ['key' => 'step_6_retention_tax_commercial', 'label' => '¿Guarda datos por obligaciones tributarias/comerciales?', 'type' => 'boolean', 'help_text' => 'Principio de Proporcionalidad: Mínimo 6 años por normativa SII.'],
-                                ['key' => 'step_6_retention_user_accounts', 'label' => '¿Mantiene cuentas de usuario activas?', 'type' => 'boolean', 'help_text' => 'Datos de perfil vigentes hasta solicitud de eliminación.'],
-                                ['key' => 'step_6_retention_account_days', 'label' => 'Días para supresión tras solicitud', 'type' => 'number', 'show_if' => ['key' => 'step_6_retention_user_accounts', 'value' => true], 'help_text' => 'Plazo máximo para anonimizar tras solicitud (default: 30).'],
-                                ['key' => 'step_6_retention_marketing', 'label' => '¿Conserva datos para marketing?', 'type' => 'boolean', 'help_text' => 'Hasta que el titular ejerza Cancelación/Oposición.'],
-                                ['key' => 'step_6_retention_custom', 'label' => '¿Tiene un plazo de retención personalizado?', 'type' => 'boolean', 'help_text' => 'Periodo específico distinto a los anteriores.'],
-                                ['key' => 'step_6_retention_custom_period', 'label' => 'Describa el plazo personalizado', 'type' => 'text', 'show_if' => ['key' => 'step_6_retention_custom', 'value' => true], 'help_text' => 'Ej: 2 años desde última interacción.'],
+                                ['key' => 'step_6_retention', 'label' => '¿Por cuánto tiempo conservará los datos de sus usuarios?', 'type' => 'multiselect', 'options' => ['tributario' => '6 años por ley — Obligación tributaria y comercial (SII)', 'cuentas' => 'Mientras la cuenta esté activa — Se eliminan al borrar la cuenta', 'marketing' => 'Hasta que el usuario lo pida — Puede cancelar en cualquier momento', 'personalizado' => 'Plazo personalizado — Usted define el período'], 'help_text' => 'Seleccione todas las que apliquen. Base legal: Principio de Proporcionalidad (Art. 3 letra c) exige conservar datos solo el tiempo necesario. Obligaciones tributarias exigen mínimo 6 años (SII).'],
+                                ['key' => 'step_6_retention_account_days', 'label' => 'Días máximos para eliminar datos tras solicitud de eliminación de cuenta', 'type' => 'text', 'show_if' => ['key' => 'step_6_retention', 'value' => 'cuentas'], 'help_text' => 'Ej: 30 días. Base legal: Debe ser un plazo razonable según Art. 3 letra c.'],
+                                ['key' => 'step_6_retention_custom_period', 'label' => 'Describa el plazo personalizado', 'type' => 'text', 'show_if' => ['key' => 'step_6_retention', 'value' => 'personalizado'], 'help_text' => 'Ej: 6 meses desde la última compra, 2 años desde la última interacción. Base legal: Debe ser proporcional a la finalidad (Art. 3 letra c).'],
                             ],
                         ],
                     ],
@@ -439,13 +405,11 @@ BLADE_WEB;
 @if($wizard_data['step_2_analytics']['active'] ?? false)
 
 @php
-    $analytics_map = [
-        'google_analytics' => 'Google Analytics (Google LLC, EE.UU.)',
-        'hotjar' => 'Hotjar (Hotjar Ltd, Malta)',
-        'mixpanel' => 'Mixpanel (Mixpanel Inc., EE.UU.)',
-        'clarity' => 'Microsoft Clarity (Microsoft Corp., EE.UU.)',
-        'matomo' => 'Matomo (InnoCraft, Nueva Zelanda)'
-    ];
+$analytics_map = [
+         'google_analytics' => 'Google Analytics (Google LLC, EE.UU.)',
+         'hotjar_clarity' => 'Hotjar / Microsoft Clarity (Mapas de calor)',
+         'mixpanel_amplitude' => 'Mixpanel / Amplitude (Analítica de eventos)'
+     ];
 
     $selected_analytics = [];
     $has_foreign_analytics = false;
@@ -488,13 +452,11 @@ BLADE_WEB;
 @if($wizard_data['step_3_marketing']['active'] ?? false)
 
 @php
-    $marketing_map = [
-        'meta_pixel' => 'Meta Platforms, Inc. (Pixel de Facebook/Instagram)',
-        'google_ads' => 'Google LLC (Google Ads y Remarketing)',
-        'tiktok_pixel' => 'TikTok Inc. (TikTok Ads)',
-        'linkedin_insight' => 'LinkedIn Corporation (Insight Tag)',
-        'twitter_pixel' => 'X Corp. (Twitter Ads)'
-    ];
+$marketing_map = [
+         'meta_pixel' => 'Meta Platforms, Inc. (Pixel de Facebook/Instagram)',
+         'google_ads' => 'Google LLC (Google Ads y Remarketing)',
+         'tiktok_linkedin' => 'TikTok Inc. / LinkedIn Corporation (TikTok Pixel / LinkedIn Insight Tag)'
+     ];
 
     $selected_marketing = [];
 
@@ -531,13 +493,11 @@ BLADE_WEB;
 @if($wizard_data['step_4_functionality']['active'] ?? false)
 
 @php
-    $functionality_map = [
-        'youtube' => 'Reproductores Multimedia (YouTube/Vimeo)',
-        'maps' => 'Mapas Interactivos (Google Maps/Mapbox)',
-        'whatsapp' => 'Widgets de Chat (WhatsApp/Intercom/Zendesk)',
-        'social' => 'Plugins y Botones Sociales (Facebook, Twitter, LinkedIn)',
-        'fonts' => 'Librerías de Fuentes Externas (Google Fonts)'
-    ];
+$functionality_map = [
+         'chats' => 'Chats de Atención al Cliente (WhatsApp, Intercom, Zendesk)',
+         'multimedia' => 'Reproductores Multimedia Incrustados (YouTube, Vimeo, Spotify)',
+         'maps' => 'Mapas Interactivos (Google Maps)'
+     ];
 
     $selected_functionality = [];
 
@@ -609,42 +569,27 @@ BLADE_COOKIE;
                 'wizard_schema' => [
                     'steps' => [
                         [
-                            'title' => 'Cookies Analíticas',
+                            'title' => 'Analítica y Estadísticas',
                             'fields' => [
-                                ['key' => 'step_2_analytics_active', 'label' => '¿Utiliza cookies de análisis estadístico?', 'type' => 'boolean', 'help_text' => 'Art. 14 ter: Requiere consentimiento para medir tráfico y comportamiento.'],
-                                ['key' => 'step_2_analytics_provider_google_analytics', 'label' => '¿Usa Google Analytics?', 'type' => 'boolean', 'show_if' => ['key' => 'step_2_analytics_active', 'value' => true], 'help_text' => 'Implica transferencia internacional (Google LLC).'],
-                                ['key' => 'step_2_analytics_provider_hotjar', 'label' => '¿Usa Hotjar (Mapas de calor)?', 'type' => 'boolean', 'show_if' => ['key' => 'step_2_analytics_active', 'value' => true], 'help_text' => 'Graba interacciones anónimas en pantalla.'],
-                                ['key' => 'step_2_analytics_provider_mixpanel', 'label' => '¿Usa Mixpanel?', 'type' => 'boolean', 'show_if' => ['key' => 'step_2_analytics_active', 'value' => true], 'help_text' => 'Analítica de eventos y funnels (Mixpanel Inc., EE.UU.).'],
-                                ['key' => 'step_2_analytics_provider_clarity', 'label' => '¿Usa Microsoft Clarity?', 'type' => 'boolean', 'show_if' => ['key' => 'step_2_analytics_active', 'value' => true], 'help_text' => 'Grabaciones de sesión gratuitas (Microsoft Corp., EE.UU.).'],
-                                ['key' => 'step_2_analytics_provider_matomo', 'label' => '¿Usa Matomo?', 'type' => 'boolean', 'show_if' => ['key' => 'step_2_analytics_active', 'value' => true], 'help_text' => 'Alternativa privacy-friendly (InnoCraft, Nueva Zelanda).'],
-                                ['key' => 'step_2_analytics_provider_otros', 'label' => '¿Usa otro proveedor de analítica?', 'type' => 'boolean', 'show_if' => ['key' => 'step_2_analytics_active', 'value' => true], 'help_text' => 'Proveedor no listado.'],
-                                ['key' => 'step_2_analytics_other_provider', 'label' => 'Nombre del proveedor de analítica adicional', 'type' => 'text', 'show_if' => ['key' => 'step_2_analytics_provider_otros', 'value' => true], 'help_text' => 'Especifique el nombre del proveedor.'],
+                                ['key' => 'step_2_analytics_active', 'label' => '¿Su sitio web usa herramientas para contar visitas o entender cómo navegan los usuarios?', 'type' => 'boolean', 'help_text' => 'Incluye Google Analytics, mapas de calor, etc. Se pedirá consentimiento antes de cargarlas. Base legal: Art. 14 ter exige consentimiento previo para cookies no esenciales; Art. 15 bis (mandatarios); Arts. 27-28 (transferencias internacionales).'],
+                                ['key' => 'step_2_analytics_providers', 'label' => '¿Cuál de estas herramientas utiliza?', 'type' => 'multiselect', 'options' => ['google_analytics' => 'Google Analytics — Estadísticas de visitas (EE.UU.)', 'hotjar_clarity' => 'Hotjar / Clarity — Mapas de calor y grabaciones', 'mixpanel_amplitude' => 'Mixpanel / Amplitude — Análisis de eventos', 'otros' => 'Otra herramienta de analítica'], 'show_if' => ['key' => 'step_2_analytics_active', 'value' => true], 'help_text' => 'Seleccione todas las que apliquen.'],
+                                ['key' => 'step_2_analytics_other_provider', 'label' => 'Nombre de la herramienta de analítica adicional', 'type' => 'text', 'show_if' => ['key' => 'step_2_analytics_providers', 'value' => 'otros'], 'help_text' => 'Ej: Matomo, Adobe Analytics, Plausible.'],
                             ],
                         ],
                         [
-                            'title' => 'Cookies de Marketing',
+                            'title' => 'Publicidad y Seguimiento',
                             'fields' => [
-                                ['key' => 'step_3_marketing_active', 'label' => '¿Utiliza cookies de publicidad o remarketing?', 'type' => 'boolean', 'help_text' => 'Art. 8 bis: Perfilamiento publicitario. Requiere consentimiento explícito.'],
-                                ['key' => 'step_3_marketing_provider_meta_pixel', 'label' => '¿Usa Píxel de Meta (Facebook/Instagram)?', 'type' => 'boolean', 'show_if' => ['key' => 'step_3_marketing_active', 'value' => true], 'help_text' => 'Rastreo de conversiones y audiencias personalizadas.'],
-                                ['key' => 'step_3_marketing_provider_google_ads', 'label' => '¿Usa Google Ads?', 'type' => 'boolean', 'show_if' => ['key' => 'step_3_marketing_active', 'value' => true], 'help_text' => 'Medición de campañas y remarketing en red de búsqueda/display.'],
-                                ['key' => 'step_3_marketing_provider_tiktok_pixel', 'label' => '¿Usa TikTok Pixel?', 'type' => 'boolean', 'show_if' => ['key' => 'step_3_marketing_active', 'value' => true], 'help_text' => 'Rastreo de eventos en TikTok Ads (TikTok Inc.).'],
-                                ['key' => 'step_3_marketing_provider_linkedin_insight', 'label' => '¿Usa LinkedIn Insight Tag?', 'type' => 'boolean', 'show_if' => ['key' => 'step_3_marketing_active', 'value' => true], 'help_text' => 'Conversiones B2B y analítica de visitantes (LinkedIn Corp.).'],
-                                ['key' => 'step_3_marketing_provider_twitter_pixel', 'label' => '¿Usa X/Twitter Ads Pixel?', 'type' => 'boolean', 'show_if' => ['key' => 'step_3_marketing_active', 'value' => true], 'help_text' => 'Rastreo de conversiones en X Corp.'],
-                                ['key' => 'step_3_marketing_provider_otros', 'label' => '¿Usa otro proveedor de marketing?', 'type' => 'boolean', 'show_if' => ['key' => 'step_3_marketing_active', 'value' => true], 'help_text' => 'Proveedor no listado.'],
-                                ['key' => 'step_3_marketing_other_provider', 'label' => 'Nombre del proveedor de marketing adicional', 'type' => 'text', 'show_if' => ['key' => 'step_3_marketing_provider_otros', 'value' => true], 'help_text' => 'Especifique el nombre del proveedor.'],
+                                ['key' => 'step_3_marketing_active', 'label' => '¿Muestra anuncios personalizados o rastrea conversiones desde redes sociales?', 'type' => 'boolean', 'help_text' => 'Ej: un cliente ve un producto en su web y luego le aparece un anuncio en Facebook. Siempre requiere consentimiento expreso. Base legal: Art. 8 bis (derecho a oponerse al perfilamiento); Art. 14 ter letra l (decisiones automatizadas); Arts. 27-28 (transferencias internacionales).'],
+                                ['key' => 'step_3_marketing_providers', 'label' => '¿Cuál de estas herramientas de publicidad utiliza?', 'type' => 'multiselect', 'options' => ['meta_pixel' => 'Meta Pixel — Anuncios en Facebook e Instagram (EE.UU.)', 'google_ads' => 'Google Ads — Remarketing y conversiones (EE.UU.)', 'tiktok_linkedin' => 'TikTok Pixel / LinkedIn Insight Tag', 'otros' => 'Otra herramienta de publicidad'], 'show_if' => ['key' => 'step_3_marketing_active', 'value' => true], 'help_text' => 'Seleccione todas las que apliquen.'],
+                                ['key' => 'step_3_marketing_other_provider', 'label' => 'Nombre de la herramienta de publicidad adicional', 'type' => 'text', 'show_if' => ['key' => 'step_3_marketing_providers', 'value' => 'otros'], 'help_text' => 'Ej: Pinterest Tag, Snapchat Pixel.'],
                             ],
                         ],
                         [
-                            'title' => 'Cookies de Funcionalidad',
+                            'title' => 'Herramientas Externas (Chat, Video, Mapas)',
                             'fields' => [
-                                ['key' => 'step_4_functionality_active', 'label' => '¿Integra widgets de terceros (Videos, Mapas, Chats)?', 'type' => 'boolean', 'help_text' => 'Art. 14 quáter: Privacidad por diseño. Bloqueo de widgets hasta aceptar.'],
-                                ['key' => 'step_4_functionality_provider_youtube', 'label' => '¿Incrusta videos de YouTube/Vimeo?', 'type' => 'boolean', 'show_if' => ['key' => 'step_4_functionality_active', 'value' => true], 'help_text' => 'El reproductor puede instalar rastreadores de Google.'],
-                                ['key' => 'step_4_functionality_provider_maps', 'label' => '¿Usa mapas interactivos (Google Maps/Mapbox)?', 'type' => 'boolean', 'show_if' => ['key' => 'step_4_functionality_active', 'value' => true], 'help_text' => 'Los mapas cargan recursos de servidores externos.'],
-                                ['key' => 'step_4_functionality_provider_whatsapp', 'label' => '¿Usa botón de WhatsApp o Chats en vivo?', 'type' => 'boolean', 'show_if' => ['key' => 'step_4_functionality_active', 'value' => true], 'help_text' => 'Conecta con servidores de Meta u otros proveedores de soporte.'],
-                                ['key' => 'step_4_functionality_provider_social', 'label' => '¿Usa plugins sociales (Facebook, Twitter, LinkedIn)?', 'type' => 'boolean', 'show_if' => ['key' => 'step_4_functionality_active', 'value' => true], 'help_text' => 'Botones de compartir pueden rastrear la visita.'],
-                                ['key' => 'step_4_functionality_provider_fonts', 'label' => '¿Usa Google Fonts u otras fuentes externas?', 'type' => 'boolean', 'show_if' => ['key' => 'step_4_functionality_active', 'value' => true], 'help_text' => 'Las fuentes externas exponen la IP al servidor del proveedor.'],
-                                ['key' => 'step_4_functionality_provider_otros', 'label' => '¿Usa otro widget de funcionalidad?', 'type' => 'boolean', 'show_if' => ['key' => 'step_4_functionality_active', 'value' => true], 'help_text' => 'Widget no listado.'],
-                                ['key' => 'step_4_functionality_other_provider', 'label' => 'Nombre del widget de funcionalidad adicional', 'type' => 'text', 'show_if' => ['key' => 'step_4_functionality_provider_otros', 'value' => true], 'help_text' => 'Especifique el nombre del widget.'],
+                                ['key' => 'step_4_functionality_active', 'label' => '¿Su sitio web tiene elementos de otras empresas incrustados (como chats, videos o mapas)?', 'type' => 'boolean', 'help_text' => 'Ej: un botón de WhatsApp, un video de YouTube, o un mapa de Google. Por ley, deben bloquearse hasta que el usuario acepte. Base legal: Art. 14 quáter (privacidad por diseño, no cargar sin consentimiento); Art. 14 ter letra h (informar transferencias internacionales).'],
+                                ['key' => 'step_4_functionality_providers', 'label' => '¿Qué tipo de elementos tiene integrados?', 'type' => 'multiselect', 'options' => ['chats' => 'Chats — WhatsApp, Intercom, Zendesk', 'multimedia' => 'Videos o audio — YouTube, Vimeo, Spotify', 'maps' => 'Mapas — Google Maps en sección Contacto', 'otros' => 'Otra herramienta externa'], 'show_if' => ['key' => 'step_4_functionality_active', 'value' => true], 'help_text' => 'Seleccione todas las que apliquen.'],
+                                ['key' => 'step_4_functionality_other_provider', 'label' => 'Nombre de la herramienta externa adicional', 'type' => 'text', 'show_if' => ['key' => 'step_4_functionality_providers', 'value' => 'otros'], 'help_text' => 'Ej: Calendly, Typeform, TripAdvisor widget.'],
                             ],
                         ],
                     ],
@@ -677,7 +622,7 @@ BLADE_COOKIE;
 <ul>
 @if($wizard_data['step_1_monitoring']['video'] ?? false)
     <li>
-        <strong>1.1. Sistemas de Videovigilancia:</strong> El Empleador utiliza sistemas de grabación de imágenes en las instalaciones con el único fin de resguardar la seguridad física de los trabajadores y los activos de la empresa. Las cámaras se encuentran debidamente señalizadas y en ningún caso vulnerarán la privacidad en zonas de descanso, vestuarios o baños. Las imágenes se almacenarán por un plazo máximo de 30 días, tras lo cual serán suprimidas o anonimizadas, salvo requerimiento de tribunales u organismos públicos en el ámbito de sus competencias.
+        <strong>1.1. Sistemas de Videovigilancia:</strong> El tratamiento de imágenes mediante sistemas de videovigilancia se realiza en ejercicio de las facultades de administración y dirección del empleador (Art. 5 del Código del Trabajo) y bajo los principios de proporcionalidad y finalidad (Art. 3 de la Ley 21.719), con el objeto de garantizar la seguridad de las personas, bienes e instalaciones de la empresa. Las cámaras se encuentran debidamente señalizadas y en ningún caso vulnerarán la privacidad en zonas de descanso, vestuarios o baños. Las imágenes se almacenarán por un plazo máximo de 30 días, tras lo cual serán suprimidas o anonimizadas, salvo requerimiento de tribunales u organismos públicos en el ámbito de sus competencias.
     </li>
 @endif
 
@@ -695,6 +640,16 @@ BLADE_COOKIE;
     <li>
         <strong>1.3. Sistemas de Geolocalización (GPS):</strong> Los vehículos corporativos o dispositivos móviles asignados cuentan con tecnología de geolocalización (Art. 16 sexies). Su finalidad exclusiva es la gestión logística, optimización de rutas y seguridad en el transporte.
         <br><em>Proporcionalidad:</em> El monitoreo se limita estrictamente al horario de la jornada laboral. Queda estrictamente prohibido el monitoreo en tiempos de descanso o colación para no afectar el derecho a la desconexión del trabajador.
+        @if(!empty($wizard_data['step_1_monitoring']['gps_retention']))
+            <br><em>Conservación:</em> Los datos de geolocalización se conservarán por un plazo de <strong>{{ htmlspecialchars($wizard_data['step_1_monitoring']['gps_retention']) }}</strong>, tras el cual serán eliminados o anonimizados.
+        @else
+            <br><em>Conservación:</em> Los datos de geolocalización se conservarán únicamente por el tiempo necesario para la finalidad indicada, tras lo cual serán eliminados o anonimizados.
+        @endif
+        @if(!empty($wizard_data['step_1_monitoring']['gps_sharing']))
+            <br><em>Comunicación a terceros:</em> {{ htmlspecialchars($wizard_data['step_1_monitoring']['gps_sharing']) }}.
+        @else
+            <br><em>Comunicación a terceros:</em> Los datos de geolocalización no serán comunicados a terceros, salvo obligación legal.
+        @endif
     </li>
 @endif
 
@@ -757,11 +712,11 @@ BLADE_COOKIE;
         @endif
 
         @if($wizard_data['step_3_sharing']['external_advisors'] ?? false)
-            <li><strong>Servicios Profesionales Externos:</strong> Los datos estrictamente necesarios para auditoría contable, defensa jurídica o asesoría en gestión de personas serán comunicados a <em>{{ htmlspecialchars($wizard_data['step_3_sharing']['external_advisors_names'] ?? 'asesores externos') }}</em>. Dichos profesionales se encuentran sujetos al deber de secreto y confidencialidad permanente establecido en el Art. 14 bis de la Ley 21.719.</li>
+            <li><strong>Servicios Profesionales Externos:</strong> Los datos estrictamente necesarios para auditoría contable, defensa jurídica o asesoría en gestión de personas serán comunicados a contadores o estudios jurídicos externos. Dichos profesionales se encuentran sujetos al deber de secreto y confidencialidad permanente establecido en el Art. 14 bis de la Ley 21.719.</li>
         @endif
 
         @if($wizard_data['step_3_sharing']['others'] ?? false)
-            <li><strong>Otros Destinatarios Autorizados:</strong> Adicionalmente, se informa la comunicación de datos a <em>{{ htmlspecialchars($wizard_data['step_3_sharing']['others_names'] ?? 'entidades autorizadas') }}</em> con la finalidad específica de: <em>{{ htmlspecialchars($wizard_data['step_3_sharing']['others_purpose'] ?? 'gestiones relacionadas al contrato de trabajo') }}</em>.</li>
+            <li><strong>Otros Destinatarios Autorizados:</strong> Adicionalmente, se informa la comunicación de datos a <em>{{ htmlspecialchars($wizard_data['step_3_sharing']['others_names'] ?? 'entidades autorizadas') }}</em> con la finalidad específica de: <em>gestiones relacionadas al contrato de trabajo</em>.</li>
         @endif
     </ul>
 
@@ -783,7 +738,7 @@ BLADE_COOKIE;
 </ul>
 <p><strong>Forma de Ejercicio:</strong> El trabajador podrá dirigir su solicitud formal al correo electrónico <strong>{{ $company->arco_contact_email }}</strong> o directamente ante el departamento de Recursos Humanos, identificándose debidamente e indicando el derecho que desea ejercer. El Empleador responderá dentro del plazo máximo de 10 días hábiles, conforme al Art. 12 de la Ley. En caso de respuesta desfavorable o silencio, el trabajador podrá recurrir ante la Agencia de Protección de Datos Personales.</p>
 
-<p><strong>Garantía de No Represalias:</strong> El ejercicio de cualquiera de estos derechos no generará consecuencia adversa alguna en la relación laboral, siendo nulo cualquier acto de represalia conforme al Artículo 154 bis del Código del Trabajo.</p>
+<p><strong>Garantía de No Discriminación y Ausencia de Represalias:</strong> De conformidad con el Art. 4 de la Ley 21.719, los derechos de acceso, rectificación, supresión, oposición y portabilidad son irrenunciables y no pueden ser limitados por ningún acto del empleador. En consecuencia, {{ $company->business_name }} garantiza que el ejercicio legítimo de estos derechos por parte del trabajador no dará lugar a represalias, medidas disciplinarias ni perjuicios en su carrera profesional. Se informa expresamente que cualquier acto destinado a impedir u obstaculizar el ejercicio de estos derechos constituye una infracción grave a la normativa de protección de datos (Art. 34 ter, letra e), sin perjuicio de las acciones de tutela laboral por vulneración de derechos fundamentales que correspondan ante los tribunales competentes.</p>
 
 BLADE_WORKERS;
 
@@ -795,34 +750,26 @@ BLADE_WORKERS;
                 'wizard_schema' => [
                     'steps' => [
                         [
-                            'title' => 'Monitoreo laboral',
+                            'title' => 'Control y monitoreo laboral',
                             'fields' => [
-                                ['key' => 'step_1_monitoring_video', 'label' => '¿Utiliza cámaras de videovigilancia?', 'type' => 'boolean', 'help_text' => 'Art. 5 Código del Trabajo: Solo para seguridad, prohibido en baños o vestuarios.'],
-                                ['key' => 'step_1_monitoring_biometrics', 'label' => '¿Usa control de asistencia biométrico?', 'type' => 'boolean', 'help_text' => 'Art. 16 ter: Requiere alternativa no invasiva si el trabajador no consiente.'],
-                                ['key' => 'step_1_monitoring_biometrics_system', 'label' => 'Sistema biométrico utilizado', 'type' => 'text', 'show_if' => ['key' => 'step_1_monitoring_biometrics', 'value' => true], 'help_text' => 'Ej: Lector de huella validado por la Dirección del Trabajo.'],
-                                ['key' => 'step_1_monitoring_gps', 'label' => '¿Usa GPS en vehículos corporativos?', 'type' => 'boolean', 'help_text' => 'Art. 16 sexies: Geolocalización. Monitoreo limitado a jornada laboral.'],
-                                ['key' => 'step_1_monitoring_digital', 'label' => '¿Monitorea herramientas digitales (email, internet)?', 'type' => 'boolean', 'help_text' => 'Facultad del empleador bajo RIOHS, respetando comunicaciones personales.'],
+                                ['key' => 'step_1_monitoring', 'label' => '¿Usa alguno de estos sistemas para controlar o monitorear a sus trabajadores?', 'type' => 'multiselect', 'options' => ['video' => 'Cámaras de seguridad — Videovigilancia en las instalaciones', 'biometria' => 'Control biométrico de asistencia — Huella digital, reconocimiento facial', 'gps' => 'GPS en vehículos o dispositivos — Rastreo de ubicación', 'digital' => 'Monitoreo digital — Correo electrónico, internet o software de la empresa'], 'help_text' => 'Seleccione todas las que apliquen. Base legal: Art. 5 del Código del Trabajo faculta al empleador para ejercer control, sujeto a proporcionalidad (Art. 3 Ley 21.719). Art. 16 sexies regula la geolocalización.'],
+                                ['key' => 'step_1_monitoring_biometrics_system', 'label' => '¿Qué sistema biométrico utiliza?', 'type' => 'text', 'show_if' => ['key' => 'step_1_monitoring', 'value' => 'biometria'], 'help_text' => 'Ej: Reloj control con huella digital, reconocimiento facial en torniquete. Base legal: Art. 16 ter exige informar el sistema biométrico y su finalidad exclusiva de identificación.'],
+                                ['key' => 'step_1_monitoring_gps_retention', 'label' => '¿Por cuánto tiempo guarda los datos de GPS?', 'type' => 'text', 'show_if' => ['key' => 'step_1_monitoring', 'value' => 'gps'], 'help_text' => 'Ej: 30 días, 6 meses, mientras dure la relación laboral. Base legal: Art. 16 sexies exige definir el plazo de conservación.'],
+                                ['key' => 'step_1_monitoring_gps_sharing', 'label' => '¿Comparte los datos de GPS con alguien más?', 'type' => 'text', 'show_if' => ['key' => 'step_1_monitoring', 'value' => 'gps'], 'help_text' => 'Ej: No se comparten / Se comparten con la empresa de logística X. Base legal: Art. 16 sexies exige informar si los datos de geolocalización se comunican a terceros.'],
                             ],
                         ],
                         [
                             'title' => 'Datos de salud y beneficios',
                             'fields' => [
-                                ['key' => 'step_2_health_benefits_health_active', 'label' => '¿Gestiona licencias médicas y accidentes laborales?', 'type' => 'boolean', 'help_text' => 'Tratamiento lícito por obligación de seguridad social (Art. 16 letra e).'],
-                                ['key' => 'step_2_health_benefits_benefits_active', 'label' => '¿Ofrece seguros de salud o cajas de compensación?', 'type' => 'boolean', 'help_text' => 'Implica tratamiento de datos de cargas familiares (Menores - Art. 16 quáter).'],
+                                ['key' => 'step_2_health_benefits', 'label' => '¿Qué tipo de información médica o de beneficios maneja de sus trabajadores?', 'type' => 'multiselect', 'options' => ['salud' => 'Salud ocupacional — Licencias médicas, exámenes preocupacionales, accidentes laborales', 'beneficios' => 'Beneficios y cargas familiares — Seguros complementarios, cajas de compensación, datos de familiares'], 'help_text' => 'Seleccione todas las que apliquen. Base legal: Art. 16 letra e permite el tratamiento de datos de salud por obligación legal (seguridad social, medicina ocupacional). Los datos de beneficios se basan en la ejecución del contrato de trabajo.'],
                             ],
                         ],
                         [
-                            'title' => 'Cesión de datos a terceros',
+                            'title' => 'Compartir datos con terceros',
                             'fields' => [
-                                ['key' => 'step_3_sharing_none', 'label' => '¿El cálculo de nómina es 100% interno (Sin software externo)?', 'type' => 'boolean', 'help_text' => 'Marcar si no usa ERPs en la nube para remuneraciones.'],
-                                ['key' => 'step_3_sharing_social_security', 'label' => '¿Realiza cesiones legales a seguridad social (AFP, Isapre)?', 'type' => 'boolean', 'help_text' => 'Obligación legal ineludible (Art. 13 letra b). Se asume true por defecto.'],
-                                ['key' => 'step_3_sharing_hr_software', 'label' => '¿Utiliza software externo de RRHH o remuneraciones (SaaS)?', 'type' => 'boolean', 'help_text' => 'Art. 15 bis: El proveedor actúa como mandatario del tratamiento.'],
-                                ['key' => 'step_3_sharing_hr_software_names', 'label' => 'Nombres de los proveedores de RRHH', 'type' => 'text', 'show_if' => ['key' => 'step_3_sharing_hr_software', 'value' => true], 'help_text' => 'Ej: BambooHR, TalentSoft, Plataformas de remuneraciones.'],
-                                ['key' => 'step_3_sharing_external_advisors', 'label' => '¿Comunica datos a asesores externos?', 'type' => 'boolean', 'help_text' => 'Auditoría contable, defensa jurídica. Sujetos al deber de secreto (Art. 14 bis).'],
-                                ['key' => 'step_3_sharing_external_advisors_names', 'label' => 'Nombres de los asesores externos', 'type' => 'text', 'show_if' => ['key' => 'step_3_sharing_external_advisors', 'value' => true], 'help_text' => 'Ej: Estudio jurídico Pérez, Auditoría López & Asociados.'],
-                                ['key' => 'step_3_sharing_others', 'label' => '¿Comunica datos a otros destinatarios?', 'type' => 'boolean', 'help_text' => 'Otros terceros no listados.'],
-                                ['key' => 'step_3_sharing_others_names', 'label' => 'Nombres de los otros destinatarios', 'type' => 'text', 'show_if' => ['key' => 'step_3_sharing_others', 'value' => true], 'help_text' => 'Especifique las entidades.'],
-                                ['key' => 'step_3_sharing_others_purpose', 'label' => 'Finalidad de la comunicación', 'type' => 'text', 'show_if' => ['key' => 'step_3_sharing_others', 'value' => true], 'help_text' => 'Ej: Gestiones relacionadas al contrato de trabajo.'],
+                                ['key' => 'step_3_sharing', 'label' => '¿A qué tipo de proveedores envía los datos de sus trabajadores?', 'type' => 'multiselect', 'options' => ['rrhh_software' => 'Software de RRHH — Buk, Talana, Rex+, etc.', 'seguridad_social' => 'Seguridad social — Previred, AFP, Fonasa/Isapre (obligatorio por ley)', 'asesores_externos' => 'Asesores externos — Contadores o abogados', 'otros' => 'Otros (especificar)', 'ninguno' => 'Ninguno — Todo se hace internamente'], 'help_text' => 'Seleccione todas las que apliquen. La seguridad social se incluye automáticamente por obligación legal. Base legal: Art. 13 letra b (obligación legal); Art. 15 bis (mandatarios); Art. 14 bis (deber de secreto para asesores).'],
+                                ['key' => 'step_3_sharing_hr_software_names', 'label' => 'Nombre del software de RRHH que utiliza', 'type' => 'text', 'show_if' => ['key' => 'step_3_sharing', 'value' => 'rrhh_software'], 'help_text' => 'Ej: Buk, Talana, Rex+.'],
+                                ['key' => 'step_3_sharing_other_recipients', 'label' => 'Especifique los otros destinatarios', 'type' => 'text', 'show_if' => ['key' => 'step_3_sharing', 'value' => 'otros'], 'help_text' => 'Ej: Empresa de transporte, consultora de seguridad.'],
                             ],
                         ],
                     ],
@@ -890,28 +837,28 @@ BLADE_CUSTOM;
                 'wizard_schema' => [
                     'steps' => [
                         [
-                            'title' => 'Clasificación legal',
+                            'title' => 'Tipo de documento',
                             'fields' => [
-                                ['key' => 'custom_policy_title', 'label' => 'Título del documento', 'type' => 'text', 'help_text' => 'Ej: Términos y Condiciones, Política de Devoluciones, etc.'],
-                                ['key' => 'custom_policy_is_privacy_related', 'label' => '¿Es un aviso de privacidad bajo la Ley 21.719?', 'type' => 'boolean', 'help_text' => 'Activa la estructura obligatoria de Finalidades y Base de Licitud.'],
+                                ['key' => 'custom_policy_title', 'label' => '¿Cómo se llama este documento?', 'type' => 'text', 'help_text' => 'Ej: Términos y Condiciones, Política de Devoluciones, Aviso de Privacidad para Concursos.'],
+                                ['key' => 'custom_policy_is_privacy_related', 'label' => '¿Es un aviso de privacidad bajo la Ley 21.719?', 'type' => 'boolean', 'help_text' => 'Si marca "Sí", se genera un documento con la estructura obligatoria de la ley (finalidades, base de licitud, derechos ARCO+P). Si marca "No", podrá escribir el contenido libremente. Base legal: Art. 14 ter exige contenido mínimo para avisos de privacidad.'],
                             ],
                         ],
                         [
                             'title' => 'Redacción libre',
                             'fields' => [
-                                ['key' => 'custom_policy_free_text_html', 'label' => 'Contenido libre (HTML)', 'type' => 'text', 'show_if' => ['key' => 'custom_policy_is_privacy_related', 'value' => false], 'help_text' => 'Párrafos personalizados si no se usa el formato estricto de la ley.'],
+                                ['key' => 'custom_policy_free_text_html', 'label' => 'Escriba el contenido del documento', 'type' => 'text', 'show_if' => ['key' => 'custom_policy_is_privacy_related', 'value' => false], 'help_text' => 'Puede usar formato HTML para títulos, listas y negritas. Este texto se insertará directamente en el documento.'],
                             ],
                         ],
                         [
-                            'title' => 'Parámetros Ley 21.719 (Si aplica)',
+                            'title' => 'Datos del aviso de privacidad',
                             'fields' => [
-                                ['key' => 'custom_policy_context', 'label' => 'Contexto del tratamiento', 'type' => 'text', 'show_if' => ['key' => 'custom_policy_is_privacy_related', 'value' => true], 'help_text' => 'Ej: "Proceso de selección de personal".'],
-                                ['key' => 'custom_policy_data_categories', 'label' => 'Categorías de datos tratados', 'type' => 'text', 'show_if' => ['key' => 'custom_policy_is_privacy_related', 'value' => true], 'help_text' => 'Ej: "Datos de identificación y contacto".'],
-                                ['key' => 'custom_policy_purposes', 'label' => 'Finalidad de los datos', 'type' => 'text', 'show_if' => ['key' => 'custom_policy_is_privacy_related', 'value' => true], 'help_text' => 'Ej: "Evaluar sus aptitudes para el cargo".'],
-                                ['key' => 'custom_policy_legal_basis', 'label' => 'Base de licitud (Art. 13)', 'type' => 'text', 'show_if' => ['key' => 'custom_policy_is_privacy_related', 'value' => true], 'help_text' => 'Ej: "Consentimiento" o "Ejecución de contrato".'],
-                                ['key' => 'custom_policy_recipients', 'label' => 'Destinatarios de los datos', 'type' => 'text', 'show_if' => ['key' => 'custom_policy_is_privacy_related', 'value' => true], 'help_text' => 'Ej: "Ningún tercero, salvo obligación legal".'],
-                                ['key' => 'custom_policy_international_transfers', 'label' => 'Transferencias internacionales (si aplica)', 'type' => 'text', 'show_if' => ['key' => 'custom_policy_is_privacy_related', 'value' => true], 'help_text' => 'Ej: "EE.UU. bajo cláusulas contractuales tipo".'],
-                                ['key' => 'custom_policy_retention_period', 'label' => 'Plazo de conservación', 'type' => 'text', 'show_if' => ['key' => 'custom_policy_is_privacy_related', 'value' => true], 'help_text' => 'Ej: "2 años desde la última interacción".'],
+                                ['key' => 'custom_policy_context', 'label' => '¿Para qué proceso específico usa estos datos?', 'type' => 'text', 'show_if' => ['key' => 'custom_policy_is_privacy_related', 'value' => true], 'help_text' => 'Ej: Proceso de selección de personal, programa de fidelización, concurso. Base legal: Art. 14 ter letra a exige identificar la finalidad específica.'],
+                                ['key' => 'custom_policy_data_categories', 'label' => '¿Qué tipo de datos personales solicita?', 'type' => 'text', 'show_if' => ['key' => 'custom_policy_is_privacy_related', 'value' => true], 'help_text' => 'Ej: Nombre, correo, teléfono, dirección, RUT. Base legal: Art. 14 ter letra b exige informar las categorías de datos tratados.'],
+                                ['key' => 'custom_policy_purposes', 'label' => '¿Para qué usa estos datos?', 'type' => 'text', 'show_if' => ['key' => 'custom_policy_is_privacy_related', 'value' => true], 'help_text' => 'Ej: Evaluar postulantes para el cargo, enviar promociones, gestionar participación en un concurso. Base legal: Art. 14 ter letra a exige que la finalidad sea determinada, explícita y legítima.'],
+                                ['key' => 'custom_policy_legal_basis', 'label' => '¿Bajo qué autorización legal trata esos datos?', 'type' => 'text', 'show_if' => ['key' => 'custom_policy_is_privacy_related', 'value' => true], 'help_text' => 'Ej: Consentimiento del titular, ejecución de un contrato, obligación legal. Base legal: Art. 13 establece las bases de licitud: consentimiento (letra a), contrato (letra c), obligación legal (letra b), interés legítimo (letra d).'],
+                                ['key' => 'custom_policy_recipients', 'label' => '¿A quién más se le entregan estos datos?', 'type' => 'text', 'show_if' => ['key' => 'custom_policy_is_privacy_related', 'value' => true], 'help_text' => 'Ej: Ningún tercero, empresas del mismo grupo, proveedores de servicio. Base legal: Art. 14 ter letra c exige informar los destinatarios.'],
+                                ['key' => 'custom_policy_international_transfers', 'label' => '¿Los datos se envían fuera de Chile? ¿A dónde?', 'type' => 'text', 'show_if' => ['key' => 'custom_policy_is_privacy_related', 'value' => true], 'help_text' => 'Ej: No / Servidores en EE.UU. bajo cláusulas contractuales. Base legal: Arts. 14 ter letra h y 27-28 regulan transferencias internacionales.'],
+                                ['key' => 'custom_policy_retention_period', 'label' => '¿Por cuánto tiempo guarda estos datos?', 'type' => 'text', 'show_if' => ['key' => 'custom_policy_is_privacy_related', 'value' => true], 'help_text' => 'Ej: 2 años desde la última interacción, mientras dure la relación contractual. Base legal: Principio de Proporcionalidad (Art. 3 letra c) exige conservar datos solo el tiempo necesario.'],
                             ],
                         ],
                     ],

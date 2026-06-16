@@ -223,9 +223,22 @@ class CompanyPolicyController extends Controller
         // Obtener los datos validados (pueden ser parciales para el flujo de wizard)
         $validatedData = $request->validated();
 
-        // Si hay wizard_data en la solicitud, fusionarlo con los datos existentes
+        // Si hay wizard_data en la solicitud, fusionarlo con los datos existentes.
+        // array_replace_recursive NO reemplaza arrays escalar-indexados, los fusiona.
+        // Para multiselects (arrays de strings), debemos reemplazar el array completo.
         if (array_key_exists('wizard_data', $validatedData)) {
-            $mergedData = array_replace_recursive($policy->wizard_data ?? [], $validatedData['wizard_data']);
+            $existingData = $policy->wizard_data ?? [];
+            $incomingData = $validatedData['wizard_data'];
+            $mergedData = array_replace_recursive($existingData, $incomingData);
+
+            // Forzar reemplazo de arrays indexados numéricamente (multiselects, providers, etc.)
+            // array_replace_recursive fusiona arrays por índice, no los reemplaza.
+            foreach ($incomingData as $key => $value) {
+                if (is_array($value) && array_is_list($value)) {
+                    $mergedData[$key] = $value;
+                }
+            }
+
             $policy->update([
                 'wizard_data' => $mergedData,
             ]);
@@ -285,68 +298,41 @@ class CompanyPolicyController extends Controller
 
     private function normalizePrivacyPolicy(array $d): array
     {
-        $websiteFunctions = [];
-        $map = ['informative' => 'informativa', 'ecommerce' => 'ecommerce', 'saas' => 'saas'];
-        foreach ($map as $flat => $blade) {
-            if ($d["step_1_website_functions_{$flat}"] ?? false) {
-                $websiteFunctions[] = $blade;
-            }
-        }
+        $websiteFunctions = $d['step_1_website_functions'] ?? [];
 
-        $sensitiveData = [];
-        $sensitiveKeys = ['salud', 'biometria', 'politica', 'sindical', 'religion', 'sexual', 'racial', 'otros', 'ninguna'];
-        foreach ($sensitiveKeys as $key) {
-            if ($d["step_2_sensitive_data_{$key}"] ?? false) {
-                $sensitiveData[] = $key;
-            }
-        }
+        $sensitiveData = $d['step_2_sensitive_data'] ?? [];
 
         $minors = [];
         if ($d['step_3_minors_active'] ?? false) {
             $minors['active'] = true;
-            $purposes = [];
-            $purposeKeys = ['servicio', 'seguridad', 'legal', 'marketing', 'otros'];
-            foreach ($purposeKeys as $key) {
-                if ($d["step_3_minors_purposes_{$key}"] ?? false) {
-                    $purposes[] = $key;
-                }
-            }
-            $minors['purposes'] = $purposes;
+            $minors['age_groups'] = $d['step_3_minors_age_groups'] ?? [];
+            $minors['purposes'] = $d['step_3_minors_purposes'] ?? [];
             $minors['other_purpose'] = $d['step_3_minors_other_purpose'] ?? null;
             $minors['verification_method'] = $d['step_3_minors_verification_method'] ?? null;
+            $minors['adolescents_sensitive'] = $d['step_3_minors_adolescents_sensitive'] ?? false;
         }
 
-        $providers = [];
-        $providerKeys = ['google_analytics', 'meta', 'shopify', 'wix', 'mailchimp', 'hubspot', 'aws', 'azure', 'google_cloud', 'otros'];
-        foreach ($providerKeys as $key) {
-            if ($d["step_4_providers_{$key}"] ?? false) {
-                $providers[] = $key;
-            }
-        }
-        if ($d['step_4_providers_local'] ?? false) {
-            $providers[] = 'local';
-        }
+        $providers = $d['step_4_providers'] ?? [];
 
         $ai = [];
         if ($d['step_5_ai_active'] ?? false) {
             $ai['active'] = true;
-            $ai['parameters'] = $d['step_5_ai_parameters'] ?? null;
             $ai['logic'] = $d['step_5_ai_logic'] ?? null;
-            $ai['consequences'] = $d['step_5_ai_consequences'] ?? null;
         }
 
+        $retentionOptions = $d['step_6_retention'] ?? [];
         $retention = [];
-        if ($d['step_6_retention_tax_commercial'] ?? false) {
+        if (in_array('tributario', $retentionOptions)) {
             $retention['tax_commercial'] = true;
         }
-        if ($d['step_6_retention_user_accounts'] ?? false) {
+        if (in_array('cuentas', $retentionOptions)) {
             $retention['user_accounts'] = true;
             $retention['account_days'] = $d['step_6_retention_account_days'] ?? '30';
         }
-        if ($d['step_6_retention_marketing'] ?? false) {
+        if (in_array('marketing', $retentionOptions)) {
             $retention['marketing'] = true;
         }
-        if ($d['step_6_retention_custom'] ?? false) {
+        if (in_array('personalizado', $retentionOptions)) {
             $retention['custom'] = true;
             $retention['custom_period'] = $d['step_6_retention_custom_period'] ?? null;
         }
@@ -355,8 +341,6 @@ class CompanyPolicyController extends Controller
             'step_1_website_functions' => $websiteFunctions,
             'step_2_sensitive_data' => $sensitiveData,
             'step_2_sensitive_data_other' => $d['step_2_sensitive_data_other'] ?? null,
-            'step_2_health_basis' => $d['step_2_health_basis'] ?? null,
-            'step_2_group_basis' => $d['step_2_group_basis'] ?? null,
             'step_3_minors' => $minors,
             'step_4_providers' => $providers,
             'step_4_other_provider' => $d['step_4_other_provider'] ?? null,
@@ -370,42 +354,21 @@ class CompanyPolicyController extends Controller
         $analytics = [];
         if ($d['step_2_analytics_active'] ?? false) {
             $analytics['active'] = true;
-            $providers = [];
-            $providerKeys = ['google_analytics', 'hotjar', 'mixpanel', 'clarity', 'matomo', 'otros'];
-            foreach ($providerKeys as $key) {
-                if ($d["step_2_analytics_provider_{$key}"] ?? false) {
-                    $providers[] = $key;
-                }
-            }
-            $analytics['providers'] = $providers;
+            $analytics['providers'] = $d['step_2_analytics_providers'] ?? [];
             $analytics['other_provider'] = $d['step_2_analytics_other_provider'] ?? null;
         }
 
         $marketing = [];
         if ($d['step_3_marketing_active'] ?? false) {
             $marketing['active'] = true;
-            $providers = [];
-            $providerKeys = ['meta_pixel', 'google_ads', 'tiktok_pixel', 'linkedin_insight', 'twitter_pixel', 'otros'];
-            foreach ($providerKeys as $key) {
-                if ($d["step_3_marketing_provider_{$key}"] ?? false) {
-                    $providers[] = $key;
-                }
-            }
-            $marketing['providers'] = $providers;
+            $marketing['providers'] = $d['step_3_marketing_providers'] ?? [];
             $marketing['other_provider'] = $d['step_3_marketing_other_provider'] ?? null;
         }
 
         $functionality = [];
         if ($d['step_4_functionality_active'] ?? false) {
             $functionality['active'] = true;
-            $providers = [];
-            $providerKeys = ['youtube', 'maps', 'whatsapp', 'social', 'fonts', 'otros'];
-            foreach ($providerKeys as $key) {
-                if ($d["step_4_functionality_provider_{$key}"] ?? false) {
-                    $providers[] = $key;
-                }
-            }
-            $functionality['providers'] = $providers;
+            $functionality['providers'] = $d['step_4_functionality_providers'] ?? [];
             $functionality['other_provider'] = $d['step_4_functionality_other_provider'] ?? null;
         }
 
@@ -418,44 +381,47 @@ class CompanyPolicyController extends Controller
 
     private function normalizeWorkersPolicy(array $d): array
     {
+        $monitoringOptions = $d['step_1_monitoring'] ?? [];
         $monitoring = [];
-        if ($d['step_1_monitoring_video'] ?? false) {
+        if (in_array('video', $monitoringOptions)) {
             $monitoring['video'] = true;
         }
-        if ($d['step_1_monitoring_biometrics'] ?? false) {
+        if (in_array('biometria', $monitoringOptions)) {
             $monitoring['biometrics'] = true;
             $monitoring['biometrics_system'] = $d['step_1_monitoring_biometrics_system'] ?? null;
         }
-        if ($d['step_1_monitoring_gps'] ?? false) {
+        if (in_array('gps', $monitoringOptions)) {
             $monitoring['gps'] = true;
+            $monitoring['gps_retention'] = $d['step_1_monitoring_gps_retention'] ?? null;
+            $monitoring['gps_sharing'] = $d['step_1_monitoring_gps_sharing'] ?? null;
         }
-        if ($d['step_1_monitoring_digital'] ?? false) {
+        if (in_array('digital', $monitoringOptions)) {
             $monitoring['digital'] = true;
         }
 
+        $healthBenefitsOptions = $d['step_2_health_benefits'] ?? [];
         $healthBenefits = [];
-        if ($d['step_2_health_benefits_health_active'] ?? false) {
+        if (in_array('salud', $healthBenefitsOptions)) {
             $healthBenefits['health_active'] = true;
         }
-        if ($d['step_2_health_benefits_benefits_active'] ?? false) {
+        if (in_array('beneficios', $healthBenefitsOptions)) {
             $healthBenefits['benefits_active'] = true;
         }
 
+        $sharingOptions = $d['step_3_sharing'] ?? [];
         $sharing = [];
-        $sharing['none'] = $d['step_3_sharing_none'] ?? false;
-        $sharing['social_security'] = $d['step_3_sharing_social_security'] ?? true;
-        if ($d['step_3_sharing_hr_software'] ?? false) {
+        $sharing['none'] = in_array('ninguno', $sharingOptions);
+        $sharing['social_security'] = in_array('seguridad_social', $sharingOptions) || ! $sharing['none'];
+        if (in_array('rrhh_software', $sharingOptions)) {
             $sharing['hr_software'] = true;
             $sharing['hr_software_names'] = $d['step_3_sharing_hr_software_names'] ?? null;
         }
-        if ($d['step_3_sharing_external_advisors'] ?? false) {
+        if (in_array('asesores_externos', $sharingOptions)) {
             $sharing['external_advisors'] = true;
-            $sharing['external_advisors_names'] = $d['step_3_sharing_external_advisors_names'] ?? null;
         }
-        if ($d['step_3_sharing_others'] ?? false) {
+        if (in_array('otros', $sharingOptions)) {
             $sharing['others'] = true;
-            $sharing['others_names'] = $d['step_3_sharing_others_names'] ?? null;
-            $sharing['others_purpose'] = $d['step_3_sharing_others_purpose'] ?? null;
+            $sharing['others_names'] = $d['step_3_sharing_other_recipients'] ?? null;
         }
 
         return array_merge($d, [
