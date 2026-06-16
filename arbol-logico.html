@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Árbol Lógico de Políticas — Decisión → Texto Legal</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+
+        /* ===== LAYOUT ===== */
+        .layout { display: flex; min-height: 100vh; }
+
+        .sidebar {
+            position: sticky;
+            top: 0;
+            width: 300px;
+            min-width: 300px;
+            height: 100vh;
+            overflow-y: auto;
+            background: #f7f9fc;
+            border-right: 2px solid #dce3ec;
+            padding: 20px 0;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        .sidebar-header {
+            padding: 0 20px 16px 20px;
+            border-bottom: 1px solid #dce3ec;
+            margin-bottom: 12px;
+        }
+        .sidebar-header h2 { margin: 0; font-size: 0.95em; color: #1a3c5e; border: none; padding: 0; }
+        .sidebar-header p { margin: 4px 0 0 0; font-size: 0.78em; color: #7f8c8d; }
+
+        .nav-pol { margin-bottom: 14px; }
+        .nav-pol-title {
+            display: block;
+            padding: 8px 20px;
+            font-weight: 700;
+            font-size: 0.82em;
+            text-decoration: none;
+            color: #1a3c5e;
+            background: #e8eef5;
+            border-left: 3px solid #1a3c5e;
+            margin-bottom: 2px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .nav-pol-title:hover { background: #dce3ec; }
+        .nav-pol-items { padding: 0; margin: 0; list-style: none; }
+        .nav-pol-items li a {
+            display: block;
+            padding: 4px 20px 4px 32px;
+            font-size: 0.78em;
+            text-decoration: none;
+            color: #555;
+            line-height: 1.5;
+            transition: background 0.15s;
+        }
+        .nav-pol-items li a:hover { background: #e4eaf3; color: #1a3c5e; }
+        .nav-pol-items li a.active { background: #d0dced; color: #1a3c5e; font-weight: 600; }
+        .nav-pol-items li a.nav-h3 { padding-left: 46px; font-size: 0.74em; }
+        .nav-pol-items li a.nav-h4 { padding-left: 58px; font-size: 0.72em; color: #888; }
+
+        .nav-pol-items.collapsed { display: none; }
+
+        .nav-pol-title::after {
+            content: ' \25BC';
+            font-size: 0.7em;
+            margin-left: 4px;
+        }
+        .nav-pol-title.collapsed-group::after {
+            content: ' \25BA';
+        }
+
+        .content { flex: 1; padding: 20px 40px; max-width: 920px; min-width: 0; }
+
+        /* ===== WIDGET SIMBOLOGÍA ===== */
+        .simbol-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 150;
+            background: #1a3c5e;
+            color: #fff;
+            border: none;
+            border-radius: 28px;
+            padding: 10px 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+            transition: background 0.2s, transform 0.15s;
+        }
+        .simbol-btn:hover { background: #2c5282; transform: translateY(-2px); }
+
+        .simbol-modal-bg {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 300;
+            align-items: center;
+            justify-content: center;
+        }
+        .simbol-modal-bg.show { display: flex; }
+
+        .simbol-modal {
+            background: #fff;
+            border-radius: 12px;
+            max-width: 640px;
+            width: 92%;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 28px 30px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+            position: relative;
+        }
+        .simbol-modal-close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 1.6em;
+            color: #7f8c8d;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+        }
+        .simbol-modal-close:hover { color: #2c3e50; }
+
+        /* ===== DOC HEADER ===== */
+        .doc-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #1a3c5e;
+        }
+        .doc-header h1 {
+            margin-top: 0;
+            font-size: 1.8em;
+            border: none;
+            padding: 0;
+        }
+        .doc-header p {
+            font-size: 1.05em;
+            color: #555;
+            max-width: 780px;
+            margin: 10px auto 0 auto;
+        }
+
+        /* ===== POLICY LETTER BADGE ===== */
+        .pol-badge {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            line-height: 28px;
+            text-align: center;
+            border-radius: 50%;
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.85em;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        .pol-badge-a { background: #2980b9; }
+        .pol-badge-b { background: #d35400; }
+        .pol-badge-c { background: #27ae60; }
+        .pol-badge-d { background: #8e44ad; }
+
+        /* ===== MOBILE HAMBURGER ===== */
+        .hamburger {
+            display: none;
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 200;
+            width: 44px;
+            height: 44px;
+            border: none;
+            background: #1a3c5e;
+            color: #fff;
+            border-radius: 8px;
+            font-size: 22px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            line-height: 1;
+            text-align: center;
+        }
+        .hamburger:hover { background: #2c5282; }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 90;
+        }
+        .overlay.show { display: block; }
+
+        @media (max-width: 900px) {
+            .hamburger { display: block; }
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                transform: translateX(-100%);
+                width: 300px;
+                box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+            }
+            .sidebar.open { transform: translateX(0); }
+            .content { padding: 60px 16px 20px 16px; }
+            .layout { flex-direction: column; }
+        }
+
+        /* ===== SCROLL SNAP ===== */
+        html { scroll-behavior: smooth; }
+        h1, h2, h3, h4 { scroll-margin-top: 20px; }
+
+        /* ===== CONTENT STYLES ===== */
+        h1 { color: #1a3c5e; border-bottom: 3px solid #1a3c5e; padding-bottom: 12px; margin-top: 50px; font-size: 1.4em; }
+        h2 { color: #2c3e50; margin-top: 35px; border-bottom: 2px solid #3498db; padding-bottom: 6px; }
+        h3 { color: #16a085; margin-top: 25px; }
+        h4 { color: #6c3483; margin-top: 18px; font-size: 0.95em; }
+        p { margin-bottom: 10px; }
+
+        /* ===== SIMBOLOGÍA ===== */
+        .leyenda { background: #ffffff; border: 2px solid #34495e; border-radius: 8px; padding: 20px 24px; margin: 20px 0 30px 0; }
+        .leyenda h3 { margin-top: 0; color: #2c3e50; }
+        .leyenda-item { display: flex; align-items: flex-start; margin: 8px 0; }
+        .leyenda-muestra { flex-shrink: 0; width: 40px; height: 20px; border-radius: 3px; margin-right: 12px; margin-top: 3px; }
+        .leyenda-texto { flex: 1; }
+
+        /* ===== BLOQUES FUNCIONALES ===== */
+        .paso { background: #fef9e7; border-left: 5px solid #f39c12; padding: 12px 18px; margin: 18px 0; }
+        .paso strong:first-child { color: #d35400; font-size: 1.05em; }
+        .seccion { background: #f8faff; border-left: 5px solid #2c3e50; padding: 12px 18px; margin: 8px 0 24px 0; }
+        .inyectado { color: #4747af; background-color: #f0f0ff; padding: 14px 18px; border-left: 4px solid #4747af; margin: 10px 0; display: block; font-size: 0.95em; }
+        .base-legal { color: #7f8c8d; font-style: italic; font-size: 0.9em; margin: 4px 0 12px 20px; }
+        .opciones { background: #f4f6f7; padding: 10px 16px; border-radius: 4px; margin: 8px 0; }
+        .opciones ul { margin: 4px 0; padding-left: 18px; }
+        .opciones li { margin: 3px 0; }
+        .nota { background: #e8f8f5; border-left: 4px solid #1abc9c; padding: 10px 14px; margin: 12px 0; font-size: 0.93em; }
+        .condicion { color: #c0392b; font-weight: bold; margin: 12px 0 4px 0; font-size: 0.93em; }
+        .flujo { text-align: center; font-weight: bold; color: #e74c3c; margin: 6px 0; font-size: 1.1em; }
+    </style>
+</head>
+<body>
+
+<button class="hamburger" id="hamburgerBtn" aria-label="Abrir navegacion">&#9776;</button>
+<div class="overlay" id="overlay"></div>
+<button class="simbol-btn" id="simbolBtn">&#128203; Ver Simbología</button>
+
+<div class="simbol-modal-bg" id="simbolModal">
+    <div class="simbol-modal">
+        <button class="simbol-modal-close" id="simbolClose">&times;</button>
+        <h3 style="margin-top:0; color:#2c3e50;">Simbología de este documento</h3>
+        <div class="leyenda-item">
+            <div class="leyenda-muestra" style="background: #fef9e7; border-left: 5px solid #f39c12;"></div>
+            <div class="leyenda-texto"><strong>Pregunta del Wizard</strong> — Cada paso del formulario que el usuario debe responder. Incluye tipo de campo, opciones y base legal aplicable.</div>
+        </div>
+        <div class="leyenda-item">
+            <div class="leyenda-muestra" style="background: #f4f6f7;"></div>
+            <div class="leyenda-texto"><strong>Opciones disponibles</strong> — Las alternativas que el usuario puede seleccionar en cada pregunta.</div>
+        </div>
+        <div class="leyenda-item">
+            <div class="leyenda-muestra" style="background: #f0f0ff; border-left: 4px solid #4747af;"></div>
+            <div class="leyenda-texto"><strong>Texto inyectado</strong> — El texto <em>exacto</em> que se inserta en el documento legal final. Todo lo contenido en estos bloques es literal y se usa tal cual en la política generada.</div>
+        </div>
+        <div class="leyenda-item">
+            <div class="leyenda-muestra" style="background: #f8faff; border-left: 5px solid #2c3e50;"></div>
+            <div class="leyenda-texto"><strong>Sección del documento</strong> — Agrupa las cláusulas que conforman una sección del documento final.</div>
+        </div>
+        <div class="leyenda-item">
+            <div class="leyenda-muestra" style="background: #e8f8f5; border-left: 4px solid #1abc9c;"></div>
+            <div class="leyenda-texto"><strong>Nota informativa</strong> — Explicación sobre el comportamiento del sistema (no se inserta en el documento final).</div>
+        </div>
+        <div class="leyenda-item">
+            <div class="leyenda-muestra" style="background: #c0392b; border-radius: 3px;"></div>
+            <div class="leyenda-texto"><strong>Condición de inyección</strong> — Indica bajo qué circunstancia se inserta el texto inyectado que sigue. No forma parte del documento final.</div>
+        </div>
+        <p style="margin-top: 14px; font-size: 0.88em; color: #555;">Los placeholders entre corchetes como <strong>[Empresa]</strong>, <strong>[lista dinámica]</strong> o <strong>[texto ingresado]</strong> representan campos que el sistema completa dinámicamente con los datos de la empresa o las respuestas del wizard.</p>
+    </div>
+</div>
+
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h2>&#128218; Mapa del Documento</h2>
+        <p>Navegar en política y pasos</p>
+    </div>
+
+    <div class="nav-pol">
+        <a class="nav-pol-title" href="#priv-web" data-toggle="priv-web-items"><span class="pol-badge pol-badge-a">A</span>Privacidad Web</a>
+        <ul class="nav-pol-items" id="priv-web-items">
+            <li><a href="#paso1-funciones">Paso 1 &mdash; Funciones del Sitio</a></li>
+            <li><a href="#sec1-finalidades" class="nav-h3">Seccion 1: Finalidades y Datos</a></li>
+            <li><a href="#paso2-sensibles">Paso 2 &mdash; Datos Sensibles</a></li>
+            <li><a href="#sec2-sensibles" class="nav-h3">Seccion 2: Datos Sensibles</a></li>
+            <li><a href="#paso3-menores">Paso 3 &mdash; Menores de Edad</a></li>
+            <li><a href="#sec3-menores" class="nav-h3">Seccion 3: Privacidad de Menores</a></li>
+            <li><a href="#paso4-proveedores">Paso 4 &mdash; Proveedores</a></li>
+            <li><a href="#sec4-proveedores" class="nav-h3">Seccion 4: Transferencias</a></li>
+            <li><a href="#paso5-ia">Paso 5 &mdash; IA y Decisiones</a></li>
+            <li><a href="#sec5-ia" class="nav-h3">Seccion 5: Decisiones Automatizadas</a></li>
+            <li><a href="#paso6-plazos">Paso 6 &mdash; Plazos de Conservacion</a></li>
+            <li><a href="#sec6-plazos" class="nav-h3">Seccion 6: Plazos</a></li>
+            <li><a href="#fijas-priv">Secciones Fijas (sin Wizard)</a></li>
+            <li><a href="#sec7-arco" class="nav-h3">Seccion 7: Derechos ARCO+P</a></li>
+            <li><a href="#cierre-priv" class="nav-h3">Cierre: Firmas</a></li>
+        </ul>
+    </div>
+
+    <div class="nav-pol">
+        <a class="nav-pol-title" href="#trabajadores" data-toggle="trabajadores-items"><span class="pol-badge pol-badge-b">B</span>Trabajadores</a>
+        <ul class="nav-pol-items" id="trabajadores-items">
+            <li><a href="#paso1-monitoreo">Paso 1 &mdash; Monitoreo Laboral</a></li>
+            <li><a href="#sec1-monitoreo" class="nav-h3">Seccion 1: Control y Monitoreo</a></li>
+            <li><a href="#paso2-salud">Paso 2 &mdash; Salud y Beneficios</a></li>
+            <li><a href="#sec2-salud" class="nav-h3">Seccion 2: Salud y Beneficios</a></li>
+            <li><a href="#paso3-terceros">Paso 3 &mdash; Datos a Terceros</a></li>
+            <li><a href="#sec3-terceros" class="nav-h3">Seccion 3: Comunicacion a Terceros</a></li>
+            <li><a href="#sec4-arco-trab" class="nav-h3">Seccion 4: Derechos ARCO+P</a></li>
+        </ul>
+    </div>
+
+    <div class="nav-pol">
+        <a class="nav-pol-title" href="#cookies" data-toggle="cookies-items"><span class="pol-badge pol-badge-c">C</span>Cookies</a>
+        <ul class="nav-pol-items" id="cookies-items">
+            <li><a href="#sec1-cookies-tecnicas" class="nav-h3">Seccion 1: Cookies Tecnicas (fija)</a></li>
+            <li><a href="#paso2-analitica">Paso 2 &mdash; Analitica</a></li>
+            <li><a href="#sec2-analitica" class="nav-h3">Seccion 2: Cookies de Analisis</a></li>
+            <li><a href="#paso3-publicidad">Paso 3 &mdash; Publicidad</a></li>
+            <li><a href="#sec3-publicidad" class="nav-h3">Seccion 3: Cookies Publicitarias</a></li>
+            <li><a href="#paso4-funcionalidad">Paso 4 &mdash; Herramientas Externas</a></li>
+            <li><a href="#sec4-funcionalidad" class="nav-h3">Seccion 4: Funcionalidad de Terceros</a></li>
+            <li><a href="#sec5-consentimiento" class="nav-h3">Seccion 5: Consentimiento (fija)</a></li>
+        </ul>
+    </div>
+
+    <div class="nav-pol">
+        <a class="nav-pol-title" href="#personalizado" data-toggle="personalizado-items"><span class="pol-badge pol-badge-d">D</span>Personalizado</a>
+        <ul class="nav-pol-items" id="personalizado-items">
+            <li><a href="#paso1-tipo">Paso 1 &mdash; Tipo de Documento</a></li>
+            <li><a href="#ruta-a" class="nav-h3">Ruta A: Lienzo Libre</a></li>
+            <li><a href="#ruta-b" class="nav-h3">Ruta B: Aviso Ley 21.719</a></li>
+        </ul>
+    </div>
+</nav>
+
+<main class="content" id="main-content">
+
+<div class="doc-header">
+    <h1>Arbol Logico de Politicas</h1>
+    <p>Este documento describe como cada respuesta del formulario (Paso del Wizard) determina que texto legal se inyecta en el documento final (Seccion del Documento). Navega por el indice lateral o usa el boton <strong>Ver Simbologia</strong> para consultar los significados de cada bloque en cualquier momento.</p>
+</div>
+
+<!-- ===== SIMBOLOGÍA ===== -->
+<div class="leyenda" id="leyenda-inline">
+<h3>Simbología de este documento</h3>
+
+<div class="leyenda-item">
+<div class="leyenda-muestra" style="background: #fef9e7; border-left: 5px solid #f39c12;"></div>
+<div class="leyenda-texto"><strong>Pregunta del Wizard</strong> — Cada paso del formulario que el usuario debe responder. Incluye tipo de campo, opciones y base legal aplicable.</div>
+</div>
+
+<div class="leyenda-item">
+<div class="leyenda-muestra" style="background: #f4f6f7;"></div>
+<div class="leyenda-texto"><strong>Opciones disponibles</strong> — Las alternativas que el usuario puede seleccionar en cada pregunta.</div>
+</div>
+
+<div class="leyenda-item">
+<div class="leyenda-muestra" style="background: #f0f0ff; border-left: 4px solid #4747af;"></div>
+<div class="leyenda-texto"><strong>Texto inyectado</strong> — El texto <em>exacto</em> que se inserta en el documento legal final. Todo lo contenido en estos bloques es literal y se usa tal cual en la política generada.</div>
+</div>
+
+<div class="leyenda-item">
+<div class="leyenda-muestra" style="background: #f8faff; border-left: 5px solid #2c3e50;"></div>
+<div class="leyenda-texto"><strong>Sección del documento</strong> — Agrupa las cláusulas que conforman una sección del documento final.</div>
+</div>
+
+<div class="leyenda-item">
+<div class="leyenda-muestra" style="background: #e8f8f5; border-left: 4px solid #1abc9c;"></div>
+<div class="leyenda-texto"><strong>Nota informativa</strong> — Explicación sobre el comportamiento del sistema (no se inserta en el documento final).</div>
+</div>
+
+<div class="leyenda-item">
+<div class="leyenda-muestra" style="background: #c0392b; border-radius: 3px;"></div>
+<div class="leyenda-texto"><strong>Condición de inyección</strong> — Indica bajo qué circunstancia se inserta el texto inyectado que sigue. No forma parte del documento final.</div>
+</div>
+
+<p style="margin-top: 10px; font-size: 0.9em; color: #555;">Los placeholders entre corchetes como <strong>[Empresa]</strong>, <strong>[lista dinámica]</strong> o <strong>[texto ingresado]</strong> representan campos que el sistema completa dinámicamente con los datos de la empresa o las respuestas del wizard.</p>
+</div>
+
+
+<!-- ============================================================ -->
+<h1 id="priv-web"><span class="pol-badge pol-badge-a">A</span> POLITICA DE PRIVACIDAD WEB</h1>
+<!-- ============================================================ -->
+
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="paso1-funciones">Paso 1 — Funciones del Sitio Web</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="paso">
+    <strong>Pregunta:</strong> ¿Para qué usa su sitio web o aplicación?<br>
+    <strong>Tipo:</strong> Selección múltiple (puede elegir más de una).<br>
+    <strong>Base legal:</strong> Informativa = medidas precontractuales (Art. 13 letra c); E-commerce = obligaciones tributarias (Art. 13 letra b) y contrato de compraventa (Art. 13 letra c); SaaS = contrato de servicios digitales (Art. 13 letra c).
+</div>
+<div class="opciones">
+    <ul>
+        <li><strong>Informativa / Contacto</strong> — Solo tiene formularios de contacto y cotizaciones</li>
+        <li><strong>E-commerce / Ventas</strong> — Vende productos o servicios y procesa pagos online</li>
+        <li><strong>SaaS / Plataforma</strong> — Los usuarios crean cuentas y suben información</li>
+    </ul>
+</div>
+
+<div class="flujo">↓ Genera →</div>
+
+<h3 id="sec1-finalidades">Sección 1 del Documento: Finalidades y Categorías de Datos Tratados</h3>
+<p>El sistema inyecta una viñeta por cada opción seleccionada. Si no selecciona ninguna, la sección se omite.</p>
+
+<div class="seccion">
+
+<p class="condicion">Si selecciona "Informativa / Contacto":</p>
+<div class="inyectado">1.1. Gestión de Consultas y Contacto: El Responsable tratará datos de identificación y contacto (como nombre, correo electrónico y teléfono) con la finalidad exclusiva de gestionar sus solicitudes de información, consultas o cotizaciones. Base de Licitud: Este tratamiento es lícito al ser necesario para la ejecución de medidas precontractuales adoptadas a solicitud del titular, según el Art. 13, letra c de la Ley.</div>
+
+<p class="condicion">Si selecciona "E-commerce / Ventas":</p>
+<div class="inyectado">1.2. Gestión de Ventas y Transacciones: El Responsable tratará datos de identificación, contacto, información de despacho y datos relativos a obligaciones económicas, financieras y comerciales para procesar sus órdenes de compra, gestionar pagos online y efectuar la entrega de productos o servicios. Base de Licitud: El tratamiento es necesario para la ejecución del contrato de compraventa suscrito con el titular (Art. 13, letra c) y para el cumplimiento de obligaciones legales de carácter tributario y comercial (Art. 13, letra b).</div>
+
+<p class="condicion">Si selecciona "SaaS / Plataforma":</p>
+<div class="inyectado">1.3. Gestión de Plataforma y Cuentas de Usuario: El Responsable tratará credenciales de acceso (usuario/contraseña), datos de perfil, logs de actividad y cookies técnicas necesarias para permitir el registro, la autenticación y la correcta prestación de las funcionalidades de la plataforma. Base de Licitud: Este tratamiento se fundamenta en la ejecución del contrato de prestación de servicios digitales o términos de uso aceptados por el titular (Art. 13, letra c).</div>
+</div>
+
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="paso2-sensibles">Paso 2 — Datos Sensibles</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="paso">
+    <strong>Pregunta:</strong> ¿Su negocio solicita o almacena algún tipo de dato sensible?<br>
+    <strong>Tipo:</strong> Selección múltiple.<br>
+    <strong>Base legal:</strong> Art. 16 exige consentimiento expreso e informado; Art. 16 ter regula datos biométricos.
+</div>
+<div class="opciones">
+    <ul>
+        <li><strong>Datos de Salud</strong> — Fichas clínicas, recetas, diagnósticos</li>
+        <li><strong>Datos Biométricos</strong> — Huella digital, reconocimiento facial</li>
+        <li><strong>Afiliación Política</strong></li>
+        <li><strong>Afiliación Sindical o Gremial</strong></li>
+        <li><strong>Creencias Religiosas</strong></li>
+        <li><strong>Orientación Sexual</strong></li>
+        <li><strong>Origen Racial o Étnico</strong></li>
+        <li><strong>Otra categoría de dato sensible</strong> — Activa campo de texto libre</li>
+        <li><strong>Ninguna de las anteriores</strong> — Excluye toda esta sección del documento</li>
+    </ul>
+</div>
+
+<div class="flujo">↓ Genera →</div>
+
+<h3 id="sec2-sensibles">Sección 2 del Documento: Tratamiento de Datos Sensibles</h3>
+
+<div class="seccion">
+
+<p class="condicion">Si selecciona cualquier categoría (excepto "Ninguna"):</p>
+<div class="inyectado"><strong>2. Tratamiento de Categorías Especiales de Datos (Datos Sensibles)</strong><br>
+El Responsable informa que, para la prestación de sus servicios, realiza el tratamiento de las siguientes categorías de datos sensibles: <strong>[lista dinámica de las categorías seleccionadas]</strong>.<br><br>
+<strong>2.1. Base de Licitud para Datos Sensibles:</strong> Para el tratamiento de la información sensible recopilada, nuestra base de licitud es su <strong>Consentimiento Expreso, Específico e Informado</strong> (Artículo 16 de la Ley 21.719). Este no se presume ni se obtiene de forma tácita; se recaba mediante una declaración escrita o un medio tecnológico que permite acreditar fehacientemente su voluntad.<br><br>
+<strong>2.2. Medidas de Seguridad Especiales:</strong> Debido a la naturaleza íntima de estos datos, [Empresa] aplica estándares de seguridad superiores, que incluyen:<br>
+— <strong>Cifrado de Extremo a Extremo:</strong> Los datos sensibles se almacenan de forma cifrada para evitar el acceso no autorizado.<br>
+— <strong>Control de Acceso Restringido:</strong> Solo el personal estrictamente autorizado y sujeto a un deber de secreto y confidencialidad permanente puede acceder a esta información.<br>
+— <strong>Seudonimización:</strong> Siempre que sea técnicamente factible, se desvinculará el dato sensible de su identidad directa para minimizar riesgos de filtración.</div>
+
+<p class="condicion">Si selecciona específicamente "Datos Biométricos", se agrega además:</p>
+<div class="inyectado"><strong>2.3. Tratamiento de Datos Biométricos:</strong> Conforme al Artículo 16 ter de la Ley, le informamos que el sistema biométrico utilizado tiene como finalidad exclusiva la identificación o autenticación del titular. Sus plantillas biométricas son almacenadas de forma cifrada y no serán utilizadas para deducir otra información sensible ni para realizar perfilamiento sin su autorización legal adicional.</div>
+
+<p class="condicion">Si selecciona "Ninguna de las anteriores":</p>
+<div class="nota">El motor omite por completo la Sección 2. El documento salta directamente de la Sección 1 a la Sección 3.</div>
+</div>
+
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="paso3-menores">Paso 3 — Menores de Edad</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="paso">
+    <strong>Pregunta principal:</strong> ¿Su organización maneja datos personales de menores de 18 años?<br>
+    <strong>Tipo:</strong> Sí / No.<br>
+    <strong>Base legal:</strong> Art. 16 quáter exige protección reforzada, respetando el interés superior y autonomía progresiva del menor.
+</div>
+
+<h4>Si responde "Sí", se despliegan las siguientes sub-preguntas:</h4>
+
+<div class="paso">
+    <strong>Sub-pregunta 1: Rango de edad</strong> — ¿Qué rangos de edad de menores trata?<br>
+    <strong>Tipo:</strong> Selección múltiple.<br>
+    <strong>Base legal:</strong> Art. 16 quáter — menores de 14 siempre requieren representante legal; de 14 a 18 ejercen autonomía progresiva, pero datos sensibles de menores de 16 requieren consentimiento del padre/tutor.<br>
+    Opciones:
+    <ul>
+        <li><strong>Menores de 14 años (Niños/as)</strong> — Requieren autorización del padre o tutor</li>
+        <li><strong>De 14 a 18 años (Adolescentes)</strong> — Pueden autorizar por sí mismos, salvo datos sensibles</li>
+    </ul>
+</div>
+
+<div class="paso">
+    <strong>Sub-pregunta 2: Finalidades</strong> — ¿Para qué necesita los datos de los menores?<br>
+    <strong>Tipo:</strong> Selección múltiple. Aplica para todos los rangos de edad seleccionados.<br>
+    Opciones:
+    <ul>
+        <li><strong>Servicio principal</strong> — Educación, salud o plataforma para menores</li>
+        <li><strong>Seguridad</strong> — Control de acceso, videovigilancia, validación de identidad</li>
+        <li><strong>Obligación legal</strong> — Requerimientos de autoridades o registros públicos</li>
+        <li><strong>Marketing</strong> — Descuentos, clubes infantiles, concursos</li>
+        <li><strong>Otra finalidad</strong> — Activa campo de texto libre</li>
+    </ul>
+</div>
+
+<div class="paso">
+    <strong>Sub-pregunta 3: Método de verificación</strong> — ¿Cómo obtiene la autorización del padre, madre o tutor?<br>
+    <strong>Tipo:</strong> Texto libre.<br>
+    <strong>Se muestra solo si:</strong> Seleccionó "Menores de 14 años" en el rango de edad.<br>
+    <strong>Base legal:</strong> Art. 16 quáter exige verificar la identidad del representante legal para menores de 14.<br>
+    Ejemplo: "Firma en contrato de matrícula", "Correo de confirmación del adulto".
+</div>
+
+<div class="paso">
+    <strong>Sub-pregunta 4: Datos sensibles de adolescentes</strong> — ¿Trata datos sensibles (salud, biometría, etc.) de adolescentes entre 14 y 16 años?<br>
+    <strong>Tipo:</strong> Sí / No.<br>
+    <strong>Se muestra solo si:</strong> Seleccionó "De 14 a 18 años" en el rango de edad.<br>
+    <strong>Base legal:</strong> Art. 16 quáter inciso cuarto — datos sensibles de menores de 16 siempre requieren autorización del representante, aunque el adolescente tenga más de 14 años.
+</div>
+
+<div class="flujo">↓ Genera →</div>
+
+<h3 id="sec3-menores">Sección 3 del Documento: Privacidad de Menores de Edad</h3>
+
+<div class="seccion">
+
+<p class="condicion">Si responde "No" (no maneja datos de menores):</p>
+<div class="inyectado">3. Privacidad de Menores de Edad: Los servicios y el sitio web de [Empresa] están dirigidos exclusivamente a personas mayores de 18 años. El Responsable no recopila ni solicita intencionadamente datos personales de menores de edad. En caso de que se tome conocimiento de la existencia de datos de un menor en nuestras bases de datos sin la debida autorización de su representante legal, se procederá a su eliminación inmediata en cumplimiento de la obligación especial de protección establecida en el Art. 16 quáter de la Ley 21.719 y conforme al Principio de Proporcionalidad (Art. 3, letra c).</div>
+
+<p class="condicion">Si responde "Sí" (maneja datos de menores), se inyecta siempre el siguiente encabezado:</p>
+<div class="inyectado"><strong>3. Tratamiento de Datos de Niños, Niñas y Adolescentes (NNA)</strong><br>
+En cumplimiento del Art. 16 quáter de la Ley 21.719, [Empresa] realiza el tratamiento de datos de menores de edad bajo el estricto respeto a su interés superior y su autonomía progresiva.<br><br>
+<strong>3.1. Finalidad del Tratamiento:</strong> Los datos de NNA son tratados exclusivamente para las siguientes finalidades: <strong>[lista dinámica según las opciones seleccionadas]</strong>.</div>
+
+<p>Luego, la cláusula de consentimiento es <strong>dinámica según el rango de edad</strong>:</p>
+
+<p class="condicion">Si seleccionó "Menores de 14 años":</p>
+<div class="inyectado"><strong>Niños y Niñas (menores de 14 años):</strong> El tratamiento solo se realiza contando con la autorización previa de sus padres o representantes legales, verificada mediante: <em>[método de verificación declarado por la empresa]</em>.</div>
+
+<p class="condicion">Si seleccionó "De 14 a 18 años":</p>
+<div class="inyectado"><strong>Adolescentes (14 a 18 años):</strong> Podrán autorizar por sí mismos el tratamiento de sus datos comunes, ejerciendo su autonomía progresiva conforme al Art. 16 quáter.</div>
+
+<p class="condicion">Si seleccionó "De 14 a 18 años" Y confirmó que trata datos sensibles de adolescentes:</p>
+<div class="inyectado"><strong>Adolescentes y Datos Sensibles (menores de 16 años):</strong> Cuando el tratamiento involucre datos sensibles de adolescentes menores de 16 años, se requerirá obligatoriamente el consentimiento expreso del padre, madre o representante legal, conforme al inciso cuarto del Art. 16 quáter de la Ley.</div>
+
+<p class="condicion">Siempre (cláusula de resguardo, inyectada independientemente del rango):</p>
+<div class="inyectado"><strong>3.3. Obligación de Resguardo:</strong> El Responsable asume la obligación especial de velar por el uso lícito y la protección reforzada de esta información, limitando su acceso solo a personal autorizado.</div>
+
+<h4>Lógicas Cruzadas de Protección Reforzada (alertas adicionales)</h4>
+
+<p class="condicion">Si seleccionó "Marketing" como finalidad:</p>
+<div class="inyectado"><strong>Aviso Especial sobre Perfilamiento:</strong> Se prohíbe la elaboración de perfiles con fines comerciales sobre datos de NNA sin que medie un análisis de impacto que garantice que no se afecta su desarrollo integral.</div>
+
+<p class="condicion">Si además seleccionó datos sensibles en el Paso 2:</p>
+<div class="inyectado"><strong>Evaluación de Impacto (PIA):</strong> Debido a que el tratamiento incluye datos sensibles de menores de edad, el Responsable declara haber realizado o estar en proceso de validación de una Evaluación de Impacto relativa a la Protección de Datos (Art. 15 ter), garantizando medidas de cifrado y seguridad de alto estándar.</div>
+</div>
+
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="paso4-proveedores">Paso 4 — Proveedores e Infraestructura</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="paso">
+    <strong>Pregunta:</strong> ¿Qué servicios externos utiliza para operar su sitio web?<br>
+    <strong>Tipo:</strong> Selección múltiple.<br>
+    <strong>Base legal:</strong> Art. 14 ter letra h y Arts. 27-28 regulan transferencias internacionales; proveedores actúan como mandatarios bajo el Art. 15 bis.
+</div>
+<div class="opciones">
+    <ul>
+        <li><strong>Servidor Local en Chile</strong> — Los datos se quedan en el país</li>
+        <li><strong>Google Analytics / Google Ads</strong> (EE.UU.)</li>
+        <li><strong>Meta Pixel / Facebook Ads</strong> (EE.UU.)</li>
+        <li><strong>Shopify</strong> — Plataforma de e-commerce (Canadá)</li>
+        <li><strong>Wix</strong> — Plataforma web (Israel)</li>
+        <li><strong>Squarespace</strong> — Plataforma web (EE.UU.)</li>
+        <li><strong>Mailchimp</strong> — Email marketing (EE.UU.)</li>
+        <li><strong>HubSpot</strong> — CRM y marketing (EE.UU.)</li>
+        <li><strong>Salesforce</strong> — CRM empresarial (EE.UU.)</li>
+        <li><strong>Amazon Web Services</strong> — Cloud (EE.UU.)</li>
+        <li><strong>Microsoft Azure</strong> — Cloud (EE.UU.)</li>
+        <li><strong>Google Cloud</strong> — Hosting (EE.UU.)</li>
+        <li><strong>Otro proveedor extranjero</strong> — Activa campo de texto libre</li>
+    </ul>
+</div>
+
+<div class="flujo">↓ Genera →</div>
+
+<h3 id="sec4-proveedores">Sección 4 del Documento: Almacenamiento y Transferencias Internacionales</h3>
+
+<div class="seccion">
+
+<p class="condicion">Solo "Servidor Local en Chile" (sin proveedores extranjeros):</p>
+<div class="inyectado"><strong>4. Almacenamiento y Proveedores de Infraestructura</strong><br>
+[Empresa] informa que los datos personales recolectados a través de sus plataformas son almacenados y tratados exclusivamente en servidores e infraestructuras ubicadas dentro del territorio nacional de la República de Chile. Por consiguiente, no se realizan operaciones de transferencia internacional de datos personales hacia terceros países.</div>
+
+<p class="condicion">Solo proveedores extranjeros (sin servidor local):</p>
+<div class="inyectado"><strong>4. Transferencia Internacional de Datos y Ecosistema Tecnológico</strong><br>
+Para garantizar la operatividad técnica, analítica y comercial de nuestra plataforma, [Empresa] aloja su infraestructura y utiliza herramientas proporcionadas por proveedores extranjeros. En consecuencia, sus datos son transferidos fuera del territorio nacional.</div>
+
+<p class="condicion">Combinación (servidor local + proveedores extranjeros):</p>
+<div class="inyectado"><strong>4. Almacenamiento Local y Transferencias Internacionales Parciales</strong><br>
+[Empresa] almacena su base de datos principal en servidores ubicados en Chile. No obstante, para optimizar nuestros servicios, analítica y comunicaciones, utilizamos herramientas tecnológicas de terceros que requieren la transferencia internacional de ciertas categorías de datos.</div>
+
+<p class="condicion">Bloque de Salvaguardas (se inyecta si hay cualquier proveedor extranjero):</p>
+<div class="inyectado"><strong>4.1. Destinatarios Internacionales:</strong> Sus datos fluyen de manera segura hacia los siguientes proveedores que actúan en calidad de mandatarios del tratamiento: <strong>[lista dinámica de proveedores internacionales seleccionados]</strong>.<br><br>
+<strong>4.2. Garantías Legales y Contractuales:</strong> De conformidad con el Art. 14 ter, letra h, y los Artículos 27 y 28 de la Ley 21.719, estas transferencias internacionales son lícitas fundamentándose en:<br>
+— <strong>Cláusulas Contractuales Tipo y Adecuación:</strong> Los destinatarios se encuentran sujetos a contratos que establecen garantías adecuadas de seguridad, o se ubican en jurisdicciones reconocidas por la Agencia como garantes de un nivel de protección adecuado.<br>
+— <strong>Mandato de Tratamiento (Art. 15 bis):</strong> Los proveedores mencionados actúan bajo nuestras instrucciones estrictas y documentadas. Tienen prohibición absoluta de utilizar sus datos personales para fines propios o distintos a los estrictamente convenidos para la prestación del servicio. En caso de incumplimiento, [Empresa] ejercerá las acciones legales correspondientes para proteger la información de sus usuarios.</div>
+</div>
+
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="paso5-ia">Paso 5 — Decisiones Automatizadas e IA</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="paso">
+    <strong>Pregunta principal:</strong> ¿Usa algoritmos o inteligencia artificial para tomar decisiones sobre los clientes?<br>
+    <strong>Tipo:</strong> Sí / No.<br>
+    <strong>Base legal:</strong> Art. 14 ter letra l y Art. 8 bis regulan decisiones automatizadas y dan derecho a explicación e intervención humana.
+</div>
+
+<div class="paso">
+    <strong>Sub-pregunta (si responde Sí):</strong> ¿Qué hace exactamente el sistema? Descríbalo en palabras simples.<br>
+    <strong>Tipo:</strong> Texto libre.<br>
+    <strong>Base legal:</strong> Art. 14 ter letra l exige informar la lógica del tratamiento automatizado.<br>
+    Ejemplo: "Evalúa ingresos e historial comercial para aprobar o rechazar créditos".
+</div>
+
+<div class="flujo">↓ Genera →</div>
+
+<h3 id="sec5-ia">Sección 5 del Documento: Decisiones Automatizadas y Elaboración de Perfiles</h3>
+
+<div class="seccion">
+
+<p class="condicion">Si responde "No":</p>
+<div class="inyectado"><strong>5. Decisiones Automatizadas y Elaboración de Perfiles</strong><br>
+El Responsable informa que no se realizan tratamientos de datos destinados a adoptar decisiones basadas únicamente en el procesamiento automatizado de su información, ni se realizan procesos de elaboración de perfiles que produzcan efectos jurídicos o le afecten de manera significativa.</div>
+
+<p class="condicion">Si responde "Sí":</p>
+<div class="inyectado"><strong>5. Tratamiento Automatizado y Elaboración de Perfiles</strong><br>
+En cumplimiento del Art. 14 ter, letra l de la Ley 21.719, [Empresa] informa que utiliza sistemas tecnológicos para la toma de decisiones automatizadas y/o elaboración de perfiles de acuerdo con lo siguiente:<br><br>
+<strong>5.1. Lógica del Tratamiento:</strong> <em>[descripción ingresada por la empresa]</em>.<br><br>
+<strong>5.2. Derechos ARCO-P y Garantías Algorítmicas:</strong> De conformidad con el Art. 8 bis de la Ley, usted tiene derecho a no ser objeto de decisiones basadas únicamente en el tratamiento automatizado de sus datos que produzcan efectos jurídicos sobre usted. En consecuencia, podrá ejercer en cualquier momento ante [Correo de Contacto ARCO] los siguientes derechos:<br>
+— <strong>Derecho a Explicación:</strong> Solicitar información detallada y comprensible sobre la lógica aplicada en la decisión que le afectó.<br>
+— <strong>Impugnación e Intervención Humana:</strong> Expresar su punto de vista, solicitar que un operador humano (y no una máquina) revise la decisión adoptada por el algoritmo, e impugnar el resultado si lo considera injusto o erróneo.<br>
+— <strong>Oposición al Perfilamiento:</strong> Oponerse a que sus datos se utilicen para elaborar perfiles predictivos.</div>
+
+<p class="condicion">Si la empresa también seleccionó e-commerce en el Paso 1, se agrega dentro de "Oposición al Perfilamiento":</p>
+<div class="inyectado">(Nota: Dado que nuestros servicios incluyen fines de mercadotecnia directa, su derecho a oponerse a este perfilamiento comercial es absoluto y procederemos a cesarlo inmediatamente tras su solicitud).</div>
+
+<p class="condicion">Siempre que se respondió "Sí" (se inyecta esta declaración al final de la sección):</p>
+<div class="inyectado"><strong>Declaración de Cumplimiento (Art. 15 ter):</strong> El Responsable declara someter estos sistemas automatizados a Evaluaciones de Impacto en la Protección de Datos (PIA) periódicas, garantizando la mitigación de sesgos discriminatorios y la protección de los derechos fundamentales de los titulares.</div>
+</div>
+
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="paso6-plazos">Paso 6 — Plazos de Conservación</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="paso">
+    <strong>Pregunta:</strong> ¿Por cuánto tiempo conservará los datos de sus usuarios?<br>
+    <strong>Tipo:</strong> Selección múltiple.<br>
+    <strong>Base legal:</strong> Principio de Proporcionalidad (Art. 3 letra c) exige conservar datos solo el tiempo necesario. Obligaciones tributarias exigen mínimo 6 años (SII).
+</div>
+<div class="opciones">
+    <ul>
+        <li><strong>6 años por ley</strong> — Obligación tributaria y comercial (SII)</li>
+        <li><strong>Mientras la cuenta esté activa</strong> — Se eliminan al borrar la cuenta (activa campo de días para eliminación)</li>
+        <li><strong>Hasta que el usuario lo pida</strong> — Puede cancelar en cualquier momento</li>
+        <li><strong>Plazo personalizado</strong> — Usted define el período (activa campo de texto libre)</li>
+    </ul>
+</div>
+
+<div class="flujo">↓ Genera →</div>
+
+<h3 id="sec6-plazos">Sección 6 del Documento: Plazos de Conservación de los Datos</h3>
+
+<div class="seccion">
+<p>Siempre se inyecta el siguiente texto de encuadre:</p>
+<div class="inyectado"><strong>6. Plazos de Conservación de los Datos</strong><br>
+En virtud del Principio de Proporcionalidad, [Empresa] conservará sus datos personales únicamente por el tiempo estrictamente necesario para cumplir con las finalidades descritas en esta política, tras lo cual serán eliminados o anonimizados (perdiendo su calidad de dato personal), salvo que exista una obligación legal o contractual que exija su retención por un periodo superior.</div>
+
+<p>Luego se inyecta una viñeta por cada opción seleccionada:</p>
+
+<p class="condicion">Si selecciona "6 años por ley":</p>
+<div class="inyectado"><strong>Obligaciones Legales y Comerciales:</strong> Los datos vinculados a transacciones, facturación y registros contables se conservarán por un plazo mínimo de 6 años, de acuerdo con las normativas vigentes del Servicio de Impuestos Internos (SII) y la legislación mercantil chilena. Este plazo primará sobre cualquier solicitud de eliminación anticipada.</div>
+
+<p class="condicion">Si selecciona "Mientras la cuenta esté activa":</p>
+<div class="inyectado"><strong>Gestión de Cuentas de Usuario:</strong> Los datos de su perfil y registro se mantendrán vigentes mientras usted mantenga su cuenta activa en nuestra plataforma. Una vez solicitada la eliminación de la cuenta, procederemos a la supresión o anonimización de la información en un plazo máximo de <em>[X]</em> días, siempre que no existan procesos judiciales o reclamaciones pendientes.</div>
+
+<p class="condicion">Si selecciona "Hasta que el usuario lo pida":</p>
+<div class="inyectado"><strong>Finalidades de Marketing y Contacto:</strong> Los datos utilizados para el envío de comunicaciones comerciales y publicidad se conservarán de manera indefinida hasta que usted ejerza su Derecho de Cancelación/Oposición o retire su consentimiento a través de los canales habilitados.</div>
+
+<p class="condicion">Si selecciona "Plazo personalizado":</p>
+<div class="inyectado"><strong>Plazo de Interacción Específica:</strong> Sus datos serán conservados por un periodo máximo de <em>[texto ingresado por el usuario]</em>, contado desde su última interacción efectiva con nuestros servicios, con el fin de garantizar la continuidad de la atención solicitada.</div>
+</div>
+
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="fijas-priv">Secciones Fijas (Sin Wizard)</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<h3 id="sec7-arco">Sección 7: Ejercicio de los Derechos ARCO+P</h3>
+<div class="seccion">
+<div class="nota">Esta sección se inyecta siempre, sin variaciones según las respuestas del wizard.</div>
+<div class="inyectado"><strong>7. Ejercicio de los Derechos ARCO+P</strong><br>
+En conformidad con los Artículos 8 y 8 bis de la Ley 21.719, usted tiene el derecho inalienable de ejercer en cualquier momento los siguientes derechos frente al Responsable del Tratamiento:<br><br>
+— <strong>Derecho de Acceso:</strong> Solicitar y obtener información clara y completa sobre la existencia de sus datos personales en nuestros registros, su origen, las finalidades del tratamiento, las categorías de datos tratados y los destinatarios de las comunicaciones realizadas.<br><br>
+— <strong>Derecho de Rectificación:</strong> Solicitar la corrección o actualización de sus datos personales que resulten inexactos, incompletos o desactualizados, para garantizar su conformidad con la realidad.<br><br>
+— <strong>Derecho de Cancelación (Supresión):</strong> Solicitar la eliminación de sus datos personales de nuestras bases de datos cuando el tratamiento no se ajuste a la ley, haya cesado la finalidad que lo motivó, o cuando usted retire su consentimiento siendo este la única base de licitud aplicable.<br><br>
+— <strong>Derecho de Oposición:</strong> Oponerse al tratamiento de sus datos personales cuando existan motivos legítimos relativos a su situación particular, o cuando el tratamiento tenga como finalidad la mercadotecnia directa o la elaboración de perfiles.<br><br>
+— <strong>Derecho de Portabilidad:</strong> Solicitar la transferencia de sus datos personales a otro Responsable del Tratamiento, en formato estructurado, de uso común y lectura mecánica, cuando el tratamiento se base en el consentimiento o en la ejecución de un contrato y se realice por medios automatizados.<br><br>
+<strong>Forma de Ejercicio:</strong> Para ejercer cualquiera de estos derechos, podrá dirigir su solicitud formal y fundamentada al correo electrónico <strong>[Correo de Contacto ARCO]</strong>, identificándose debidamente e indicando el derecho que desea ejercer. El Responsable atenderá su solicitud dentro del plazo máximo de 10 días hábiles contados desde la recepción de la misma, conforme al Art. 12 de la Ley.<br><br>
+En caso de no recibir respuesta dentro del plazo legal, o si la respuesta fuese desfavorable, usted tiene el derecho a recurrir ante la Agencia de Protección de Datos Personales para que ésta conozca y resuelva su reclamación.</div>
+<div class="base-legal">Artículos 8, 8 bis y 12 de la Ley 21.719.</div>
+</div>
+
+<h3 id="cierre-priv">Cierre: Aceptación y Firmas</h3>
+<div class="seccion">
+<div class="nota">Se inyecta siempre al final del documento.</div>
+<div class="inyectado">Aceptación y Cambios a la Política: El titular declara haber sido informado de las condiciones de tratamiento de sus datos y otorga su consentimiento expreso cuando dicha base de licitud sea aplicable. [Empresa] se reserva el derecho de modificar esta política para adaptarla a novedades legislativas o de la Agencia de Protección de Datos Personales, lo cual será debidamente notificado a través de esta plataforma.<br><br>
+Responsable Titular: [Nombre del Representante Legal]<br>
+Cargo: Representante Legal<br>
+RUT Representante: [RUT del Representante Legal]<br>
+Versión del Documento: [Número de Versión]<br>
+Fecha de Última Actualización: [Fecha de Publicación o 'Borrador']</div>
+</div>
+
+
+<!-- ============================================================ -->
+<h1 id="trabajadores"><span class="pol-badge pol-badge-b">B</span> POLITICA PARA TRABAJADORES (RR.HH.)</h1>
+<!-- ============================================================ -->
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="paso1-monitoreo">Paso 1 — Control y Monitoreo Laboral</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="paso">
+    <strong>Pregunta:</strong> ¿Usa alguno de estos sistemas para controlar o monitorear a sus trabajadores?<br>
+    <strong>Tipo:</strong> Selección múltiple.<br>
+    <strong>Base legal:</strong> Art. 5 del Código del Trabajo (facultades de administración y dirección); Art. 3 Ley 21.719 (proporcionalidad); Art. 16 sexies (geolocalización); Art. 16 ter (biometría).
+</div>
+<div class="opciones">
+    <ul>
+        <li><strong>Cámaras de seguridad</strong> — Videovigilancia en las instalaciones</li>
+        <li><strong>Control biométrico de asistencia</strong> — Huella digital, reconocimiento facial</li>
+        <li><strong>GPS en vehículos o dispositivos</strong> — Rastreo de ubicación</li>
+        <li><strong>Monitoreo digital</strong> — Correo electrónico, internet o software de la empresa</li>
+    </ul>
+</div>
+
+<h4>Campos condicionales:</h4>
+<div class="paso">
+    <strong>Si selecciona "Biometría":</strong> ¿Qué sistema biométrico utiliza?<br>
+    <strong>Tipo:</strong> Texto libre. Ejemplo: "Reloj control con huella digital validado por la Dirección del Trabajo".<br>
+    <strong>Base legal:</strong> Art. 16 ter exige informar el sistema y su finalidad exclusiva de identificación.
+</div>
+<div class="paso">
+    <strong>Si selecciona "GPS":</strong><br>
+    — ¿Por cuánto tiempo guarda los datos de GPS? (Texto libre. Ej: "30 días", "6 meses". Base legal: Art. 16 sexies.)<br>
+    — ¿Comparte los datos de GPS con alguien más? (Texto libre. Ej: "No se comparten" / "Se comparten con la empresa de logística X". Base legal: Art. 16 sexies.)
+</div>
+
+<div class="flujo">↓ Genera →</div>
+
+<h3 id="sec1-monitoreo">Sección 1 del Documento: Control y Monitoreo Tecnológico</h3>
+
+<div class="seccion">
+<p>Siempre se inyecta la siguiente introducción:</p>
+<div class="inyectado"><strong>1. Control y Monitoreo Tecnológico en el Ámbito Laboral</strong><br>
+En el ejercicio de sus facultades de administración y dirección, el Empleador podrá utilizar herramientas tecnológicas para el control de asistencia, seguridad y correcto uso de los recursos corporativos, sujetándose a los principios de proporcionalidad y finalidad.</div>
+
+<p>Luego se inyecta una cláusula por cada sistema seleccionado:</p>
+
+<p class="condicion">Si selecciona "Cámaras de seguridad":</p>
+<div class="inyectado"><strong>1.1. Sistemas de Videovigilancia:</strong> El tratamiento de imágenes mediante sistemas de videovigilancia se realiza en ejercicio de las facultades de administración y dirección del empleador (Art. 5 del Código del Trabajo) y bajo los principios de proporcionalidad y finalidad (Art. 3 de la Ley 21.719), con el objeto de garantizar la seguridad de las personas, bienes e instalaciones de la empresa. Las cámaras se encuentran debidamente señalizadas y en ningún caso vulnerarán la privacidad en zonas de descanso, vestuarios o baños. Las imágenes se almacenarán por un plazo máximo de 30 días, tras lo cual serán suprimidas o anonimizadas, salvo requerimiento de tribunales u organismos públicos en el ámbito de sus competencias.</div>
+
+<p class="condicion">Si selecciona "Biometría":</p>
+<div class="inyectado"><strong>1.2. Control de Asistencia Biométrico:</strong> Para el registro y cumplimiento de la jornada laboral, el Empleador utiliza el sistema <em>[nombre ingresado por la empresa]</em>.<br>
+<strong>Base Lícita y Garantías:</strong> El tratamiento de estos datos sensibles requiere su consentimiento expreso. El Empleador garantiza que no se almacenan las huellas o rasgos físicos en formato crudo, sino mediante plantillas matemáticas cifradas irreversibles.</div>
+<div class="inyectado"><strong>Nota de Cumplimiento (Art. 16 ter):</strong> El trabajador tiene el derecho a negarse al uso de sistemas biométricos. En tal caso, el Empleador dispondrá de un método alternativo de control de asistencia no invasivo que no implique discriminación laboral.</div>
+
+<p class="condicion">Si selecciona "GPS":</p>
+<div class="inyectado"><strong>1.3. Sistemas de Geolocalización (GPS):</strong> Los vehículos corporativos o dispositivos móviles asignados cuentan con tecnología de geolocalización (Art. 16 sexies). Su finalidad exclusiva es la gestión logística, optimización de rutas y seguridad en el transporte.<br>
+<strong>Proporcionalidad:</strong> El monitoreo se limita estrictamente al horario de la jornada laboral. Queda estrictamente prohibido el monitoreo en tiempos de descanso o colación para no afectar el derecho a la desconexión del trabajador.</div>
+<p class="condicion">Si declaró plazo de conservación para GPS:</p>
+<div class="inyectado"><strong>Conservación:</strong> Los datos de geolocalización se conservarán por un plazo de <em>[plazo ingresado por la empresa]</em>, tras el cual serán eliminados o anonimizados.</div>
+<p class="condicion">Si declaró comunicación a terceros para GPS:</p>
+<div class="inyectado"><strong>Comunicación a terceros:</strong> [texto ingresado por la empresa]. Si no declaró: Los datos de geolocalización no serán comunicados a terceros, salvo obligación legal.</div>
+
+<p class="condicion">Si selecciona "Monitoreo digital":</p>
+<div class="inyectado"><strong>1.4. Monitoreo de Herramientas Digitales:</strong> El correo electrónico corporativo, el acceso a internet, los equipos informáticos y el software provisto son herramientas de propiedad exclusiva del Empleador, entregadas para el desarrollo de las funciones laborales. [Empresa] se reserva la facultad de auditar estos medios, siempre respetando la privacidad de las comunicaciones estrictamente personales y de acuerdo con los protocolos y límites establecidos en el Reglamento Interno de Orden, Higiene y Seguridad (RIOHS).</div>
+</div>
+
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="paso2-salud">Paso 2 — Datos de Salud y Beneficios</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="paso">
+    <strong>Pregunta:</strong> ¿Qué tipo de información médica o de beneficios maneja de sus trabajadores?<br>
+    <strong>Tipo:</strong> Selección múltiple.<br>
+    <strong>Base legal:</strong> Art. 16 letra e (obligación legal para datos de salud); ejecución del contrato de trabajo para beneficios.
+</div>
+<div class="opciones">
+    <ul>
+        <li><strong>Salud ocupacional</strong> — Licencias médicas, exámenes preocupacionales, accidentes laborales</li>
+        <li><strong>Beneficios y cargas familiares</strong> — Seguros complementarios, cajas de compensación, datos de familiares</li>
+    </ul>
+</div>
+
+<div class="flujo">↓ Genera →</div>
+
+<h3 id="sec2-salud">Sección 2 del Documento: Datos de Salud y Beneficios Laborales</h3>
+
+<div class="seccion">
+
+<p class="condicion">Si selecciona "Salud ocupacional":</p>
+<div class="inyectado"><strong>2.1. Salud Ocupacional y Obligaciones Legales</strong><br>
+El Empleador realizará el tratamiento de datos relativos a la salud del trabajador (tales como licencias médicas, resultados de exámenes preocupacionales, evaluaciones de riesgos psicosociales o registros de accidentes laborales) con la finalidad exclusiva de dar cumplimiento a sus obligaciones legales ante la Dirección del Trabajo, las Secretarías Regionales Ministeriales de Salud (SEREMI) y las Mutualidades de Empleadores.<br><br>
+<strong>Base de Licitud:</strong> Este tratamiento es lícito por mandato legal y por ser indispensable para el ejercicio de derechos y el cumplimiento de obligaciones en el ámbito del derecho laboral y de seguridad social (Art. 16, letra e de la Ley 21.719).<br><br>
+<strong>Medidas de Seguridad Reforzadas:</strong> Dada la naturaleza de datos sensibles de esta información, el Empleador garantiza que el acceso a estos registros está restringido exclusivamente al personal de Recursos Humanos, Bienestar y Salud Ocupacional, quienes se encuentran bajo un estricto deber de secreto y confidencialidad que subsiste de manera indefinida, incluso tras el término de la relación laboral.</div>
+
+<div class="inyectado"><strong>Nota de Cumplimiento (Brechas y PIA):</strong> Conforme al Art. 14 sexies de la Ley 21.719, cualquier vulneración de seguridad que afecte estos datos de salud será notificada de forma obligatoria a la Agencia de Protección de Datos Personales y al titular. Asimismo, si este tratamiento se realiza a gran escala, el Responsable declara someter estos procesos a una Evaluación de Impacto (PIA) obligatoria.</div>
+
+<p class="condicion">Si selecciona "Beneficios y cargas familiares":</p>
+<div class="inyectado"><strong>2.2. Gestión de Beneficios, Seguros y Cargas Familiares</strong><br>
+Con el fin de gestionar seguros complementarios de salud, convenios de bienestar, cajas de compensación y otros beneficios de carácter social, el Empleador tratará datos personales del trabajador y, cuando corresponda, de sus cargas familiares debidamente acreditadas.<br><br>
+<strong>Finalidad y Licitud:</strong> La información será utilizada únicamente para la inscripción, administración y otorgamiento de los beneficios voluntarios u obligatorios pactados. El tratamiento se basa en la ejecución del contrato de trabajo y sus anexos de beneficios.<br><br>
+<strong>Responsabilidad sobre Datos de Terceros y Menores (NNA):</strong> El trabajador, al suministrar libremente los datos de sus cargas familiares (incluyendo Niños, Niñas y Adolescentes para efectos de asignaciones o seguros), declara bajo su responsabilidad contar con la facultad legal para autorizar dicho tratamiento en su calidad de padre, madre o representante legal, autorizando expresamente al Empleador a procesarlos en estricto resguardo del interés superior de los menores (Art. 16 quáter).</div>
+</div>
+
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="paso3-terceros">Paso 3 — Compartir Datos con Terceros</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="paso">
+    <strong>Pregunta:</strong> ¿A qué tipo de proveedores envía los datos de sus trabajadores?<br>
+    <strong>Tipo:</strong> Selección múltiple.<br>
+    <strong>Base legal:</strong> Art. 13 letra b (obligación legal); Art. 15 bis (mandatarios); Art. 14 bis (deber de secreto para asesores).
+</div>
+<div class="opciones">
+    <ul>
+        <li><strong>Software de RRHH</strong> — Buk, Talana, Rex+, etc. (activa campo para nombre del software)</li>
+        <li><strong>Seguridad social</strong> — Previred, AFP, Fonasa/Isapre (obligatorio por ley, se incluye automáticamente)</li>
+        <li><strong>Asesores externos</strong> — Contadores o abogados</li>
+        <li><strong>Otros</strong> — Activa campo de texto libre</li>
+        <li><strong>Ninguno</strong> — Todo se hace internamente</li>
+    </ul>
+</div>
+
+<div class="flujo">↓ Genera →</div>
+
+<h3 id="sec3-terceros">Sección 3 del Documento: Comunicación y Cesión de Datos a Terceros</h3>
+
+<div class="seccion">
+
+<p class="condicion">Si selecciona "Ninguno" (tratamiento 100% interno):</p>
+<div class="inyectado"><strong>3. Comunicación y Cesión de Datos a Terceros</strong><br>
+[Empresa] informa que, para el correcto cumplimiento de las obligaciones derivadas del contrato de trabajo y la normativa vigente, sus datos personales pueden ser comunicados o cedidos a los siguientes terceros destinatarios, quienes actúan bajo bases de licitud específicas:<br><br>
+<strong>Tratamiento Interno:</strong> El Responsable informa que el tratamiento de datos de Recursos Humanos se realiza íntegramente de forma interna, no existiendo comunicaciones de datos a proveedores externos de gestión de personal, salvo las cesiones obligatorias por mandato legal a los organismos de seguridad social, salud y tributarios que se detallan a continuación.<br><br>
+<strong>Instituciones de Seguridad Social (Cesión Legal):</strong> En cumplimiento de una obligación legal ineludible (Art. 13, letra b de la Ley 21.719), sus datos personales y previsionales serán cedidos a entidades como Previred, AFP, Isapres, Fonasa, Administradora de Fondos de Cesantía (AFC) y Mutualidades de Empleadores para la declaración, pago de cotizaciones y beneficios sociales.</div>
+
+<p class="condicion">Si selecciona cualquier proveedor externo:</p>
+<div class="inyectado"><strong>3. Comunicación y Cesión de Datos a Terceros</strong><br>
+[Empresa] informa que, para el correcto cumplimiento de las obligaciones derivadas del contrato de trabajo y la normativa vigente, sus datos personales pueden ser comunicados o cedidos a los siguientes terceros destinatarios, quienes actúan bajo bases de licitud específicas:<br><br>
+<strong>Instituciones de Seguridad Social (Cesión Legal):</strong> En cumplimiento de una obligación legal (Art. 13, letra b de la Ley 21.719), sus datos personales y previsionales serán cedidos a entidades como Previred, AFP, Isapres, Fonasa, AFC y Mutualidades de Empleadores para la declaración y pago de cotizaciones.</div>
+
+<p class="condicion">Si selecciona "Software de RRHH":</p>
+<div class="inyectado"><strong>Proveedores de Gestión de RR.HH. (Comunicación por Mandato):</strong> Sus datos de identificación, asistencia y remuneraciones serán comunicados a plataformas o proveedores tecnológicos tales como <em>[nombre del software ingresado, ej: Buk]</em>. Estas entidades actúan en calidad de mandatarios del tratamiento (Art. 15 bis), procesando la información bajo instrucciones estrictas del Empleador, exclusivamente para fines de cálculo de remuneraciones y gestión administrativa.</div>
+
+<p class="condicion">Si selecciona "Asesores externos":</p>
+<div class="inyectado"><strong>Servicios Profesionales Externos:</strong> Los datos estrictamente necesarios para auditoría contable, defensa jurídica o asesoría en gestión de personas serán comunicados a contadores o estudios jurídicos externos. Dichos profesionales se encuentran sujetos al deber de secreto y confidencialidad permanente establecido en el Art. 14 bis de la Ley 21.719.</div>
+
+<p class="condicion">Si selecciona "Otros":</p>
+<div class="inyectado"><strong>Otros Destinatarios Autorizados:</strong> Adicionalmente, se informa la comunicación de datos a <em>[destinatarios especificados]</em> con la finalidad específica de: <em>gestiones relacionadas al contrato de trabajo</em>.</div>
+
+<p class="condicion">Si se seleccionó cualquier proveedor externo (se agrega esta nota):</p>
+<div class="inyectado"><strong>Nota de Cumplimiento Institucional (Art. 15 bis y Transferencias Internacionales):</strong> El Empleador declara que toda comunicación de datos a proveedores tecnológicos o externos se encuentra regulada por un Contrato de Mandato para el Tratamiento de Datos. Asimismo, si alguno de los proveedores de software (SaaS) mencionados almacena información fuera del territorio nacional de Chile, dicha transferencia internacional se realiza bajo cláusulas contractuales tipo u otros mecanismos lícitos establecidos en los Artículos 27 y 28 de la Ley 21.719, asumiendo el Empleador la responsabilidad solidaria frente al titular por eventuales infracciones del mandatario.</div>
+</div>
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="sec4-arco-trab">Sección 4: Derechos ARCO+P del Trabajador y No Discriminación (Siempre presente, sin Wizard)</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="seccion">
+<div class="nota">Esta sección se inyecta siempre, sin variaciones según las respuestas del wizard.</div>
+
+<div class="inyectado"><strong>4. Ejercicio de los Derechos ARCO+P del Trabajador</strong><br>
+En conformidad con los Artículos 8 y 8 bis de la Ley 21.719 y sin perjuicio de los derechos laborales consagrados en el Código del Trabajo, el trabajador tiene el derecho inalienable de ejercer en cualquier momento los siguientes derechos frente al Empleador en su calidad de Responsable del Tratamiento:<br><br>
+— <strong>Derecho de Acceso:</strong> Solicitar y obtener información completa sobre los datos personales que el Empleador mantiene en sus registros, su origen, finalidades del tratamiento y los posibles destinatarios de comunicaciones.<br><br>
+— <strong>Derecho de Rectificación:</strong> Solicitar la corrección de datos personales inexactos, incompletos o desactualizados, especialmente aquellos relativos a información previsional, remuneracional y de contacto.<br><br>
+— <strong>Derecho de Cancelación (Supresión):</strong> Solicitar la eliminación de datos personales cuyo tratamiento no se ajuste a la ley o haya cesado la finalidad que lo motivó, sin perjuicio de las obligaciones legales de conservación de registros laborales y previsionales.<br><br>
+— <strong>Derecho de Oposición:</strong> Oponerse al tratamiento de sus datos para finalidades distintas a las estrictamente laborales o legales, particularmente en lo referente a monitoreo tecnológico y comunicaciones no relacionadas con la relación laboral.<br><br>
+— <strong>Derecho de Portabilidad:</strong> Solicitar la transferencia de sus datos personales a otro Responsable en formato estructurado y de uso común, cuando el tratamiento se realice por medios automatizados.<br><br>
+<strong>Forma de Ejercicio:</strong> El trabajador podrá dirigir su solicitud formal al correo electrónico <strong>[Correo de Contacto ARCO]</strong> o directamente ante el departamento de Recursos Humanos, identificándose debidamente e indicando el derecho que desea ejercer. El Empleador responderá dentro del plazo máximo de 10 días hábiles, conforme al Art. 12 de la Ley. En caso de respuesta desfavorable o silencio, el trabajador podrá recurrir ante la Agencia de Protección de Datos Personales.<br><br>
+<strong>Garantía de No Discriminación y Ausencia de Represalias:</strong> De conformidad con el Art. 4 de la Ley 21.719, los derechos de acceso, rectificación, supresión, oposición y portabilidad son irrenunciables y no pueden ser limitados por ningún acto del empleador. En consecuencia, [Empresa] garantiza que el ejercicio legítimo de estos derechos por parte del trabajador no dará lugar a represalias, medidas disciplinarias ni perjuicios en su carrera profesional. Se informa expresamente que cualquier acto destinado a impedir u obstaculizar el ejercicio de estos derechos constituye una infracción grave a la normativa de protección de datos (Art. 34 ter, letra e), sin perjuicio de las acciones de tutela laboral por vulneración de derechos fundamentales que correspondan ante los tribunales competentes.</div>
+<div class="base-legal">Arts. 4, 8, 8 bis, 12, 34 ter letra e de la Ley 21.719; Art. 5 del Código del Trabajo.</div>
+</div>
+
+
+<!-- ============================================================ -->
+<h1 id="cookies"><span class="pol-badge pol-badge-c">C</span> POLITICA DE COOKIES Y TECNOLOGIAS DE RASTREO</h1>
+<!-- ============================================================ -->
+
+<h3 id="sec1-cookies-tecnicas">Sección 1: Cookies Técnicas (Siempre presente, sin Wizard)</h3>
+<div class="seccion">
+<div class="nota">Esta sección no tiene paso de wizard asociado. Se inyecta siempre.</div>
+<div class="inyectado"><strong>1. Cookies Técnicas y Estrictamente Necesarias</strong><br>
+Nuestra plataforma utiliza cookies técnicas que son indispensables para el funcionamiento estructural, la navegación y la seguridad básica del sitio web.<br><br>
+<strong>1.1. Base de Licitud (Exención de Consentimiento):</strong> Conforme al Artículo 13, letra c) de la Ley 21.719, la instalación de estas cookies <strong>no requiere de su consentimiento previo</strong>. Su tratamiento es estrictamente necesario para la ejecución del servicio o la funcionalidad específica solicitada explícitamente por usted al acceder a nuestra web.<br><br>
+<strong>1.2. Alcance y Proporcionalidad:</strong> En estricto respeto al Principio de Proporcionalidad (Art. 3, letra c), estas cookies no recolectan información para fines comerciales, no rastrean su actividad en sitios web de terceros, ni son utilizadas para la elaboración de perfiles de usuario.<br><br>
+<strong>Aviso sobre Desactivación:</strong> El usuario tiene la libertad de configurar su navegador para bloquear o ser alertado sobre la presencia de estas cookies técnicas. Sin embargo, advertimos que su bloqueo forzado a nivel de navegador impedirá el funcionamiento de áreas o características vitales del sitio web.</div>
+</div>
+
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="paso2-analitica">Paso 2 — Analítica y Estadísticas</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="paso">
+    <strong>Pregunta principal:</strong> ¿Su sitio web usa herramientas para contar visitas o entender cómo navegan los usuarios?<br>
+    <strong>Tipo:</strong> Sí / No.<br>
+    <strong>Base legal:</strong> Art. 14 ter exige consentimiento previo para cookies no esenciales; Art. 15 bis (mandatarios); Arts. 27-28 (transferencias internacionales).
+</div>
+
+<div class="paso">
+    <strong>Sub-pregunta (si responde Sí):</strong> ¿Cuál de estas herramientas utiliza?<br>
+    <strong>Tipo:</strong> Selección múltiple.<br>
+    Opciones:
+    <ul>
+        <li><strong>Google Analytics</strong> — Estadísticas de visitas (EE.UU.)</li>
+        <li><strong>Hotjar / Clarity</strong> — Mapas de calor y grabaciones</li>
+        <li><strong>Mixpanel / Amplitude</strong> — Análisis de eventos</li>
+        <li><strong>Otra herramienta</strong> — Activa campo de texto libre</li>
+    </ul>
+</div>
+
+<div class="flujo">↓ Genera →</div>
+
+<h3 id="sec2-analitica">Sección 2 del Documento: Cookies de Análisis o Medición</h3>
+<div class="seccion">
+<p class="condicion">Se inyecta solo si la empresa marca que utiliza herramientas de analítica.</p>
+<div class="inyectado"><strong>2. Cookies de Análisis o Medición</strong><br>
+Con su <strong>consentimiento previo y explícito</strong>, recabado a través de nuestro Panel de Preferencias (Banner de Cookies), el sitio web de <strong>[Empresa]</strong> utiliza cookies analíticas para cuantificar el número de usuarios y realizar la medición y análisis estadístico de la utilización que hacen los usuarios de nuestro servicio.<br><br>
+<strong>2.1. Finalidad y Proporcionalidad:</strong> Estos datos se tratan con el fin exclusivo de introducir mejoras en la oferta de productos, servicios y diseño de la interfaz tras analizar los hábitos de navegación. Esta información se procesa de forma agregada y no se utiliza para identificar personalmente al usuario fuera del ámbito estadístico.<br><br>
+<strong>2.2. Proveedores de Analítica (Mandatarios):</strong> La gestión técnica de estas cookies se realiza a través de los siguientes proveedores externos, quienes actúan bajo instrucciones estrictas en calidad de mandatarios del tratamiento (Art. 15 bis):<br>
+— [lista dinámica de proveedores seleccionados]</div>
+
+<p class="condicion">Si hay proveedores extranjeros, se agrega:</p>
+<div class="inyectado"><strong>2.3. Transferencia Internacional y Seudonimización:</strong> Se informa que el uso de estas herramientas implica la comunicación de datos telemáticos a proveedores en el extranjero. [Empresa] garantiza que estas transferencias se amparan en cláusulas contractuales tipo (Art. 27). Adicionalmente, se han implementado medidas de privacidad por diseño, tales como la <strong>anonimización/truncamiento de la dirección IP</strong> del usuario antes de su almacenamiento en servidores extranjeros, minimizando cualquier riesgo de reidentificación.</div>
+</div>
+
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="paso3-publicidad">Paso 3 — Publicidad y Seguimiento</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="paso">
+    <strong>Pregunta principal:</strong> ¿Muestra anuncios personalizados o rastrea conversiones desde redes sociales?<br>
+    <strong>Tipo:</strong> Sí / No.<br>
+    <strong>Base legal:</strong> Art. 8 bis (derecho a oponerse al perfilamiento); Art. 14 ter letra l (decisiones automatizadas); Arts. 27-28 (transferencias internacionales).
+</div>
+
+<div class="paso">
+    <strong>Sub-pregunta (si responde Sí):</strong> ¿Cuál de estas herramientas de publicidad utiliza?<br>
+    <strong>Tipo:</strong> Selección múltiple.<br>
+    Opciones:
+    <ul>
+        <li><strong>Meta Pixel</strong> — Anuncios en Facebook e Instagram (EE.UU.)</li>
+        <li><strong>Google Ads</strong> — Remarketing y conversiones (EE.UU.)</li>
+        <li><strong>TikTok Pixel / LinkedIn Insight Tag</strong></li>
+        <li><strong>Otra herramienta</strong> — Activa campo de texto libre</li>
+    </ul>
+</div>
+
+<div class="flujo">↓ Genera →</div>
+
+<h3 id="sec3-publicidad">Sección 3 del Documento: Cookies de Publicidad Comportamental y Perfilamiento</h3>
+<div class="seccion">
+<p class="condicion">Se inyecta solo si la empresa marca que hace publicidad o retargeting.</p>
+<div class="inyectado"><strong>3. Cookies de Publicidad Comportamental y Perfilamiento</strong><br>
+Con su <strong>autorización expresa</strong>, el sitio web de <strong>[Empresa]</strong> utiliza cookies de rastreo y publicidad gestionadas por terceros. Estas tecnologías nos permiten adaptar nuestra oferta a sus intereses.<br><br>
+<strong>3.1. Finalidad y Elaboración de Perfiles:</strong> Estas cookies recopilan información sobre sus hábitos de navegación, tiempo de permanencia e interacciones para crear un perfil de sus intereses (Art. 8 bis de la Ley 21.719). Esto nos permite mostrarle anuncios relevantes en plataformas de terceros y medir la eficacia de nuestras campañas publicitarias.<br>
+<em>Terceros autorizados (Mandatarios):</em> <strong>[lista dinámica de proveedores seleccionados]</strong>.<br><br>
+<strong>3.2. Transferencia Internacional de Datos:</strong> Se informa expresamente al titular que el uso de estas herramientas implica la comunicación de identificadores en línea a los proveedores mencionados, cuyos servidores se encuentran fuera del territorio nacional. Estas operaciones se realizan bajo el amparo de cláusulas contractuales tipo u otros mecanismos que garantizan un nivel adecuado de protección (Artículos 27 y 28).<br><br>
+<strong>3.3. Control y Revocación Absoluta:</strong> Usted puede retirar su consentimiento para este tratamiento específico en cualquier momento a través de nuestro centro de preferencias de privacidad o modificando la configuración de su navegador, sin que ello afecte la licitud de la navegación básica del sitio o la prestación del servicio.</div>
+
+<div class="inyectado"><strong>Declaración de Impacto y Límites del Perfilamiento (Art. 14 ter / Art. 15 ter):</strong> El Responsable declara formalmente que la elaboración de perfiles descrita en esta sección tiene fines exclusivamente publicitarios y comerciales genéricos. En ningún caso estos algoritmos toman decisiones automatizadas que produzcan efectos jurídicos sobre usted, ni son utilizados para la discriminación arbitraria de precios, denegación de servicios u otras consecuencias que afecten significativamente sus derechos fundamentales.</div>
+</div>
+
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="paso4-funcionalidad">Paso 4 — Herramientas Externas (Chat, Video, Mapas)</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="paso">
+    <strong>Pregunta principal:</strong> ¿Su sitio web tiene elementos de otras empresas incrustados (como chats, videos o mapas)?<br>
+    <strong>Tipo:</strong> Sí / No.<br>
+    <strong>Base legal:</strong> Art. 14 quáter (privacidad por diseño, no cargar sin consentimiento); Art. 14 ter letra h (informar transferencias internacionales).
+</div>
+
+<div class="paso">
+    <strong>Sub-pregunta (si responde Sí):</strong> ¿Qué tipo de elementos tiene integrados?<br>
+    <strong>Tipo:</strong> Selección múltiple.<br>
+    Opciones:
+    <ul>
+        <li><strong>Chats</strong> — WhatsApp, Intercom, Zendesk</li>
+        <li><strong>Videos o audio</strong> — YouTube, Vimeo, Spotify</li>
+        <li><strong>Mapas</strong> — Google Maps en sección Contacto</li>
+        <li><strong>Otra herramienta externa</strong> — Activa campo de texto libre</li>
+    </ul>
+</div>
+
+<div class="flujo">↓ Genera →</div>
+
+<h3 id="sec4-funcionalidad">Sección 4 del Documento: Cookies de Personalización y Funcionalidad de Terceros</h3>
+<div class="seccion">
+<p class="condicion">Se inyecta solo si la empresa tiene widgets integrados.</p>
+<div class="inyectado"><strong>4. Cookies de Personalización y Funcionalidad de Terceros</strong><br>
+Para ofrecerle servicios interactivos, soporte en línea y contenido multimedia enriquecido, el sitio web de <strong>[Empresa]</strong> tiene integradas herramientas y widgets de terceros que pueden instalar cookies u otros rastreadores en su dispositivo.<br><br>
+<strong>4.1. Servicios Integrados:</strong> Se informa a los usuarios el uso de las siguientes funcionalidades externas: <strong>[lista dinámica de servicios seleccionados]</strong>.<br><br>
+<strong>4.2. Tratamiento por Terceros y Corresponsabilidad:</strong> Estos servicios son proporcionados por entidades independientes, quienes actúan bajo sus propias políticas de privacidad. Al interactuar con estos widgets (como reproducir un video o utilizar un botón de compartir), dichos terceros pueden rastrear su actividad de navegación. [Empresa] informa que no tiene control directo sobre la información recopilada de manera autónoma por estas entidades una vez que usted interactúa con sus componentes.<br><br>
+<strong>4.3. Transferencia Internacional (Art. 14 ter, letra h):</strong> Se advierte expresamente que el uso de estas herramientas implica la transferencia internacional de sus datos técnicos (como su dirección IP) a los países de origen de estos proveedores (principalmente EE.UU.). Estas operaciones operan bajo las salvaguardas legales que estos últimos declaran en sus términos de servicio corporativos.</div>
+
+<div class="inyectado"><strong>Nota de Privacidad por Diseño (Art. 14 quáter):</strong> En cumplimiento del deber de protección desde el diseño, el Responsable declara implementar mecanismos tecnológicos que bloquean la carga y ejecución de estos widgets de terceros hasta que usted otorgue su consentimiento expreso mediante nuestro Panel de Preferencias, garantizando que ninguna cookie funcional externa sea instalada por defecto al cargar el sitio web.</div>
+</div>
+
+<h3 id="sec5-consentimiento">Sección 5: Gestión y Revocación del Consentimiento (Siempre presente, sin Wizard)</h3>
+<div class="seccion">
+<div class="nota">Esta sección no tiene paso de wizard asociado. Se inyecta siempre.</div>
+<div class="inyectado"><strong>5. Gestión, Configuración y Revocación del Consentimiento</strong><br>
+De conformidad con el Artículo 12 de la Ley 21.719, usted tiene el derecho inalienable de retirar su consentimiento para el uso de cookies no esenciales en cualquier momento, de forma gratuita y utilizando medios equivalentes a los empleados para su otorgamiento.<br><br>
+<strong>5.1. Centro de Preferencias de Privacidad:</strong> Para facilitar este control permanente, [Empresa] pone a su disposición nuestro Panel de Preferencias. Puede acceder a él en cualquier momento haciendo clic en el siguiente enlace para modificar sus opciones o revocar permisos previos: <a href="#" class="open-privacy-widget" onclick="event.preventDefault(); window.dispatchEvent(new Event('openPrivacyWidget'));"><strong>Abrir Centro de Preferencias de Cookies</strong></a>.<br><br>
+<strong>5.2. Efectos de la Revocación (No Retroactividad):</strong> La retirada de su consentimiento no afectará a la licitud de los tratamientos basados en el consentimiento previos a dicha retirada. Una vez revocado, nuestros sistemas bloquearán de forma inmediata la instalación y lectura de las cookies asociadas a dicha categoría en su dispositivo.<br><br>
+<strong>5.3. Configuración del Navegador:</strong> Adicionalmente, le informamos que puede bloquear, restringir o eliminar las cookies instaladas en su equipo mediante la configuración de las opciones de seguridad del navegador que utilice (Google Chrome, Mozilla Firefox, Safari, Microsoft Edge, etc.). No obstante, le recordamos que el bloqueo forzado de todas las cookies (incluidas las estrictamente técnicas) afectará la funcionalidad y estabilidad de nuestro sitio web.</div>
+</div>
+
+
+<!-- ============================================================ -->
+<h1 id="personalizado"><span class="pol-badge pol-badge-d">D</span> DOCUMENTO LEGAL PERSONALIZADO</h1>
+<!-- ============================================================ -->
+
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="paso1-tipo">Paso 1 — Tipo de Documento</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="paso">
+    <strong>Pregunta 1:</strong> ¿Cómo se llama este documento?<br>
+    <strong>Tipo:</strong> Texto libre.<br>
+    Ejemplo: "Términos y Condiciones", "Política de Devoluciones", "Aviso de Privacidad para Concursos".
+</div>
+
+<div class="paso">
+    <strong>Pregunta 2:</strong> ¿Es un aviso de privacidad bajo la Ley 21.719?<br>
+    <strong>Tipo:</strong> Sí / No.<br>
+    <strong>Base legal:</strong> Art. 14 ter exige contenido mínimo para avisos de privacidad.
+</div>
+
+<div class="flujo">↓ Genera →</div>
+
+<h3 id="ruta-a">Ruta A: No es aviso de privacidad (Lienzo Libre)</h3>
+<div class="seccion">
+<p class="condicion">Si la respuesta es "No":</p>
+<div class="paso">
+    <strong>Pregunta:</strong> Escriba el contenido del documento.<br>
+    <strong>Tipo:</strong> Texto libre (HTML).<br>
+    El texto se inserta directamente en el documento, cerrando con las firmas representativas.
+</div>
+<div class="nota">El motor desactiva la estructura de la Ley 21.719 y simplemente inyecta el código HTML crudo que redacte la empresa.</div>
+</div>
+
+<h3 id="ruta-b">Ruta B: Sí es aviso de privacidad (Estructura Obligatoria Ley 21.719)</h3>
+<div class="seccion">
+<p class="condicion">Si la respuesta es "Sí":</p>
+<p>El sistema exige completar los siguientes campos y los ensambla en una plantilla con la estructura legal obligatoria.</p>
+
+<div class="paso">
+    <strong>Contexto del tratamiento:</strong> ¿Para qué proceso específico usa estos datos?<br>
+    <strong>Tipo:</strong> Texto libre. Ej: "Proceso de selección de personal".<br>
+    <strong>Base legal:</strong> Art. 14 ter letra a exige identificar la finalidad específica.
+</div>
+
+<div class="paso">
+    <strong>Categorías de datos:</strong> ¿Qué tipo de datos personales solicita?<br>
+    <strong>Tipo:</strong> Texto libre. Ej: "Nombre, correo, teléfono, dirección, RUT".<br>
+    <strong>Base legal:</strong> Art. 14 ter letra b exige informar las categorías de datos tratados.
+</div>
+
+<div class="paso">
+    <strong>Finalidad:</strong> ¿Para qué usa estos datos?<br>
+    <strong>Tipo:</strong> Texto libre. Ej: "Evaluar postulantes para el cargo".<br>
+    <strong>Base legal:</strong> Art. 14 ter letra a exige que la finalidad sea determinada, explícita y legítima.
+</div>
+
+<div class="paso">
+    <strong>Base de licitud:</strong> ¿Bajo qué autorización legal trata esos datos?<br>
+    <strong>Tipo:</strong> Texto libre. Ej: "Consentimiento del titular", "Ejecución de contrato".<br>
+    <strong>Base legal:</strong> Art. 13 establece las bases de licitud: consentimiento (letra a), contrato (letra c), obligación legal (letra b), interés legítimo (letra d).
+</div>
+
+<div class="paso">
+    <strong>Destinatarios:</strong> ¿A quién más se le entregan estos datos?<br>
+    <strong>Tipo:</strong> Texto libre. Ej: "Ningún tercero", "Empresas del mismo grupo".<br>
+    <strong>Base legal:</strong> Art. 14 ter letra c exige informar los destinatarios.
+</div>
+
+<div class="paso">
+    <strong>Transferencias internacionales:</strong> ¿Los datos se envían fuera de Chile? ¿A dónde?<br>
+    <strong>Tipo:</strong> Texto libre. Ej: "No" / "Servidores en EE.UU. bajo cláusulas contractuales".<br>
+    <strong>Base legal:</strong> Arts. 14 ter letra h y 27-28 regulan transferencias internacionales.
+</div>
+
+<div class="paso">
+    <strong>Plazo de conservación:</strong> ¿Por cuánto tiempo guarda estos datos?<br>
+    <strong>Tipo:</strong> Texto libre. Ej: "2 años desde la última interacción".<br>
+    <strong>Base legal:</strong> Principio de Proporcionalidad (Art. 3 letra c) exige conservar datos solo el tiempo necesario.
+</div>
+</div>
+
+<div class="flujo">↓ Genera →</div>
+
+<h3>Documento generado (Ruta B):</h3>
+<div class="inyectado">El presente documento regula el tratamiento de datos personales específico para <strong>[Contexto ingresado]</strong>, en estricto cumplimiento de la Ley 21.719 de la República de Chile.<br><br>
+<strong>1. Definición y Finalidades del Tratamiento</strong><br>
+[Empresa] recolecta y trata las siguientes categorías de datos: <strong>[Categorías ingresadas]</strong>.<br>
+La finalidad exclusiva de este tratamiento es: <strong>[Finalidades ingresadas]</strong>. No trataremos sus datos para fines distintos a los aquí informados sin su consentimiento previo o una base legal que lo justifique.<br><br>
+<strong>2. Base de Licitud</strong><br>
+Este tratamiento se realiza bajo la siguiente base de licitud (Art. 13 de la Ley 21.719): <strong>[Base de licitud ingresada]</strong>.<br><br>
+<strong>3. Destinatarios y Comunicaciones</strong><br>
+Sus datos personales podrán ser comunicados a: <strong>[Destinatarios ingresados]</strong>.</div>
+
+<p class="condicion">Si el usuario llenó el campo de transferencias internacionales:</p>
+<div class="inyectado"><strong>Transferencia Internacional:</strong> Sus datos serán transferidos a <strong>[destino ingresado]</strong>, operando bajo las salvaguardas legales que establece el Art. 27 de la Ley.</div>
+
+<p class="condicion">Si el usuario dejó el campo de transferencias vacío:</p>
+<div class="inyectado">El Responsable declara que para este proceso específico no se realizan transferencias de datos fuera del territorio nacional.</div>
+
+<p>Cierre de la Ruta B (Retención y Derechos):</p>
+<div class="inyectado"><strong>4. Plazos de Conservación</strong><br>
+Sus datos se conservarán durante el siguiente periodo: <strong>[Plazo ingresado]</strong>. Cumplido este plazo, los datos serán eliminados o anonimizados (perdiendo su calidad de dato personal).<br><br>
+<strong>5. Ejercicio de Derechos ARCO+P</strong><br>
+Usted tiene derecho de Acceso, Rectificación, Cancelación (Supresión), Oposición y Portabilidad sobre su información. Puede ejercer estos derechos en cualquier momento enviando una solicitud formal a <strong>[Correo de Contacto ARCO]</strong>. En caso de no recibir respuesta dentro de los plazos legales, le asiste el derecho a recurrir ante la Agencia de Protección de Datos Personales.</div>
+
+</main>
+</div>
+
+<script>
+(function() {
+    var sidebar = document.getElementById('sidebar');
+    var hamburger = document.getElementById('hamburgerBtn');
+    var overlay = document.getElementById('overlay');
+    var navLinks = sidebar.querySelectorAll('.nav-pol-items a');
+    var navToggles = sidebar.querySelectorAll('.nav-pol-title[data-toggle]');
+
+    var simbolBtn = document.getElementById('simbolBtn');
+    var simbolModal = document.getElementById('simbolModal');
+    var simbolClose = document.getElementById('simbolClose');
+
+    function closeMobile() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+    }
+
+    hamburger.addEventListener('click', function() {
+        var isOpen = sidebar.classList.contains('open');
+        if (isOpen) { closeMobile(); }
+        else { sidebar.classList.add('open'); overlay.classList.add('show'); }
+    });
+
+    overlay.addEventListener('click', closeMobile);
+
+    navLinks.forEach(function(link) {
+        link.addEventListener('click', function() {
+            closeMobile();
+        });
+    });
+
+    navToggles.forEach(function(toggle) {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            var targetId = toggle.getAttribute('data-toggle');
+            var target = document.getElementById(targetId);
+            if (target) {
+                target.classList.toggle('collapsed');
+                toggle.classList.toggle('collapsed-group');
+            }
+        });
+    });
+
+    simbolBtn.addEventListener('click', function() {
+        simbolModal.classList.add('show');
+    });
+    simbolClose.addEventListener('click', function() {
+        simbolModal.classList.remove('show');
+    });
+    simbolModal.addEventListener('click', function(e) {
+        if (e.target === simbolModal) { simbolModal.classList.remove('show'); }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            simbolModal.classList.remove('show');
+            closeMobile();
+        }
+    });
+
+    var allSections = [];
+    var headingSelectors = ['h1[id]', 'h2[id]', 'h3[id]', 'h4[id]'];
+    headingSelectors.forEach(function(sel) {
+        document.querySelectorAll('#main-content ' + sel).forEach(function(el) {
+            allSections.push({ id: el.id, top: el.offsetTop, el: el });
+        });
+    });
+
+    function recalcOffsets() {
+        allSections.forEach(function(sec) {
+            sec.top = sec.el.offsetTop;
+        });
+    }
+
+    function onScroll() {
+        var scrollY = window.scrollY || window.pageYOffset;
+        var current = null;
+        allSections.forEach(function(sec) {
+            if (sec.top - 80 <= scrollY) { current = sec; }
+        });
+        navLinks.forEach(function(link) { link.classList.remove('active'); });
+        if (current) {
+            var activeLink = sidebar.querySelector('a[href="#' + current.id + '"]');
+            if (activeLink) { activeLink.classList.add('active'); }
+        }
+    }
+
+    var scrollTimer;
+    window.addEventListener('scroll', function() {
+        clearTimeout(scrollTimer);
+        scrollTimer = setTimeout(onScroll, 80);
+    }, { passive: true });
+
+    setTimeout(function() { recalcOffsets(); onScroll(); }, 300);
+    onScroll();
+})();
+</script>
+</body>
+</html>
