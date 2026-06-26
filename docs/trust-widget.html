@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trust Widget — Flujo de Consentimiento</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root {
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+
+  --color-text-primary: #1a1a2e;
+  --color-text-secondary: #5a5a7a;
+  --color-text-info: #2563eb;
+  --color-text-success: #16a34a;
+  --color-text-warning: #d97706;
+  --color-text-danger: #dc2626;
+
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f4f4f8;
+  --color-background-info: #eef2ff;
+  --color-background-success: #f0fdf4;
+  --color-background-warning: #fffbeb;
+  --color-background-danger: #fef2f2;
+
+  --color-border-primary: #d4d4e0;
+  --color-border-secondary: #c8c8d8;
+  --color-border-tertiary: #e2e2ec;
+  --color-border-info: #93c5fd;
+  --color-border-success: #86efac;
+  --color-border-warning: #fcd34d;
+
+  --border-radius-md: 10px;
+  --border-radius-lg: 14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-sans);
+  background: #f6f7fb;
+  padding: 32px 20px;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+}
+
+h2.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+/* ── layout wrapper ── */
+.page-wrap {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+/* ── header ── */
+.header { text-align: center; margin-bottom: 28px; }
+.header h1 { font-size: 26px; font-weight: 600; letter-spacing: -.3px; }
+.header p { font-size: 15px; color: var(--color-text-secondary); margin-top: 8px; line-height: 1.6; }
+
+/* ── stepper ── */
+.stepper-nav {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; margin-bottom: 28px; flex-wrap: wrap;
+}
+.step-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 18px; border-radius: 22px;
+  font-size: 14px; font-weight: 500;
+  color: var(--color-text-secondary);
+  border: 0.5px solid var(--color-border-tertiary);
+  background: var(--color-background-secondary);
+  cursor: pointer; transition: all .2s; white-space: nowrap;
+  user-select: none;
+}
+.step-pill:hover { background: var(--color-background-primary); }
+.step-pill.active {
+  background: var(--color-background-info);
+  color: var(--color-text-info);
+  border-color: var(--color-border-info);
+}
+.step-pill.done {
+  background: var(--color-background-success);
+  color: var(--color-text-success);
+  border-color: var(--color-border-success);
+}
+.step-connector { width: 24px; height: 1.5px; background: var(--color-border-tertiary); flex-shrink: 0; }
+.step-pill i { font-size: 16px; }
+
+/* ── panels ── */
+.panel { display: none; animation: fadeIn .25s ease; }
+.panel.active { display: block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── scene card ── */
+.scene {
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-lg);
+  background: var(--color-background-primary);
+  overflow: hidden; margin-bottom: 18px;
+}
+.scene-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; background: var(--color-background-secondary);
+  border-bottom: 0.5px solid var(--color-border-tertiary);
+}
+.scene-bar-dot { width: 10px; height: 10px; border-radius: 50%; }
+.scene-bar-url { font-size: 13px; color: var(--color-text-secondary); margin-left: 4px; font-family: var(--font-mono); }
+.scene-content { padding: 18px 22px; min-height: 100px; position: relative; }
+
+/* ── site placeholder ── */
+.site-placeholder { display: flex; flex-direction: column; gap: 8px; }
+.site-line { height: 12px; border-radius: 5px; background: var(--color-border-tertiary); }
+
+/* ── banner ── */
+.banner {
+  border: 0.5px solid var(--color-border-info);
+  border-radius: var(--border-radius-md);
+  background: var(--color-background-primary);
+  padding: 16px 20px;
+  box-shadow: 0 2px 12px rgba(37,99,235,.08);
+}
+.banner-title { font-size: 15px; font-weight: 500; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.banner-desc { font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 12px; }
+.banner-actions { display: flex; gap: 8px; margin-top: 12px; }
+.btn-accept {
+  flex: 1; padding: 8px 14px; border-radius: var(--border-radius-md);
+  background: var(--color-text-info); color: #fff;
+  border: none; font-size: 13px; font-weight: 500; cursor: pointer;
+}
+.btn-reject {
+  flex: 1; padding: 8px 14px; border-radius: var(--border-radius-md);
+  background: var(--color-background-secondary);
+  color: var(--color-text-secondary);
+  border: 0.5px solid var(--color-border-tertiary);
+  font-size: 13px; cursor: pointer;
+}
+.btn-reject:hover { background: var(--color-background-primary); }
+
+/* ── toggle row ── */
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0; border-top: 0.5px solid var(--color-border-tertiary);
+}
+.toggle-label { font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.toggle-label i { font-size: 15px; }
+.toggle-badge { font-size: 11px; padding: 2px 8px; border-radius: 5px; font-weight: 500; }
+.badge-on { background: var(--color-background-success); color: var(--color-text-success); }
+.badge-off { background: var(--color-background-secondary); color: var(--color-text-secondary); }
+
+/* ── switch toggle ── */
+.switch { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.switch-track {
+  position: absolute; inset: 0; border-radius: 11px;
+  background: var(--color-border-secondary);
+  transition: .2s; cursor: pointer;
+}
+.switch input:checked + .switch-track { background: var(--color-text-info); }
+.switch-thumb {
+  position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
+  border-radius: 50%; background: #fff; transition: .2s; pointer-events: none;
+}
+.switch input:checked ~ .switch-thumb { left: 19px; }
+
+/* ── flow grid ── */
+.flow-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+.flow-box {
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  padding: 14px 18px; background: var(--color-background-secondary);
+}
+.flow-box-title { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.flow-box-title i { font-size: 18px; }
+.flow-box p { font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; }
+.flow-box.highlight { border-color: var(--color-border-success); background: var(--color-background-success); }
+.flow-box.highlight .flow-box-title { color: var(--color-text-success); }
+.flow-box.warn { border-color: var(--color-border-warning); background: var(--color-background-warning); }
+.flow-box.warn .flow-box-title { color: var(--color-text-warning); }
+
+.arrow-center { text-align: center; font-size: 22px; color: var(--color-text-secondary); margin: 6px 0; line-height: 1; }
+
+/* ── explain card ── */
+.explain-card {
+  border-left: 3px solid var(--color-border-info);
+  padding: 14px 18px;
+  background: var(--color-background-info);
+  border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+  margin-bottom: 18px;
+}
+.explain-card p { font-size: 14px; color: var(--color-text-primary); line-height: 1.7; }
+.explain-card strong { font-weight: 500; }
+
+/* ── log row ── */
+.log-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 0; border-bottom: 0.5px solid var(--color-border-tertiary);
+}
+.log-row:last-child { border-bottom: none; }
+.log-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 2px;
+}
+.log-icon i { font-size: 15px; }
+.log-text { font-size: 13px; line-height: 1.6; }
+.log-text span { font-size: 12px; color: var(--color-text-secondary); display: block; margin-top: 2px; }
+
+/* ── tags ── */
+.tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 12px;
+  font-size: 12px; font-weight: 500;
+}
+.tag i { font-size: 13px; }
+.tag-blue { background: var(--color-background-info); color: var(--color-text-info); }
+.tag-green { background: var(--color-background-success); color: var(--color-text-success); }
+.tag-orange { background: var(--color-background-warning); color: var(--color-text-warning); }
+.tag-gray { background: var(--color-background-secondary); color: var(--color-text-secondary); }
+
+/* ── category row ── */
+.category-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 10px 0; border-bottom: 0.5px solid var(--color-border-tertiary);
+}
+.category-row:last-child { border-bottom: none; }
+.cat-icon-wrap { width: 38px; height: 38px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cat-icon-wrap i { font-size: 18px; }
+.cat-body { flex: 1; }
+.cat-title { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+.cat-desc { font-size: 12.5px; color: var(--color-text-secondary); line-height: 1.6; }
+.cat-examples { font-size: 12px; color: var(--color-text-secondary); margin-top: 4px; }
+.cat-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+
+/* ── nav bar ── */
+.nav-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 24px; padding-top: 16px;
+  border-top: 0.5px solid var(--color-border-tertiary);
+}
+.nav-btn {
+  padding: 10px 22px; border-radius: var(--border-radius-md);
+  font-size: 14px; font-weight: 500;
+  border: 0.5px solid var(--color-border-secondary);
+  background: var(--color-background-secondary);
+  color: var(--color-text-primary);
+  cursor: pointer; display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-sans);
+}
+.nav-btn:hover { background: var(--color-background-primary); }
+.nav-btn.primary { background: var(--color-text-info); color: #fff; border-color: transparent; }
+.nav-btn.primary:hover { filter: brightness(1.1); }
+.nav-btn:disabled { opacity: .35; cursor: not-allowed; }
+.step-counter { font-size: 13px; color: var(--color-text-secondary); }
+
+/* ── proof box ── */
+.proof-box {
+  background: var(--color-background-secondary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  padding: 14px 18px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.8;
+  word-break: break-all;
+  margin-bottom: 12px;
+}
+.proof-box .hl { color: var(--color-text-info); font-weight: 500; }
+
+.section-label {
+  font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: .6px;
+  color: var(--color-text-secondary); margin: 18px 0 8px;
+}
+
+/* ── responsive ── */
+@media (max-width: 640px) {
+  .stepper-nav { gap: 4px; }
+  .step-pill { font-size: 11px; padding: 5px 12px; }
+  .step-connector { width: 10px; }
+  .flow-grid { grid-template-columns: 1fr; }
+  .category-row { gap: 8px; }
+  .page-wrap { padding: 0; }
+  body { padding: 20px 12px; }
+}
+</style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+<div class="header">
+  <h1>Trust Widget</h1>
+  <p>Cómo funciona el consentimiento de cookies paso a paso — desde que el usuario llega al sitio hasta el registro legal inmutable.</p>
+</div>
+
+<div class="stepper-nav">
+  <div class="step-pill active" id="pill-0" onclick="goTo(0)"><i class="ti ti-world"></i>Llegada</div>
+  <div class="step-connector"></div>
+  <div class="step-pill" id="pill-1" onclick="goTo(1)"><i class="ti ti-cookie"></i>Categorías</div>
+  <div class="step-connector"></div>
+  <div class="step-pill" id="pill-2" onclick="goTo(2)"><i class="ti ti-click"></i>Decisión</div>
+  <div class="step-connector"></div>
+  <div class="step-pill" id="pill-3" onclick="goTo(3)"><i class="ti ti-bolt"></i>Efecto</div>
+  <div class="step-connector"></div>
+  <div class="step-pill" id="pill-4" onclick="goTo(4)"><i class="ti ti-shield-check"></i>Registro</div>
+</div>
+
+<!-- PANEL 0: Llegada -->
+<div class="panel active" id="panel-0">
+  <div class="explain-card">
+    <p>Cuando alguien entra a la web de la Pyme, <strong>el script del widget se carga en silencio</strong> — sin interrumpir la página ni ralentizarla. Antes de mostrar el banner, el sistema ya fijó los valores por defecto: todas las cookies opcionales <strong>bloqueadas</strong>.</p>
+  </div>
+  <div class="scene">
+    <div class="scene-bar">
+      <div class="scene-bar-dot" style="background:#ff5f57"></div>
+      <div class="scene-bar-dot" style="background:#febc2e"></div>
+      <div class="scene-bar-dot" style="background:#28c840"></div>
+      <span class="scene-bar-url">tiendaejemplo.cl</span>
+    </div>
+    <div class="scene-content">
+      <div class="site-placeholder" style="margin-bottom:12px">
+        <div class="site-line" style="width:40%;height:14px"></div>
+        <div class="site-line" style="width:80%"></div>
+        <div class="site-line" style="width:65%"></div>
+      </div>
+      <div class="banner">
+        <div class="banner-title"><i class="ti ti-cookie" style="font-size:16px;color:var(--color-text-info)"></i>Este sitio usa cookies</div>
+        <div class="banner-desc">Usamos cookies para mejorar tu experiencia. Puedes elegir cuáles aceptar. Las cookies técnicas siempre están activas porque el sitio no funciona sin ellas.</div>
+        <div class="banner-actions">
+          <button class="btn-reject">Solo necesarias</button>
+          <button class="btn-accept">Ver preferencias</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flow-grid">
+    <div class="flow-box warn">
+      <div class="flow-box-title"><i class="ti ti-clock-pause"></i>Antes del banner</div>
+      <p>Google Analytics, Meta Pixel, Hotjar y todos los scripts de rastreo están <strong>bloqueados</strong>. No se ha cargado ninguno.</p>
+    </div>
+    <div class="flow-box">
+      <div class="flow-box-title"><i class="ti ti-device-laptop"></i>Lo que ve el usuario</div>
+      <p>La página carga normalmente. El banner aparece en la parte inferior sin bloquear el contenido del sitio.</p>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL 1: Categorías -->
+<div class="panel" id="panel-1">
+  <div class="explain-card">
+    <p>El banner muestra <strong>cuatro categorías de cookies</strong>, cada una con un propósito diferente. Solo las técnicas son obligatorias — el usuario decide libremente sobre las demás.</p>
+  </div>
+  <div class="scene">
+    <div class="scene-bar">
+      <div class="scene-bar-dot" style="background:#ff5f57"></div>
+      <div class="scene-bar-dot" style="background:#febc2e"></div>
+      <div class="scene-bar-dot" style="background:#28c840"></div>
+      <span class="scene-bar-url">tiendaejemplo.cl — preferencias de cookies</span>
+    </div>
+    <div class="scene-content" style="padding:10px 12px">
+      <div class="category-row">
+        <div class="cat-icon-wrap" style="background:var(--color-background-success)"><i class="ti ti-lock" style="color:var(--color-text-success)"></i></div>
+        <div class="cat-body">
+          <div class="cat-title">Técnicas / necesarias</div>
+          <div class="cat-desc">El sitio no funciona sin ellas: tu sesión, carrito de compras, seguridad.</div>
+          <div class="cat-examples">Ejemplos: sesión, carrito, anti-fraude</div>
+        </div>
+        <div class="cat-right"><span class="tag tag-green"><i class="ti ti-check"></i>Siempre activas</span></div>
+      </div>
+      <div class="category-row">
+        <div class="cat-icon-wrap" style="background:var(--color-background-info)"><i class="ti ti-chart-bar" style="color:var(--color-text-info)"></i></div>
+        <div class="cat-body">
+          <div class="cat-title">Analítica / medición</div>
+          <div class="cat-desc">Miden cuántas personas visitan el sitio y qué páginas ven. No te identifican.</div>
+          <div class="cat-examples">Google Analytics, Hotjar, Mixpanel</div>
+        </div>
+        <div class="cat-right">
+          <label class="switch"><input type="checkbox" id="sw-analytics"><div class="switch-track"></div><div class="switch-thumb"></div></label>
+          <span class="tag tag-gray" id="lbl-analytics"><i class="ti ti-x"></i>Inactiva</span>
+        </div>
+      </div>
+      <div class="category-row">
+        <div class="cat-icon-wrap" style="background:var(--color-background-warning)"><i class="ti ti-speakerphone" style="color:var(--color-text-warning)"></i></div>
+        <div class="cat-body">
+          <div class="cat-title">Publicidad / perfilamiento</div>
+          <div class="cat-desc">Permiten mostrar anuncios personalizados en otras plataformas como Instagram o Google.</div>
+          <div class="cat-examples">Meta Pixel, Google Ads, TikTok Pixel</div>
+        </div>
+        <div class="cat-right">
+          <label class="switch"><input type="checkbox" id="sw-marketing"><div class="switch-track"></div><div class="switch-thumb"></div></label>
+          <span class="tag tag-gray" id="lbl-marketing"><i class="ti ti-x"></i>Inactiva</span>
+        </div>
+      </div>
+      <div class="category-row">
+        <div class="cat-icon-wrap" style="background:var(--color-background-secondary)"><i class="ti ti-puzzle" style="color:var(--color-text-secondary)"></i></div>
+        <div class="cat-body">
+          <div class="cat-title">Funcionalidad de terceros</div>
+          <div class="cat-desc">Widgets externos como chats de soporte, videos de YouTube o mapas de Google.</div>
+          <div class="cat-examples">Intercom, YouTube, Google Maps</div>
+        </div>
+        <div class="cat-right">
+          <label class="switch"><input type="checkbox" id="sw-functional"><div class="switch-track"></div><div class="switch-thumb"></div></label>
+          <span class="tag tag-gray" id="lbl-functional"><i class="ti ti-x"></i>Inactiva</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="explain-card" style="border-color:var(--color-border-warning);background:var(--color-background-warning);border-left-color:var(--color-border-warning)">
+    <p style="color:var(--color-text-primary)"><strong>Importante:</strong> Los switches de arriba son interactivos. Prueba activarlos para ver cómo cambia el estado — así funciona el banner real que verán los usuarios de la Pyme.</p>
+  </div>
+</div>
+
+<!-- PANEL 2: Decisión -->
+<div class="panel" id="panel-2">
+  <div class="explain-card">
+    <p>El usuario hace clic en <strong>"Guardar preferencias"</strong>. En ese instante ocurren dos cosas en paralelo: una inmediata (para Google) y una silenciosa en segundo plano (para nuestro registro legal).</p>
+  </div>
+  <div class="section-label">Lo que ocurre al hacer clic</div>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+    <div class="flow-box highlight">
+      <div class="flow-box-title"><i class="ti ti-bolt"></i>Acción 1 — Inmediata (milisegundos)</div>
+      <p>Las preferencias se guardan en el dispositivo del usuario (<code>localStorage</code>). Google recibe el estado de consentimiento al instante mediante Consent Mode v2. El sitio reacciona de inmediato: si aceptó analítica, GA4 se activa ahora.</p>
+    </div>
+    <div class="arrow-center"><i class="ti ti-arrows-down" style="font-size:20px"></i></div>
+    <div class="flow-box">
+      <div class="flow-box-title"><i class="ti ti-cloud-upload"></i>Acción 2 — Segundo plano (invisible)</div>
+      <p>El widget envía las preferencias a nuestra API. El usuario no espera esto — ya puede seguir navegando. Si la API tardara o fallara, las preferencias locales ya están guardadas y el sitio no se rompe.</p>
+    </div>
+  </div>
+  <div class="section-label">Mapeo de propósitos a tecnologías</div>
+  <div class="flow-grid">
+    <div class="flow-box">
+      <div class="flow-box-title"><i class="ti ti-brand-google"></i>Google (GA4 + Ads)</div>
+      <p>Recibe <code>analytics_storage</code>, <code>ad_storage</code>, <code>ad_user_data</code>. Respeta el estado sin que el widget toque ningún script directamente.</p>
+    </div>
+    <div class="flow-box">
+      <div class="flow-box-title"><i class="ti ti-brand-meta"></i>Meta Pixel, TikTok...</div>
+      <p>El widget carga sus scripts dinámicamente solo si el usuario consintió. Si rechazó, esos scripts nunca se ejecutan en el navegador.</p>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL 3: Efecto inmediato -->
+<div class="panel" id="panel-3">
+  <div class="explain-card">
+    <p>Dependiendo de lo que el usuario eligió, el widget <strong>activa o mantiene bloqueados</strong> los scripts de terceros. Este es el mecanismo técnico real de control.</p>
+  </div>
+  <div class="section-label">Ejemplo: usuario aceptó analítica, rechazó publicidad</div>
+  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+    <div class="log-row">
+      <div class="log-icon" style="background:var(--color-background-success)"><i class="ti ti-check" style="color:var(--color-text-success)"></i></div>
+      <div class="log-text">
+        Google Analytics activado
+        <span>gtag('consent','update', {analytics_storage:'granted'}) → GA4 empieza a registrar visitas</span>
+      </div>
+    </div>
+    <div class="log-row">
+      <div class="log-icon" style="background:var(--color-background-success)"><i class="ti ti-check" style="color:var(--color-text-success)"></i></div>
+      <div class="log-text">
+        Hotjar activado
+        <span>El script de Hotjar se inyecta dinámicamente en la página → empieza a grabar mapas de calor</span>
+      </div>
+    </div>
+    <div class="log-row">
+      <div class="log-icon" style="background:var(--color-background-danger)"><i class="ti ti-x" style="color:var(--color-text-danger)"></i></div>
+      <div class="log-text">
+        Meta Pixel — bloqueado
+        <span>El script nunca se cargó. No existe ninguna cookie _fbp en el navegador del usuario.</span>
+      </div>
+    </div>
+    <div class="log-row">
+      <div class="log-icon" style="background:var(--color-background-danger)"><i class="ti ti-x" style="color:var(--color-text-danger)"></i></div>
+      <div class="log-text">
+        Google Ads — bloqueado
+        <span>ad_storage:'denied' · ad_user_data:'denied' → Google no crea cookie de remarketing</span>
+      </div>
+    </div>
+    <div class="log-row">
+      <div class="log-icon" style="background:var(--color-background-secondary)"><i class="ti ti-lock" style="color:var(--color-text-secondary)"></i></div>
+      <div class="log-text">
+        Cookies técnicas — siempre activas
+        <span>sesión, carrito, seguridad: nunca bloqueadas, nunca preguntadas.</span>
+      </div>
+    </div>
+  </div>
+  <div class="explain-card" style="border-color:var(--color-border-warning);background:var(--color-background-warning);border-left-color:var(--color-border-warning)">
+    <p style="color:var(--color-text-primary)"><strong>Responsabilidad de la Pyme:</strong> Para que el widget pueda bloquear Meta Pixel o Hotjar, la Pyme debe quitarlos de su HTML y declarar los IDs en el panel de configuración. Si los tiene pegados directamente en el código, corren antes del banner y el widget no puede hacer nada.</p>
+  </div>
+</div>
+
+<!-- PANEL 4: Registro legal -->
+<div class="panel" id="panel-4">
+  <div class="explain-card">
+    <p>En paralelo a todo lo anterior, nuestra API recibe las preferencias y genera un <strong>sello criptográfico único</strong> — la prueba legal de que ese usuario, en ese momento, consintió exactamente esos propósitos con esa versión de política.</p>
+  </div>
+  <div class="section-label">Qué contiene cada registro en el ledger</div>
+  <div class="proof-box">
+    <span class="hl">visitor_uuid</span>: "f47ac10b-58cc-4372-a567-..."<br>
+    <span class="hl">company_id</span>: 142<br>
+    <span class="hl">policy_hash</span>: "sha256:3a9f2c8d..."  <span style="opacity:.5">← versión exacta de la política</span><br>
+    <span class="hl">purposes</span>: {necessary:true, analytics:true, marketing:false}<br>
+    <span class="hl">consent_occurred_at</span>: "2026-06-23T14:32:11Z"<br>
+    <span class="hl">capture_method</span>: "live_widget"<br>
+    <span class="hl">proof_hash</span>: "sha256:8b4e1a7f..."  <span style="opacity:.5">← sello que vincula todo</span>
+  </div>
+  <div class="section-label">Qué garantiza cada campo</div>
+  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+    <div class="log-row">
+      <div class="log-icon" style="background:var(--color-background-info)"><i class="ti ti-fingerprint" style="color:var(--color-text-info)"></i></div>
+      <div class="log-text">visitor_uuid — identifica el navegador donde ocurrió el consentimiento<span>No es la persona, pero es el contexto técnico verificable donde se tomó la decisión</span></div>
+    </div>
+    <div class="log-row">
+      <div class="log-icon" style="background:var(--color-background-info)"><i class="ti ti-file-certificate" style="color:var(--color-text-info)"></i></div>
+      <div class="log-text">policy_hash — versión exacta de la política que leyó el usuario<span>Si la política cambia después, este hash prueba que el usuario vio la versión vigente en ese momento</span></div>
+    </div>
+    <div class="log-row">
+      <div class="log-icon" style="background:var(--color-background-success)"><i class="ti ti-list-check" style="color:var(--color-text-success)"></i></div>
+      <div class="log-text">purposes — qué aceptó y qué rechazó, con precisión<span>No "aceptó todo" — el log guarda cada categoría por separado: analítica sí, publicidad no</span></div>
+    </div>
+    <div class="log-row">
+      <div class="log-icon" style="background:var(--color-background-success)"><i class="ti ti-clock" style="color:var(--color-text-success)"></i></div>
+      <div class="log-text">consent_occurred_at — momento exacto de la decisión<span>Este timestamp es previo a cualquier procesamiento de datos — cumple el requisito de consentimiento previo</span></div>
+    </div>
+    <div class="log-row">
+      <div class="log-icon" style="background:var(--color-background-success)"><i class="ti ti-shield-lock" style="color:var(--color-text-success)"></i></div>
+      <div class="log-text">proof_hash — sello que vincula todo de forma inalterable<span>Si alguien intenta modificar el registro posterior, el hash no coincide — el fraude es detectable</span></div>
+    </div>
+  </div>
+  <div class="flow-box highlight">
+    <div class="flow-box-title"><i class="ti ti-database"></i>El ledger es append-only</div>
+    <p>Ningún registro puede borrarse ni modificarse. Solo se pueden agregar nuevos. Ante una fiscalización de la Ley 21.719, la Pyme puede mostrar exactamente qué consintió cada usuario y cuándo.</p>
+  </div>
+</div>
+
+<div class="nav-bar">
+  <button class="nav-btn" id="btn-prev" onclick="navigate(-1)" disabled><i class="ti ti-arrow-left"></i>Anterior</button>
+  <span class="step-counter" id="step-counter">Paso 1 de 5</span>
+  <button class="nav-btn primary" id="btn-next" onclick="navigate(1)">Siguiente<i class="ti ti-arrow-right"></i></button>
+</div>
+
+</div><!-- /page-wrap -->
+
+<script>
+(function() {
+  let cur = 0;
+  const total = 5;
+
+  window.goTo = function(n) {
+    document.getElementById('panel-' + cur).classList.remove('active');
+    cur = n;
+    document.getElementById('panel-' + cur).classList.add('active');
+
+    for (let i = 0; i < total; i++) {
+      const p = document.getElementById('pill-' + i);
+      p.classList.remove('active', 'done');
+      if (i < cur) p.classList.add('done');
+      if (i === cur) p.classList.add('active');
+    }
+
+    document.getElementById('btn-prev').disabled = cur === 0;
+    document.getElementById('step-counter').textContent = 'Paso ' + (cur + 1) + ' de ' + total;
+
+    const nextBtn = document.getElementById('btn-next');
+    nextBtn.disabled = cur === total - 1;
+    if (cur === total - 1) {
+      nextBtn.innerHTML = '<i class="ti ti-check"></i>Completado';
+    } else {
+      nextBtn.innerHTML = 'Siguiente<i class="ti ti-arrow-right"></i>';
+    }
+  };
+
+  window.navigate = function(dir) {
+    var next = Math.max(0, Math.min(total - 1, cur + dir));
+    if (next !== cur) window.goTo(next);
+  };
+
+  function bindSwitch(id, lblId) {
+    var sw = document.getElementById(id);
+    var lbl = document.getElementById(lblId);
+    if (!sw || !lbl) return;
+    sw.addEventListener('change', function() {
+      if (this.checked) {
+        lbl.className = 'tag tag-blue';
+        lbl.innerHTML = '<i class="ti ti-check"></i>Activa';
+      } else {
+        lbl.className = 'tag tag-gray';
+        lbl.innerHTML = '<i class="ti ti-x"></i>Inactiva';
+      }
+    });
+  }
+
+  bindSwitch('sw-analytics', 'lbl-analytics');
+  bindSwitch('sw-marketing', 'lbl-marketing');
+  bindSwitch('sw-functional', 'lbl-functional');
+})();
+</script>
+
+</body>
+</html>
