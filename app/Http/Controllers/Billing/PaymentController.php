@@ -18,7 +18,7 @@ class PaymentController extends Controller
     {
         $company = $request->user()->company;
 
-        if (!$company) {
+        if (! $company) {
             return $this->error('Acceso denegado.', null, 403);
         }
 

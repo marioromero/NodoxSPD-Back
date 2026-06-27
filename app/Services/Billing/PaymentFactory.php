@@ -3,7 +3,7 @@
 namespace App\Services\Billing;
 
 use App\Services\Billing\Gateways\BankTransferGateway;
-//use App\Services\Billing\Gateways\StripeGateway; descomentar
+// use App\Services\Billing\Gateways\StripeGateway; descomentar
 use Exception;
 
 class PaymentFactory
@@ -11,10 +11,10 @@ class PaymentFactory
     public static function make(string $method)
     {
         return match ($method) {
-            'bank_transfer' => new BankTransferGateway(),
-            //'stripe' => new StripeGateway(),
+            'bank_transfer' => new BankTransferGateway,
+            // 'stripe' => new StripeGateway(),
             // 'mercadopago' => new MercadoPagoGateway(), descomentar
-            default => throw new Exception("Método de pago no soportado"),
+            default => throw new Exception('Método de pago no soportado'),
         };
     }
 }

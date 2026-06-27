@@ -19,11 +19,11 @@ class PlanController extends Controller
         // Eager loading para evitar el problema de N+1 consultas.
         // Solo traemos los precios que estén activos.
         $plans = Plan::with([
-            'prices' => fn($query) => $query->where('is_active', true),
-            'features'
+            'prices' => fn ($query) => $query->where('is_active', true),
+            'features',
         ])
-        ->where('is_active', true)
-        ->get();
+            ->where('is_active', true)
+            ->get();
 
         return $this->success('Catálogo de planes', $plans);
     }

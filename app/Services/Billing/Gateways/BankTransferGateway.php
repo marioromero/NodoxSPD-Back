@@ -3,8 +3,8 @@
 namespace App\Services\Billing\Gateways;
 
 use App\Models\Company;
-use App\Models\PlanPrice;
 use App\Models\Payment;
+use App\Models\PlanPrice;
 use App\Models\Subscription;
 use Illuminate\Support\Str;
 
@@ -21,7 +21,7 @@ class BankTransferGateway implements PaymentGatewayInterface
         ]);
 
         // 2. Registramos el pago como pendiente
-        $reference = 'TRX-' . strtoupper(Str::random(10));
+        $reference = 'TRX-'.strtoupper(Str::random(10));
 
         Payment::create([
             'company_id' => $company->id,
@@ -38,7 +38,7 @@ class BankTransferGateway implements PaymentGatewayInterface
             'status' => 'pending_action',
             'message' => 'Por favor, transfiere el monto a la cuenta XXXXX.',
             'reference' => $reference,
-            'amount' => $price->amount
+            'amount' => $price->amount,
         ];
     }
 

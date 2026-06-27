@@ -21,7 +21,7 @@ class SubscriptionController extends Controller
     {
         $company = $request->user()->company;
 
-        if (!$company) {
+        if (! $company) {
             return $this->error('Acceso denegado. Solo las empresas tienen suscripciones.', null, 403);
         }
 
@@ -42,12 +42,12 @@ class SubscriptionController extends Controller
         // Esta validación idealmente irá en un FormRequest más adelante
         $request->validate([
             'plan_price_id' => ['required', 'exists:plan_prices,id'],
-            'payment_method' => ['required', 'string'] // ej: 'bank_transfer', 'stripe'
+            'payment_method' => ['required', 'string'], // ej: 'bank_transfer', 'stripe'
         ]);
 
         $company = $request->user()->company;
 
-        if (!$company) {
+        if (! $company) {
             return $this->error('Acceso denegado. Solo las empresas pueden suscribirse.', null, 403);
         }
 
@@ -69,7 +69,7 @@ class SubscriptionController extends Controller
         } catch (\Exception $e) {
             // Logueamos el error real internamente, pero le devolvemos un mensaje limpio a Angular
             // Log::error('Error en pago: ' . $e->getMessage());
-            return $this->error('No se pudo procesar el pago: ' . $e->getMessage(), null, 500);
+            return $this->error('No se pudo procesar el pago: '.$e->getMessage(), null, 500);
         }
     }
 }
