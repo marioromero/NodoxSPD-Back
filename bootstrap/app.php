@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\CheckCompanyOnboarding;
+use App\Http\Middleware\DynamicCorsMiddleware;
 use App\Http\Middleware\ForceJsonResponse;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -64,6 +65,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'onboarding.check' => CheckCompanyOnboarding::class,
+            'cors.dynamic' => DynamicCorsMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

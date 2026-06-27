@@ -24,6 +24,9 @@ class Company extends Model
         'dpo_designation_act',
         'dpo_contact',
         'legal_settings',
+        'allowed_domains',
+        'integration_secret',
+        'widget_config',
         'last_impact_assessment_at',
         'security_policy_version',
         'onboarding_completed_at',
@@ -34,6 +37,8 @@ class Company extends Model
         'local_contact_for_foreign_entity' => 'array',
         'dpo_contact' => 'array',
         'legal_settings' => 'array',
+        'allowed_domains' => 'array',
+        'widget_config' => 'array',
         'last_impact_assessment_at' => 'datetime',
         'onboarding_completed_at' => 'datetime',
     ];
