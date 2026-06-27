@@ -175,6 +175,21 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 500);
         });
 
+        $exceptions->renderable(function (LogicException $e, Request $request) {
+            Log::warning('409 Conflict - Inmutabilidad/Régla de negocio', [
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'path' => $request->path(),
+                'method' => $request->method(),
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'No se puede modificar ni eliminar este recurso.',
+                'data' => null,
+            ], 409);
+        });
+
         $exceptions->renderable(function (Throwable $e, Request $request) {
             Log::error('500 Internal Server Error', [
                 'exception' => get_class($e),
