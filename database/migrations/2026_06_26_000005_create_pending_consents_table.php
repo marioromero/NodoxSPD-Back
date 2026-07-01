@@ -13,23 +13,37 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('pending_consents', function (Blueprint $table) {
+            // Llave primaria y relaciones
             $table->bigIncrements('id');
             $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
             $table->foreignId('company_policy_id')->constrained('company_policies')->restrictOnDelete();
+
+            // Token único de confirmación y payload cifrado con PII del visitante
             $table->string('token', 64)->unique();
             $table->json('pii_payload');
             $table->string('pii_hash', 64)->index();
+
+            // Estado del consentimiento pendiente y origen de la captura
             $table->enum('status', ['pending', 'confirmed', 'expired'])->default('pending')->index();
             $table->enum('source', ['zapier', 'make', 'manual_panel', 'webhook_generic'])->index();
+
+            // Control de expiración del token y confirmación
             $table->timestamp('expires_at');
             $table->timestamp('confirmed_at')->nullable();
+
+            // Columna generada (stored): solo tiene valor cuando status='pending'.
+            // Permite un índice único parcial: solo un consentimiento pendiente activo
+            // por combinación pii_hash + company_policy_id (evita duplicados pendientes).
             $table->string('pending_uniqueness_key', 200)->storedAs("IF(status = 'pending', CONCAT(pii_hash, ':', company_policy_id), NULL)")->nullable();
             $table->timestamps();
 
+            // Índices compuestos para limpieza de expirados y reporting por empresa
             $table->index(['expires_at', 'status']);
             $table->index(['company_id', 'status']);
         });
 
+        // Índice único sobre la columna generada: MySQL permite múltiples NULLs
+        // en un UNIQUE, por lo que solo se enforcea unicidad cuando status='pending'.
         DB::statement('ALTER TABLE pending_consents ADD UNIQUE KEY uq_pending_active (pending_uniqueness_key)');
     }
 

@@ -28,6 +28,17 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(CompanyPolicy::class, CompanyPolicyPolicy::class);
         Gate::policy(TriageQuestion::class, TriageQuestionPolicy::class);
 
+        /*
+         * Rate Limiter "widget": defensa multicapa para el Trust Widget.
+         *
+         * Aplica tres límites simultáneos por cada petición al widget:
+         * - Por Visitante: 10 req/min (clave: visitor:{visitor_uuid})
+         * - Por Empresa:   60 req/min (clave: company:{company_public_uuid})
+         * - Por IP:         5 req/min (clave: ip:{ip})
+         *
+         * Si cualquiera de los tres límites se excede, Laravel retorna HTTP 429.
+         * Los valores son configurables via .env (RATE_LIMIT_WIDGET_*).
+         */
         RateLimiter::for('widget', function (Request $request) {
             return [
                 Limit::perMinute((int) config('rate_limits.widget.visitor'))

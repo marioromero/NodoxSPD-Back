@@ -1,5 +1,11 @@
 <?php
 
+/*
+ * Límites de tasa configurables para el Trust Widget.
+ * Defensa multicapa: visitante, empresa e IP se evalúan simultáneamente.
+ * Valores overrideable desde .env (RATE_LIMIT_WIDGET_*).
+ */
+
 return [
 
     'widget' => [

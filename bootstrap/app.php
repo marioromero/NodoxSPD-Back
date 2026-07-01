@@ -177,6 +177,12 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 500);
         });
 
+        /*
+         * Handler para LogicException: violaciones de inmutabilidad o reglas de negocio.
+         * Retorna 409 Conflict (no 500) para distinguir intentos de modificación
+         * de errores genéricos. La respuesta no expone internals del sistema.
+         * Se ejecuta antes del catch-all Throwable para no enmascarar el código HTTP.
+         */
         $exceptions->renderable(function (LogicException $e, Request $request) {
             Log::warning('409 Conflict - Inmutabilidad/Régla de negocio', [
                 'exception' => get_class($e),
