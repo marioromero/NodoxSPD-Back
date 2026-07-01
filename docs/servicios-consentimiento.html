@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servicios de Consentimiento — NodoxSPD</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: system-ui, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f5f7fa; }
+
+        .layout { display: flex; min-height: 100vh; }
+        .sidebar {
+            position: sticky; top: 0; width: 300px; min-width: 300px; height: 100vh; overflow-y: auto;
+            background: #f7f9fc; border-right: 2px solid #dce3ec; padding: 20px 0; z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        .sidebar-header { padding: 0 20px 16px 20px; border-bottom: 1px solid #dce3ec; margin-bottom: 12px; }
+        .sidebar-header h2 { margin: 0; font-size: 0.95em; color: #1a3c5e; border: none; padding: 0; }
+        .sidebar-header p { margin: 4px 0 0 0; font-size: 0.78em; color: #7f8c8d; }
+        .sidebar-back { display: block; font-size: 0.75em; color: #1a3c5e; margin-top: 8px; text-decoration: none; font-weight: 600; }
+        .sidebar-back:hover { text-decoration: underline; }
+
+        .nav-section { margin-bottom: 14px; }
+        .nav-section-title {
+            display: block; padding: 8px 20px; font-weight: 700; font-size: 0.82em;
+            text-decoration: none; color: #1a3c5e; background: #e8eef5;
+            border-left: 3px solid #1a3c5e; margin-bottom: 2px; cursor: pointer; user-select: none;
+        }
+        .nav-section-title:hover { background: #dce3ec; }
+        .nav-section-items { padding: 0; margin: 0; list-style: none; }
+        .nav-section-items li a {
+            display: block; padding: 4px 20px 4px 32px; font-size: 0.78em;
+            text-decoration: none; color: #555; line-height: 1.5; transition: background 0.15s;
+        }
+        .nav-section-items li a:hover { background: #e4eaf3; color: #1a3c5e; }
+        .nav-section-items li a.nav-h3 { padding-left: 46px; font-size: 0.74em; }
+        .nav-section-items.collapsed { display: none; }
+        .nav-section-title::after { content: ' \25BC'; font-size: 0.7em; margin-left: 4px; }
+        .nav-section-title.collapsed-group::after { content: ' \25BA'; }
+
+        .content { flex: 1; padding: 20px 40px; max-width: 960px; min-width: 0; }
+
+        .hamburger {
+            display: none; position: fixed; top: 12px; left: 12px; z-index: 200;
+            width: 44px; height: 44px; border: none; background: #1a3c5e; color: #fff;
+            border-radius: 8px; font-size: 22px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .hamburger:hover { background: #2c5282; }
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 90; }
+        .overlay.show { display: block; }
+
+        @media (max-width: 900px) {
+            .hamburger { display: block; }
+            .sidebar { position: fixed; left: 0; top: 0; transform: translateX(-100%); width: 300px; }
+            .sidebar.open { transform: translateX(0); }
+            .content { padding: 60px 16px 20px 16px; }
+            .layout { flex-direction: column; }
+        }
+
+        html { scroll-behavior: smooth; }
+        h1, h2, h3, h4 { scroll-margin-top: 20px; }
+
+        .doc-header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #1a3c5e; }
+        .doc-header h1 { margin-top: 0; font-size: 1.8em; border: none; padding: 0; color: #1a3c5e; }
+        .doc-header p { font-size: 1.05em; color: #555; max-width: 780px; margin: 10px auto 0 auto; }
+
+        h1 { color: #1a3c5e; border-bottom: 3px solid #1a3c5e; padding-bottom: 12px; margin-top: 50px; font-size: 1.4em; }
+        h2 { color: #2c3e50; margin-top: 35px; border-bottom: 2px solid #3498db; padding-bottom: 6px; }
+        h3 { color: #16a085; margin-top: 25px; }
+
+        .card {
+            background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
+            padding: 20px 24px; margin: 20px 0; box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+        .card h3 { margin: 0 0 4px 0; color: #1a3c5e; font-size: 1.1em; border: none; padding: 0; }
+        .card .path { font-family: 'JetBrains Mono', monospace; font-size: 0.82em; color: #888; margin-bottom: 8px; }
+        .card p { margin: 0 0 10px 0; color: #555; font-size: 0.93em; }
+        .card p:last-child { margin-bottom: 0; }
+        .card .tag {
+            display: inline-block; font-size: 0.72em; font-weight: 600; padding: 2px 10px;
+            border-radius: 12px; margin-right: 4px; background: #e8eef5; color: #1a3c5e;
+        }
+        .card .tag.ledger { background: #fef2f2; color: #b91c1c; }
+        .card .tag.hash { background: #ede9fe; color: #5b21b6; }
+        .card .tag.core { background: #d1fae5; color: #065f46; }
+
+        .code-block {
+            background: #1e293b; color: #e2e8f0; border-radius: 8px; padding: 14px 16px;
+            font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6;
+            overflow-x: auto; margin: 10px 0;
+        }
+        .code-block .comment { color: #94a3b8; }
+        .code-block .keyword { color: #c084fc; }
+        .code-block .string { color: #34d399; }
+        .code-block .function { color: #60a5fa; }
+
+        .nota { background: #e8f8f5; border-left: 4px solid #1abc9c; padding: 10px 14px; margin: 12px 0; font-size: 0.93em; }
+        .nota-warn { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px 14px; margin: 12px 0; font-size: 0.93em; }
+        .nota-danger { background: #fef2f2; border-left: 4px solid #ef4444; padding: 10px 14px; margin: 12px 0; font-size: 0.93em; }
+    </style>
+</head>
+<body>
+
+<button class="hamburger" id="hamburgerBtn">&#9776;</button>
+<div class="overlay" id="overlay"></div>
+
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h2>&#128218; Documentación</h2>
+        <p>Servicios de Consentimiento</p>
+        <a class="sidebar-back" href="index.html">&larr; Volver al índice</a>
+    </div>
+
+    <div class="nav-section">
+        <a class="nav-section-title" href="#proof-hash" data-toggle="proof-hash-items">ProofHashService</a>
+        <ul class="nav-section-items" id="proof-hash-items">
+            <li><a href="#proof-hash">Servicio de sellado criptográfico</a></li>
+            <li><a href="#canonicalizacion" class="nav-h3">Canonicalización JSON</a></li>
+            <li><a href="#verificacion" class="nav-h3">Verificación de integridad</a></li>
+        </ul>
+    </div>
+    <div class="nav-section">
+        <a class="nav-section-title" href="#inmutabilidad" data-toggle="inmutabilidad-items">Inmutabilidad</a>
+        <ul class="nav-section-items" id="inmutabilidad-items">
+            <li><a href="#inmutabilidad">ConsentLog — Ledger inmutable</a></li>
+            <li><a href="#doble-proteccion" class="nav-h3">Doble capa de protección</a></li>
+        </ul>
+    </div>
+    <div class="nav-section">
+        <a class="nav-section-title" href="#pending" data-toggle="pending-items">Pending Consents</a>
+        <ul class="nav-section-items" id="pending-items">
+            <li><a href="#pending">Sala de espera transitoria</a></li>
+        </ul>
+    </div>
+</nav>
+
+<main class="content" id="main-content">
+
+<div class="doc-header">
+    <h1>Servicios de Consentimiento</h1>
+    <p>Servicios core del Módulo 2: sellado criptográfico, inmutabilidad del ledger y gestión de consentimientos pendientes.</p>
+</div>
+
+<!-- ──────────────────────────────────────────── -->
+<h1 id="proof-hash">ProofHashService</h1>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="card">
+    <h3>Servicio de Sellado Criptográfico</h3>
+    <div class="path">app/Services/Consent/ProofHashService.php</div>
+    <p>
+        Es el servicio responsable de calcular el <strong>proof_hash</strong> de cada registro en <code>consent_logs</code>. 
+        Este hash es el sello que garantiza la integridad forense del consentimiento: si alguien modifica cualquier campo del registro, 
+        el hash deja de coincidir y el fraude es detectable.
+    </p>
+    <span class="tag hash">Criptografía</span>
+    <span class="tag core">Core</span>
+
+    <p><strong>¿Qué datos sella?</strong> El hash se calcula sobre cuatro campos:</p>
+    <ul>
+        <li><code>identifier</code> — email o SHA-256 del RUT del titular</li>
+        <li><code>policy_hash</code> — SHA-256 del contenido de la política que el usuario aceptó</li>
+        <li><code>purposes</code> — JSON canónico con los propósitos aceptados/rechazados</li>
+        <li><code>timestamp</code> — fecha ISO 8601 de cuándo ocurrió el consentimiento</li>
+    </ul>
+
+    <p><strong>Método compute( ): </strong>Toma un payload, lo canonicaliza y devuelve <code>hash('sha256', $canonical)</code>.</p>
+
+    <h3 id="canonicalizacion">Canonicalización JSON</h3>
+    <p>
+        El método <code>canonicalize()</code> ordena todas las llaves del payload recursivamente con <code>ksort()</code> antes de serializar a JSON. 
+        Esto garantiza que el mismo contenido siempre produzca el mismo hash, independientemente del orden en que se construyó el array en PHP.
+    </p>
+    <div class="code-block">
+<span class="comment">// Ejemplo de un payload canonicalizado</span>
+{<br>
+&nbsp;&nbsp;<span class="string">"identifier"</span>: <span class="string">"usuario@email.com"</span>,<br>
+&nbsp;&nbsp;<span class="string">"policy_hash"</span>: <span class="string">"a1b2c3d4..."</span>,<br>
+&nbsp;&nbsp;<span class="string">"purposes"</span>: {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"analytics"</span>: <span class="keyword">true</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"marketing"</span>: <span class="keyword">false</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"necessary"</span>: <span class="keyword">true</span><br>
+&nbsp;&nbsp;},<br>
+&nbsp;&nbsp;<span class="string">"timestamp"</span>: <span class="string">"2026-06-26T23:20:11+00:00"</span><br>
+}
+    </div>
+
+    <h3 id="verificacion">Verificación de Integridad</h3>
+    <p>
+        El método <code>computeForLog(ConsentLog $log)</code> reconstruye el payload desde el modelo y recalcula el hash. 
+        Para verificar que un registro no ha sido alterado, se compara el hash calculado contra el <code>proof_hash</code> almacenado:
+    </p>
+
+    <div class="code-block">
+<span class="comment">// Verificación manual (ejemplo conceptual)</span><br>
+$esperado = $log->proof_hash;<br>
+$calculado = (new <span class="function">ProofHashService</span>())->computeForLog($log);<br>
+<br>
+<span class="keyword">if</span> ($esperado !== $calculado) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">// Alguien modificó el registro — alerta forense</span><br>
+}
+    </div>
+
+    <div class="nota">
+        El proof_hash está almacenado con restricción <strong>UNIQUE</strong> en la base de datos. Esto no solo evita duplicados accidentales, 
+        sino que también es una protección adicional contra manipulaciones.
+    </div>
+</div>
+
+<!-- ──────────────────────────────────────────── -->
+<h1 id="inmutabilidad">Inmutabilidad del Ledger</h1>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="card">
+    <h3>ConsentLog — El modelo que nunca cambia</h3>
+    <div class="path">app/Models/ConsentLog.php</div>
+    <p>
+        El modelo <code>ConsentLog</code> está diseñado para ser <strong>append-only</strong>. No se puede modificar ni eliminar un registro 
+        una vez creado. Esto es el corazón de la estrategia forense del sistema: cada consentimiento queda congelado en el tiempo.
+    </p>
+    <span class="tag ledger">Ledger</span>
+    <span class="tag core">Core</span>
+
+    <p><strong>Características clave del modelo:</strong></p>
+    <ul>
+        <li><code>$timestamps = false</code> — desactiva los timestamps automáticos de Eloquent. No existe columna <code>updated_at</code>.</li>
+        <li>En el evento <code>creating</code>: asigna <code>recorded_at</code> y <code>created_at</code> manualmente con <code>now()</code></li>
+        <li>En el evento <code>updating</code>: lanza <code>LogicException</code> — impide cualquier UPDATE</li>
+        <li>En el evento <code>deleting</code>: lanza <code>LogicException</code> — impide cualquier DELETE</li>
+        <li>El campo <code>proof_hash</code> tiene restricción UNIQUE a nivel de BD</li>
+    </ul>
+
+    <h3 id="doble-proteccion">Doble Capa de Protección</h3>
+    <p>La inmutabilidad se garantiza en dos niveles:</p>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:10px;">
+        <thead><tr style="background:#f0f2f5;">
+            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#777;text-transform:uppercase">Capa</th>
+            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#777;text-transform:uppercase">Mecanismo</th>
+            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#777;text-transform:uppercase">Qué protege</th>
+        </tr></thead>
+        <tbody>
+            <tr><td style="padding:7px 12px;border-bottom:1px solid #eee"><strong>1. Eloquent</strong></td>
+                <td style="padding:7px 12px;border-bottom:1px solid #eee">Eventos <code>updating</code> y <code>deleting</code> lanzan <code>LogicException</code></td>
+                <td style="padding:7px 12px;border-bottom:1px solid #eee">Protege contra código que intente modificar registros</td></tr>
+            <tr><td style="padding:7px 12px;border-bottom:1px solid #eee"><strong>2. Base de datos</strong></td>
+                <td style="padding:7px 12px;border-bottom:1px solid #eee">No existe columna <code>updated_at</code>. <code>proof_hash</code> es UNIQUE.</td>
+                <td style="padding:7px 12px;border-bottom:1px solid #eee">Cualquier UPDATE dejaría la fila inconsistente con el hash</td></tr>
+        </tbody>
+    </table>
+
+    <div class="nota-danger" style="margin-top:12px;">
+        <strong>Importante:</strong> Las excepciones de inmutabilidad son capturadas por el handler centralizado en <code>bootstrap/app.php</code> 
+        y devueltas como HTTP 409 con mensaje "No se puede modificar ni eliminar este recurso."
+    </div>
+</div>
+
+<!-- ──────────────────────────────────────────── -->
+<h1 id="pending">Pending Consents</h1>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="card">
+    <h3>Tabla de Consentimientos Pendientes</h3>
+    <div class="path">database/migrations/2026_06_26_000005_create_pending_consents_table.php</div>
+    <p>
+        Migración que crea la tabla <code>pending_consents</code>, diseñada como sala de espera transitoria para PII que aún no ha sido autorizado por el titular.
+        Su implementación y flujo de ciclo de vida están pendientes de desarrollo.
+    </p>
+    <p>Para más detalle sobre su estructura, revisar el <a href="diccionario-de-datos.html#pending_consents">Diccionario de Datos</a>.</p>
+</div>
+
+</main>
+</div>
+
+<script>
+(function() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('overlay');
+    var hamburger = document.getElementById('hamburgerBtn');
+    if (hamburger) { hamburger.addEventListener('click', function() { sidebar.classList.toggle('open'); overlay.classList.toggle('show'); }); }
+    if (overlay) { overlay.addEventListener('click', function() { sidebar.classList.remove('open'); overlay.classList.remove('show'); }); }
+    var titles = document.querySelectorAll('.nav-section-title');
+    titles.forEach(function(title) {
+        title.addEventListener('click', function(e) {
+            e.preventDefault();
+            var items = document.getElementById(this.getAttribute('data-toggle'));
+            if (items) { items.classList.toggle('collapsed'); this.classList.toggle('collapsed-group'); }
+        });
+    });
+    var links = document.querySelectorAll('.nav-section-items a');
+    links.forEach(function(link) { link.addEventListener('click', function() { if (window.innerWidth <= 900) { sidebar.classList.remove('open'); overlay.classList.remove('show'); } }); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estándares de API — NodoxSPD</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: system-ui, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f5f7fa; }
+
+        .layout { display: flex; min-height: 100vh; }
+        .sidebar {
+            position: sticky; top: 0; width: 300px; min-width: 300px; height: 100vh; overflow-y: auto;
+            background: #f7f9fc; border-right: 2px solid #dce3ec; padding: 20px 0; z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        .sidebar-header { padding: 0 20px 16px 20px; border-bottom: 1px solid #dce3ec; margin-bottom: 12px; }
+        .sidebar-header h2 { margin: 0; font-size: 0.95em; color: #1a3c5e; border: none; padding: 0; }
+        .sidebar-header p { margin: 4px 0 0 0; font-size: 0.78em; color: #7f8c8d; }
+        .sidebar-back { display: block; font-size: 0.75em; color: #1a3c5e; margin-top: 8px; text-decoration: none; font-weight: 600; }
+        .sidebar-back:hover { text-decoration: underline; }
+
+        .nav-section { margin-bottom: 14px; }
+        .nav-section-title {
+            display: block; padding: 8px 20px; font-weight: 700; font-size: 0.82em;
+            text-decoration: none; color: #1a3c5e; background: #e8eef5;
+            border-left: 3px solid #1a3c5e; margin-bottom: 2px; cursor: pointer; user-select: none;
+        }
+        .nav-section-title:hover { background: #dce3ec; }
+        .nav-section-items { padding: 0; margin: 0; list-style: none; }
+        .nav-section-items li a {
+            display: block; padding: 4px 20px 4px 32px; font-size: 0.78em;
+            text-decoration: none; color: #555; line-height: 1.5; transition: background 0.15s;
+        }
+        .nav-section-items li a:hover { background: #e4eaf3; color: #1a3c5e; }
+        .nav-section-items li a.nav-h3 { padding-left: 46px; font-size: 0.74em; }
+        .nav-section-items.collapsed { display: none; }
+        .nav-section-title::after { content: ' \25BC'; font-size: 0.7em; margin-left: 4px; }
+        .nav-section-title.collapsed-group::after { content: ' \25BA'; }
+
+        .content { flex: 1; padding: 20px 40px; max-width: 960px; min-width: 0; }
+
+        .hamburger {
+            display: none; position: fixed; top: 12px; left: 12px; z-index: 200;
+            width: 44px; height: 44px; border: none; background: #1a3c5e; color: #fff;
+            border-radius: 8px; font-size: 22px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .hamburger:hover { background: #2c5282; }
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 90; }
+        .overlay.show { display: block; }
+
+        @media (max-width: 900px) {
+            .hamburger { display: block; }
+            .sidebar { position: fixed; left: 0; top: 0; transform: translateX(-100%); width: 300px; }
+            .sidebar.open { transform: translateX(0); }
+            .content { padding: 60px 16px 20px 16px; }
+            .layout { flex-direction: column; }
+        }
+
+        html { scroll-behavior: smooth; }
+        h1, h2, h3, h4 { scroll-margin-top: 20px; }
+
+        .doc-header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #1a3c5e; }
+        .doc-header h1 { margin-top: 0; font-size: 1.8em; border: none; padding: 0; color: #1a3c5e; }
+        .doc-header p { font-size: 1.05em; color: #555; max-width: 780px; margin: 10px auto 0 auto; }
+
+        h1 { color: #1a3c5e; border-bottom: 3px solid #1a3c5e; padding-bottom: 12px; margin-top: 50px; font-size: 1.4em; }
+        h2 { color: #2c3e50; margin-top: 35px; border-bottom: 2px solid #3498db; padding-bottom: 6px; }
+
+        .card {
+            background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
+            padding: 20px 24px; margin: 20px 0; box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+        .card h3 { margin: 0 0 4px 0; color: #1a3c5e; font-size: 1.1em; border: none; padding: 0; }
+        .card .path { font-family: 'JetBrains Mono', monospace; font-size: 0.82em; color: #888; margin-bottom: 8px; }
+        .card p { margin: 0 0 10px 0; color: #555; font-size: 0.93em; }
+        .card p:last-child { margin-bottom: 0; }
+        .card .tag {
+            display: inline-block; font-size: 0.72em; font-weight: 600; padding: 2px 10px;
+            border-radius: 12px; margin-right: 4px; background: #e8eef5; color: #1a3c5e;
+        }
+
+        .code-block {
+            background: #1e293b; color: #e2e8f0; border-radius: 8px; padding: 14px 16px;
+            font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6;
+            overflow-x: auto; margin: 10px 0;
+        }
+
+        .nota { background: #e8f8f5; border-left: 4px solid #1abc9c; padding: 10px 14px; margin: 12px 0; font-size: 0.93em; }
+        .nota-warn { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px 14px; margin: 12px 0; font-size: 0.93em; }
+
+        .resp-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+        .resp-table th { background: #f0f2f5; padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #777; text-transform: uppercase; border-bottom: 1px solid #ddd; }
+        .resp-table td { padding: 7px 12px; border-bottom: 1px solid #eee; }
+        .resp-table code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #f5f5f5; padding: 1px 5px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<button class="hamburger" id="hamburgerBtn">&#9776;</button>
+<div class="overlay" id="overlay"></div>
+
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h2>&#128218; Documentación</h2>
+        <p>Estándares de API</p>
+        <a class="sidebar-back" href="index.html">&larr; Volver al índice</a>
+    </div>
+
+    <div class="nav-section">
+        <a class="nav-section-title" href="#general" data-toggle="general-items">Generales</a>
+        <ul class="nav-section-items" id="general-items">
+            <li><a href="#general">Visión general</a></li>
+            <li><a href="#formato-respuesta">Formato de respuesta</a></li>
+            <li><a href="#force-json">ForceJsonResponse</a></li>
+        </ul>
+    </div>
+    <div class="nav-section">
+        <a class="nav-section-title" href="#errores" data-toggle="errores-items">Manejo de Errores</a>
+        <ul class="nav-section-items" id="errores-items">
+            <li><a href="#errores">Handler centralizado</a></li>
+            <li><a href="#errores-bd" class="nav-h3">Errores de base de datos</a></li>
+            <li><a href="#errores-inmutabilidad">Violaciones de reglas de negocio</a></li>
+        </ul>
+    </div>
+    <div class="nav-section">
+        <a class="nav-section-title" href="#auth" data-toggle="auth-items">Autenticación</a>
+        <ul class="nav-section-items" id="auth-items">
+            <li><a href="#sanctum">Sanctum — API Tokens</a></li>
+            <li><a href="#spatie">Spatie — RBAC</a></li>
+            <li><a href="#onboarding-check">CheckCompanyOnboarding</a></li>
+        </ul>
+    </div>
+</nav>
+
+<main class="content" id="main-content">
+
+<div class="doc-header">
+    <h1>Estándares de API</h1>
+    <p>Convenciones generales del proyecto: formato de respuestas, manejo de errores, autenticación y control de acceso. Aplica a toda la aplicación, independientemente del módulo.</p>
+</div>
+
+<h1 id="general">Visión General</h1>
+
+<div class="card" id="formato-respuesta">
+    <h3>Formato de Respuesta JSON</h3>
+    <p>Todos los endpoints del sistema responden con una estructura JSON consistente. No importa si es éxito o error — el contrato es siempre el mismo:</p>
+    <div class="code-block">
+{<br>
+&nbsp;&nbsp;<span style="color:#60a5fa;">"status"</span>: <span style="color:#34d399;">true</span> <span style="color:#94a3b8;">|</span> <span style="color:#34d399;">false</span>,<br>
+&nbsp;&nbsp;<span style="color:#60a5fa;">"message"</span>: <span style="color:#34d399;">"Mensaje legible para el frontend"</span>,<br>
+&nbsp;&nbsp;<span style="color:#60a5fa;">"data"</span>: { <span style="color:#94a3b8;">...payload o null</span> }<br>
+}
+    </div>
+    <p><strong>Reglas:</strong></p>
+    <ul>
+        <li><code>status</code> → <code>true</code> en 2xx, <code>false</code> en 4xx/5xx</li>
+        <li><code>message</code> → frase corta en español, legible para el frontend</li>
+        <li><code>data</code> → el payload de la respuesta, o <code>null</code> en errores sin contenido adicional</li>
+        <li>En errores de validación (422), <code>data.errors</code> contiene un objeto con los errores por campo</li>
+    </ul>
+</div>
+
+<div class="card" id="force-json">
+    <h3>ForceJsonResponse</h3>
+    <div class="path">app/Http/Middleware/ForceJsonResponse.php</div>
+    <p>Es el primer middleware en ejecutarse (registrado con <code>prepend</code> en el stack global). Fuerza que <strong>toda</strong> respuesta sea <code>application/json</code>, ignorando el header <code>Accept</code> del cliente. Por ser una API pura — nunca se devuelve HTML ni XML.</p>
+</div>
+
+<!-- ──────────────────────────────────────────── -->
+<h1 id="errores">Manejo Centralizado de Errores</h1>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="card">
+    <h3>Exception Handler</h3>
+    <div class="path">bootstrap/app.php</div>
+    <p>Toda la gestión de errores está centralizada en <code>bootstrap/app.php</code> con el método <code>withExceptions()</code>. Cada tipo de excepción se traduce a una respuesta JSON con el formato estándar.</p>
+
+    <table class="resp-table">
+        <thead><tr><th>Excepción</th><th>Código HTTP</th><th>Mensaje</th><th>Causa típica</th></tr></thead>
+        <tbody>
+            <tr><td><code>NotFoundHttpException</code></td><td>404</td><td>El endpoint o recurso solicitado no existe</td><td>Ruta mal escrita, recurso eliminado</td></tr>
+            <tr><td><code>AuthenticationException</code></td><td>401</td><td>No autorizado. Se requiere iniciar sesión.</td><td>Token faltante, expirado o inválido</td></tr>
+            <tr><td><code>AuthorizationException</code></td><td>403</td><td>No tienes permisos para realizar esta acción.</td><td>Rol incorrecto, permiso faltante</td></tr>
+            <tr><td><code>ValidationException</code></td><td>422</td><td>Mensaje de validación + errores por campo</td><td>Datos de entrada inválidos</td></tr>
+            <tr><td><code>QueryException</code> (23000)</td><td>409</td><td>Error de integridad de datos.</td><td>Duplicados, FK, RESTRICT</td></tr>
+            <tr><td><code>LogicException</code></td><td>409</td><td>No se puede modificar ni eliminar este recurso.</td><td>Violación de inmutabilidad del ledger</td></tr>
+            <tr><td><code>Throwable</code> (genérico)</td><td>500</td><td>Error interno del servidor.</td><td>Error inesperado, bug</td></tr>
+        </tbody>
+    </table>
+
+    <div class="nota">
+        <strong>Logging:</strong> Todas las excepciones se registran con <code>Log::warning</code> o <code>Log::error</code> según su gravedad, incluyendo path, método y mensaje. Los errores 500 incluyen file y línea para facilitar debugging en producción.
+    </div>
+</div>
+
+<div class="card" id="errores-bd">
+    <h3>Errores de Base de Datos</h3>
+    <div class="path">bootstrap/app.php — función parseDuplicateError()</div>
+    <p>Los errores <code>QueryException</code> con código SQLSTATE <code>23000</code> violación de integridad) se clasifican por driver code de MariaDB:</p>
+    <table class="resp-table">
+        <thead><tr><th>Código</th><th>Significado</th><th>Respuesta</th></tr></thead>
+        <tbody>
+            <tr><td><code>1062</code></td><td>Entrada duplicada (UNIQUE)</td><td>Mensaje legible con el valor duplicado y el campo afectado. Se mapean campos conocidos como <code>companies_tax_id_unique</code> → "RUT", <code>users_email_unique</code> → "Correo electrónico"</td></tr>
+            <tr><td><code>1451</code></td><td>No se puede eliminar (FK RESTRICT)</td><td>"No se puede eliminar porque está siendo utilizado por otros registros."</td></tr>
+            <tr><td><code>1452</code></td><td>Referencia inválida (FK no encontrada)</td><td>"Referencia inválida. El recurso relacionado no existe."</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card" id="errores-inmutabilidad">
+    <h3>Violaciones de Reglas de Negocio</h3>
+    <div class="path">bootstrap/app.php — handler de LogicException</div>
+    <p>Las <code>LogicException</code> capturan violaciones de reglas de negocio que no pueden expresarse como validación simple. El caso principal es la <strong>inmutabilidad del ledger</strong>: cuando se intenta hacer <code>update()</code> o <code>delete()</code> sobre un <code>ConsentLog</code>, el modelo lanza <code>LogicException</code> y el handler responde con 409.</p>
+    <p>Esto asegura que ningún código (intencional o accidental) pueda modificar registros de consentimiento, protegiendo la integridad forense del sistema.</p>
+</div>
+
+<!-- ──────────────────────────────────────────── -->
+<h1 id="auth">Autenticación y Control de Acceso</h1>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="card" id="sanctum">
+    <h3>Sanctum — API Tokens</h3>
+    <div class="path">Laravel Sanctum · config/sanctum.php</div>
+    <p>La autenticación se maneja con <strong>Laravel Sanctum</strong>. Al registrarse o iniciar sesión, el backend emite un token que el frontend (Angular) debe enviar en cada request autenticado mediante el header <code>Authorization: Bearer {token}</code>.</p>
+    <p><strong>Endpoints públicos vs protegidos:</strong></p>
+    <ul>
+        <li>Públicos: <code>/api/register</code>, <code>/api/login</code>, <code>/api/plans</code>, <code>/api/public/policies/{hash}</code></li>
+        <li>Protegidos (<code>auth:sanctum</code>): <code>/api/me</code>, <code>/api/logout</code>, todo bajo <code>/api/company</code> y <code>/api/portal</code></li>
+    </ul>
+    <p>Las sesiones web (Stateful API) están habilitadas vía <code>$middleware->statefulApi()</code> en <code>bootstrap/app.php</code>, lo que permite también autenticación desde el panel admin con cookies de sesión.</p>
+</div>
+
+<div class="card" id="spatie">
+    <h3>Spatie — RBAC (Roles y Permisos)</h3>
+    <div class="path">vendor/spatie/laravel-permission</div>
+    <p>El paquete <strong>Spatie Laravel Permission</strong> implementa control de acceso basado en roles. Se usa para distinguir entre los tipos de usuario y aplicar permisos granulares.</p>
+    <p><strong>Middleware registrados como alias:</strong></p>
+    <ul>
+        <li><code>role</code> → <code>RoleMiddleware</code> — verifica que el usuario tenga un rol específico</li>
+        <li><code>permission</code> → <code>PermissionMiddleware</code> — verifica permisos específicos</li>
+    </ul>
+    <p><strong>Roles actuales:</strong></p>
+    <ul>
+        <li><code>company_admin</code> — administrador de una Pyme cliente. Accede a <code>/api/company/*</code></li>
+        <li><code>person</code> — persona natural. Accede a <code>/api/portal/*</code> (aún en desarrollo)</li>
+    </ul>
+    <p>La estructura de tablas (roles, permissions, model_has_roles, etc.) está lista para granularidad fina en el futuro.</p>
+</div>
+
+<div class="card" id="onboarding-check">
+    <h3>CheckCompanyOnboarding</h3>
+    <div class="path">app/Http/Middleware/CheckCompanyOnboarding.php</div>
+    <p>Middleware registrado como alias <code>onboarding.check</code> que verifica que la empresa haya completado su configuración inicial antes de acceder a los módulos core del SaaS.</p>
+    <p><strong>Qué protege:</strong> La "Zona Estricta" donde están los módulos de la Ley 21.719 (Trust Widget, Políticas, ARCO+P, Brechas).</p>
+    <p><strong>Qué no bloquea:</strong> La facturación y endpoints de onboarding, para no impedir pagos ni la configuración inicial.</p>
+    <p>Se aplica como middleware de grupo en rutas específicas dentro de <code>/api/company/*</code>.</p>
+</div>
+
+</main>
+</div>
+
+<script>
+(function() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('overlay');
+    var hamburger = document.getElementById('hamburgerBtn');
+    if (hamburger) { hamburger.addEventListener('click', function() { sidebar.classList.toggle('open'); overlay.classList.toggle('show'); }); }
+    if (overlay) { overlay.addEventListener('click', function() { sidebar.classList.remove('open'); overlay.classList.remove('show'); }); }
+    var titles = document.querySelectorAll('.nav-section-title');
+    titles.forEach(function(title) {
+        title.addEventListener('click', function(e) {
+            e.preventDefault();
+            var items = document.getElementById(this.getAttribute('data-toggle'));
+            if (items) { items.classList.toggle('collapsed'); this.classList.toggle('collapsed-group'); }
+        });
+    });
+    var links = document.querySelectorAll('.nav-section-items a');
+    links.forEach(function(link) { link.addEventListener('click', function() { if (window.innerWidth <= 900) { sidebar.classList.remove('open'); overlay.classList.remove('show'); } }); });
+})();
+</script>
+</body>
+</html>

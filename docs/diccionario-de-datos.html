@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Diccionario de Datos — SaaS Compliance Pymes</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --surface-2: #f0f2f5;
+    --border: #e2e5ea;
+    --border-strong: #c8cdd6;
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+    --text-muted: #9ca3af;
+    --accent: #1e40af;
+    --accent-light: #eff6ff;
+    --accent-mid: #bfdbfe;
+    --green: #166534;
+    --green-bg: #f0fdf4;
+    --green-border: #bbf7d0;
+    --purple: #5b21b6;
+    --purple-bg: #faf5ff;
+    --purple-border: #ddd6fe;
+    --orange: #92400e;
+    --orange-bg: #fffbeb;
+    --orange-border: #fde68a;
+    --red: #991b1b;
+    --red-bg: #fef2f2;
+    --red-border: #fecaca;
+    --gray: #374151;
+    --gray-bg: #f9fafb;
+    --gray-border: #e5e7eb;
+    --teal: #0f766e;
+    --teal-bg: #f0fdfa;
+    --teal-border: #99f6e4;
+    --font: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 32px 24px;
+  }
+
+  /* ── Top nav ── */
+  .top-nav { max-width: 1200px; margin: 0 auto 16px; }
+  .top-nav a { font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 500; }
+  .top-nav a:hover { text-decoration: underline; }
+
+  /* ── Header ── */
+  .doc-header {
+    max-width: 1200px;
+    margin: 0 auto 40px;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 24px;
+  }
+  .doc-header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+  }
+  .doc-header p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+  }
+  .doc-meta {
+    display: flex;
+    gap: 20px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .doc-meta span {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .doc-meta strong { color: var(--text-secondary); }
+
+  /* ── Table of contents ── */
+  .toc {
+    max-width: 1200px;
+    margin: 0 auto 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 22px;
+  }
+  .toc h2 { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 12px; }
+  .toc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; }
+  .toc-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    font-weight: 500;
+    transition: background .15s;
+  }
+  .toc-item:hover { background: var(--surface-2); color: var(--accent); }
+  .toc-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Section ── */
+  .section {
+    max-width: 1200px;
+    margin: 0 auto 44px;
+  }
+  .section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .section-title { flex: 1; }
+  .section-title h2 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 3px;
+  }
+  .section-title .table-name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .section-desc {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    margin-top: 4px;
+  }
+  .badge-module {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+    align-self: flex-start;
+    margin-top: 4px;
+  }
+
+  /* ── Table ── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 13px;
+  }
+  .data-table thead th {
+    background: var(--surface-2);
+    padding: 9px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .data-table tbody tr { border-bottom: 1px solid var(--border); }
+  .data-table tbody tr:last-child { border-bottom: none; }
+  .data-table tbody tr:hover { background: var(--surface-2); }
+  .data-table td { padding: 9px 14px; vertical-align: top; }
+  .data-table td.col-name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .data-table td.col-type {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--purple);
+    white-space: nowrap;
+  }
+  .data-table td.col-desc {
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    line-height: 1.5;
+    min-width: 280px;
+  }
+  .data-table td.col-constraints {
+    min-width: 160px;
+  }
+
+  /* ── Constraint pills ── */
+  .pills { display: flex; flex-wrap: wrap; gap: 4px; }
+  .pill {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  .pill-pk    { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .pill-fk    { background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; }
+  .pill-uq    { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+  .pill-idx   { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+  .pill-nn    { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+  .pill-null  { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+  .pill-gen   { background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7; }
+  .pill-dep   { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+  .pill-new   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+  .pill-enum  { background: #fdf4ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+  .pill-immut { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
+
+  /* ── Special rows ── */
+  .row-deprecated td { opacity: 0.65; background: var(--orange-bg); }
+  .row-deprecated td.col-name { color: var(--orange); text-decoration: line-through; }
+  .row-new td { background: var(--accent-light); }
+  .row-new td.col-name { color: var(--accent); }
+  .row-pk td { background: #fffbeb; }
+
+  /* ── Notes ── */
+  .note {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.6;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .note-warn { background: var(--orange-bg); border: 1px solid var(--orange-border); color: var(--orange); }
+  .note-info { background: var(--accent-light); border: 1px solid var(--accent-mid); color: var(--accent); }
+  .note-success { background: var(--green-bg); border: 1px solid var(--green-border); color: var(--green); }
+  .note-danger { background: var(--red-bg); border: 1px solid var(--red-border); color: var(--red); }
+  .note-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+  /* ── Color coding for modules ── */
+  .m1 { background: var(--gray-bg); border: 1px solid var(--gray-border); color: var(--gray); }
+  .m2-new { background: var(--accent-light); border: 1px solid var(--accent-mid); color: var(--accent); }
+  .m2-mod { background: var(--orange-bg); border: 1px solid var(--orange-border); color: var(--orange); }
+
+  .section-icon.blue   { background: var(--accent-light); }
+  .section-icon.green  { background: var(--green-bg); }
+  .section-icon.purple { background: var(--purple-bg); }
+  .section-icon.orange { background: var(--orange-bg); }
+  .section-icon.gray   { background: var(--gray-bg); }
+  .section-icon.teal   { background: var(--teal-bg); }
+  .section-icon.red    { background: var(--red-bg); }
+
+  .legend {
+    max-width: 1200px;
+    margin: 0 auto 32px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .legend-label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-right: 4px; text-transform: uppercase; letter-spacing: .4px; }
+
+  @media (max-width: 700px) {
+    body { padding: 16px 12px; }
+    .data-table { font-size: 12px; }
+    .data-table td, .data-table thead th { padding: 7px 10px; }
+    .toc-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div class="top-nav"><a href="index.html">&larr; Volver al índice</a></div>
+
+<div class="doc-header">
+  <h1>Diccionario de Datos — SaaS Compliance Pymes</h1>
+  <p>Estructura completa de la base de datos MariaDB. Incluye el esquema existente del Módulo 1 y las nuevas tablas del Módulo 2 (Ledger de Consentimientos).</p>
+  <div class="doc-meta">
+    <span>🗄️ <strong>Motor:</strong> MariaDB / InnoDB · utf8mb4_unicode_ci</span>
+    <span>🏗️ <strong>Framework:</strong> Laravel 11</span>
+    <span>📦 <strong>Módulo 1:</strong> Generador de políticas (completo)</span>
+    <span>🔐 <strong>Módulo 2:</strong> Ledger de consentimientos (en desarrollo)</span>
+  </div>
+</div>
+
+<!-- ── Legend ── -->
+<div class="legend">
+  <span class="legend-label">Leyenda:</span>
+  <span class="pill pill-pk">PK</span>
+  <span class="pill pill-fk">FK</span>
+  <span class="pill pill-uq">UNIQUE</span>
+  <span class="pill pill-idx">INDEX</span>
+  <span class="pill pill-nn">NOT NULL</span>
+  <span class="pill pill-null">NULLABLE</span>
+  <span class="pill pill-gen">GENERATED</span>
+  <span class="pill pill-immut">INMUTABLE</span>
+  <span class="pill pill-dep">DEPRECATED</span>
+  <span class="pill pill-new">NUEVO M2</span>
+</div>
+
+<!-- ── TOC ── -->
+<div class="toc">
+  <h2>Índice de tablas</h2>
+  <div class="toc-grid">
+    <a href="#users"           class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>users</a>
+    <a href="#people"          class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>people</a>
+    <a href="#companies"       class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>companies</a>
+    <a href="#sectors"         class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>sectors</a>
+    <a href="#company_sector"  class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>company_sector</a>
+    <a href="#business_activities" class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>business_activities</a>
+    <a href="#roles"           class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>roles</a>
+    <a href="#permissions"     class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>permissions</a>
+    <a href="#model_has_roles" class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>model_has_roles</a>
+    <a href="#model_has_permissions" class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>model_has_permissions</a>
+    <a href="#role_has_permissions" class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>role_has_permissions</a>
+    <a href="#legal_templates" class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>legal_templates</a>
+    <a href="#company_policies" class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>company_policies</a>
+    <a href="#triage_questions" class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>triage_questions</a>
+    <a href="#consent_logs"    class="toc-item"><span class="toc-dot" style="background:#1e40af"></span>consent_logs ★ nuevo</a>
+    <a href="#pending_consents" class="toc-item"><span class="toc-dot" style="background:#1e40af"></span>pending_consents ★ nuevo</a>
+    <a href="#import_batches"  class="toc-item"><span class="toc-dot" style="background:#1e40af"></span>import_batches ★ nuevo</a>
+    <a href="#person_visitor_uuids" class="toc-item"><span class="toc-dot" style="background:#1e40af"></span>person_visitor_uuids ★ nuevo</a>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════
+     MÓDULO 1 — TABLAS EXISTENTES
+     ════════════════════════════════════════════════ -->
+
+<!-- ── users ── -->
+<div class="section" id="users">
+  <div class="section-header">
+    <div class="section-icon gray">👤</div>
+    <div class="section-title">
+      <h2>Usuarios del sistema</h2>
+      <div class="table-name">users</div>
+      <div class="section-desc">Tabla raíz de autenticación. Cada registro representa una cuenta de acceso al panel, ya sea de una empresa (Pyme) o de una persona natural. Gestionada por Laravel con Sanctum/Auth.</div>
+    </div>
+    <span class="badge-module m1">Módulo 1</span>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr>
+    </thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Identificador interno autoincremental. Referenciado por todas las entidades del sistema.</td></tr>
+      <tr><td class="col-name">email</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-uq">UNIQUE</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Correo electrónico del usuario. Es el identificador de login. Único en todo el sistema.</td></tr>
+      <tr><td class="col-name">email_verified_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Fecha en que el usuario verificó su email. NULL indica cuenta no verificada.</td></tr>
+      <tr><td class="col-name">password</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Contraseña hasheada con bcrypt. Nunca se almacena en texto plano.</td></tr>
+      <tr><td class="col-name">type</td><td class="col-type">ENUM</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-enum">company | person</span></div></td><td class="col-desc">Discriminador de tipo de usuario. Determina si el usuario tiene perfil en <code>companies</code> o en <code>people</code>.</td></tr>
+      <tr><td class="col-name">is_active</td><td class="col-type">TINYINT(1)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Flag de cuenta activa. 1 = activa, 0 = suspendida. Permite bloquear acceso sin eliminar la cuenta.</td></tr>
+      <tr><td class="col-name">remember_token</td><td class="col-type">VARCHAR(100)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Token de sesión persistente de Laravel ("recuérdame"). Rotado en cada login.</td></tr>
+      <tr><td class="col-name">created_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Fecha de creación del registro. Gestionada automáticamente por Eloquent.</td></tr>
+      <tr><td class="col-name">updated_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Fecha de última modificación. Gestionada automáticamente por Eloquent.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── people ── -->
+<div class="section" id="people">
+  <div class="section-header">
+    <div class="section-icon gray">🧑</div>
+    <div class="section-title">
+      <h2>Personas naturales</h2>
+      <div class="table-name">people</div>
+      <div class="section-desc">Perfil extendido para usuarios de tipo <code>person</code>. Contiene los datos personales y legales de personas naturales que interactúan con el sistema como titulares de datos.</div>
+    </div>
+    <span class="badge-module m1">Módulo 1</span>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr>
+    </thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Identificador interno de la persona.</td></tr>
+      <tr><td class="col-name">user_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → users</span><span class="pill pill-uq">UNIQUE</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Referencia a la cuenta de acceso. Relación 1-a-1 con <code>users</code>. CASCADE DELETE.</td></tr>
+      <tr><td class="col-name">guardian_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → people</span><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Auto-referencia para menores de edad o personas bajo tutela legal. NULL si es mayor de edad autónomo.</td></tr>
+      <tr><td class="col-name">first_name</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Nombre(s) de la persona.</td></tr>
+      <tr><td class="col-name">last_name</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Apellido(s) de la persona.</td></tr>
+      <tr><td class="col-name">tax_id</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-uq">UNIQUE</span><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">RUT chileno de la persona. Único en el sistema. Opcional para usuarios sin RUT local.</td></tr>
+      <tr><td class="col-name">phone</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Teléfono de contacto. Formato libre.</td></tr>
+      <tr><td class="col-name">birth_date</td><td class="col-type">DATE</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Fecha de nacimiento. Usada para verificar mayoría de edad en flujos de consentimiento.</td></tr>
+      <tr class="row-deprecated"><td class="col-name">consent_logs</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span><span class="pill pill-dep">DEPRECATED</span></div></td><td class="col-desc">⚠️ OBSOLETO. Almacenaba logs de consentimiento directamente en la persona. Reemplazado por la tabla <code>consent_logs</code> del Módulo 2. Será eliminado con DROP en la migración de limpieza.</td></tr>
+      <tr><td class="col-name">sensitive_data_categories</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Categorías de datos sensibles asociadas a esta persona (salud, religión, origen étnico, etc.) según Ley 21.719.</td></tr>
+      <tr><td class="col-name">is_blocked</td><td class="col-type">TINYINT(1)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Flag de bloqueo del titular. 1 = persona bloqueada para tratamiento de datos. Cumple derecho de oposición.</td></tr>
+      <tr><td class="col-name">retention_expiry_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Fecha de expiración del período de retención de datos. Pasada esta fecha, los datos deben eliminarse o anonimizarse.</td></tr>
+      <tr><td class="col-name">last_notified_breach_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Última vez que se notificó a esta persona de una brecha de seguridad. Cumplimiento del Art. 37 Ley 21.719.</td></tr>
+      <tr><td class="col-name">created_at / updated_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Timestamps estándar de Eloquent.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── companies ── -->
+<div class="section" id="companies">
+  <div class="section-header">
+    <div class="section-icon blue">🏢</div>
+    <div class="section-title">
+      <h2>Empresas (Pymes clientes)</h2>
+      <div class="table-name">companies</div>
+      <div class="section-desc">Perfil legal y operativo de cada Pyme cliente del SaaS. Es el eje central del sistema multi-tenant. El Módulo 2 agrega columnas de configuración del widget y seguridad.</div>
+    </div>
+    <span class="badge-module m2-mod">Módulo 1 + modificada en M2</span>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr>
+    </thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Identificador interno. Usado como <code>company_id</code> en todas las FK del sistema.</td></tr>
+      <tr><td class="col-name">user_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → users</span><span class="pill pill-uq">UNIQUE</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Cuenta de acceso propietaria de la empresa. 1-a-1 con <code>users</code>. CASCADE DELETE.</td></tr>
+      <tr><td class="col-name">public_uuid</td><td class="col-type">UUID</td><td><div class="pills"><span class="pill pill-uq">UNIQUE</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Identificador público seguro de la empresa. Usado en todas las URLs y APIs públicas del widget para no exponer el ID interno numérico.</td></tr>
+      <tr><td class="col-name">business_name</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Razón social de la empresa. Aparece en las políticas legales generadas.</td></tr>
+      <tr><td class="col-name">tax_id</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-uq">UNIQUE</span><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">RUT de la empresa. Único en el sistema. Opcional en el onboarding inicial.</td></tr>
+      <tr><td class="col-name">legal_address</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Domicilio legal de la empresa. Requerido para políticas de privacidad válidas bajo Ley 21.719.</td></tr>
+      <tr><td class="col-name">arco_contact_email</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Email de contacto para ejercer derechos ARCO (Acceso, Rectificación, Cancelación, Oposición). Exigido por la ley.</td></tr>
+      <tr><td class="col-name">legal_representative_name</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Nombre del representante legal de la empresa. Aparece en documentos legales generados.</td></tr>
+      <tr><td class="col-name">legal_representative_tax_id</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">RUT del representante legal.</td></tr>
+      <tr><td class="col-name">is_foreign_entity</td><td class="col-type">TINYINT(1)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Indica si la empresa es extranjera operando en Chile. Activa requisitos adicionales de representación local.</td></tr>
+      <tr><td class="col-name">local_contact_for_foreign_entity</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Datos del contacto local para entidades extranjeras. Requerido por Ley 21.719 para empresas sin domicilio en Chile.</td></tr>
+      <tr><td class="col-name">dpo_designation_act</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Acto formal de designación del Delegado de Protección de Datos (DPO). Número o referencia del documento.</td></tr>
+      <tr><td class="col-name">dpo_contact</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Datos de contacto del DPO: nombre, email, teléfono. JSON para flexibilidad.</td></tr>
+      <tr><td class="col-name">legal_settings</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Configuración legal miscelánea de la empresa: transferencias internacionales, base legal de tratamiento, etc.</td></tr>
+      <tr><td class="col-name">last_impact_assessment_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Fecha de última Evaluación de Impacto en Protección de Datos (EIPD). Requerida para tratamientos de alto riesgo.</td></tr>
+      <tr><td class="col-name">security_policy_version</td><td class="col-type">INT(11)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Versión actual de la política de seguridad interna de la empresa. Inicia en 1 y se incrementa.</td></tr>
+      <tr><td class="col-name">onboarding_completed_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Fecha en que la Pyme completó el proceso de configuración inicial del panel. NULL = onboarding pendiente.</td></tr>
+      <tr class="row-new"><td class="col-name">allowed_domains</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span><span class="pill pill-new">NUEVO M2</span></div></td><td class="col-desc">Array JSON con los dominios autorizados para usar el Trust Widget. Ej: <code>["mitienda.cl","checkout.mitienda.cl"]</code>. Validado por el middleware CORS dinámico en cada request. NULL = widget no configurado.</td></tr>
+      <tr class="row-new"><td class="col-name">integration_secret</td><td class="col-type">VARCHAR(64)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span><span class="pill pill-new">NUEVO M2</span></div></td><td class="col-desc">Secreto HMAC-SHA256 de 64 caracteres para Identity Stitching. Generado con <code>Str::random(64)</code> al activar el widget. Nunca se expone en APIs públicas. Permite que el backend de la Pyme firme el ID de sus usuarios.</td></tr>
+      <tr class="row-new"><td class="col-name">widget_config</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span><span class="pill pill-new">NUEVO M2</span></div></td><td class="col-desc">Configuración visual y funcional del widget por Pyme: posición del banner, color primario, botón de rechazo, duración de cookies, y mapa de proveedores por propósito (analytics, marketing, personalization). También almacena la URL de webhook de retorno si la Pyme usa Make/Zapier.</td></tr>
+      <tr><td class="col-name">created_at / updated_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Timestamps estándar de Eloquent.</td></tr>
+    </tbody>
+  </table>
+  <div class="note note-warn">
+    <span class="note-icon">⚠️</span>
+    <span>Las tres columnas marcadas como NUEVO M2 se agregan mediante una migración <code>add_widget_columns_to_companies_table</code> que usa <code>Schema::table()</code> — nunca modificando la migración original del Módulo 1.</span>
+  </div>
+</div>
+
+<!-- ── sectors ── -->
+<div class="section" id="sectors">
+  <div class="section-header">
+    <div class="section-icon gray">🏭</div>
+    <div class="section-title">
+      <h2>Sectores económicos</h2>
+      <div class="table-name">sectors</div>
+      <div class="section-desc">Catálogo de sectores económicos para clasificar las empresas. Usado en el onboarding y en la generación de políticas sectoriales.</div>
+    </div>
+    <span class="badge-module m1">Módulo 1</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Identificador del sector.</td></tr>
+      <tr><td class="col-name">name</td><td class="col-type">VARCHAR(150)</td><td><div class="pills"><span class="pill pill-uq">UNIQUE</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Nombre del sector económico. Ej: "Comercio minorista", "Salud", "Educación".</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── company_sector ── -->
+<div class="section" id="company_sector">
+  <div class="section-header">
+    <div class="section-icon gray">🔗</div>
+    <div class="section-title">
+      <h2>Relación empresa ↔ sector</h2>
+      <div class="table-name">company_sector</div>
+      <div class="section-desc">Tabla pivote que resuelve la relación muchos-a-muchos entre empresas y sectores. Una Pyme puede operar en múltiples sectores.</div>
+    </div>
+    <span class="badge-module m1">Módulo 1</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">PK surrogate de la relación.</td></tr>
+      <tr><td class="col-name">company_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → companies</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Empresa participante. CASCADE DELETE.</td></tr>
+      <tr><td class="col-name">sector_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → sectors</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Sector económico. CASCADE DELETE.</td></tr>
+      <tr><td class="col-name">created_at / updated_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Timestamps estándar.</td></tr>
+    </tbody>
+  </table>
+  <div class="note note-info"><span class="note-icon">ℹ️</span><span>Índice único compuesto sobre <code>(company_id, sector_id)</code> para evitar duplicados en la relación.</span></div>
+</div>
+
+<!-- ── business_activities ── -->
+<div class="section" id="business_activities">
+  <div class="section-header">
+    <div class="section-icon gray">📋</div>
+    <div class="section-title">
+      <h2>Actividades económicas</h2>
+      <div class="table-name">business_activities</div>
+      <div class="section-desc">Catálogo de actividades económicas del SII chileno. Vinculadas a un sector. Usadas para determinar requisitos legales específicos de la empresa.</div>
+    </div>
+    <span class="badge-module m1">Módulo 1</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">code</td><td class="col-type">VARCHAR(10)</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Código de actividad económica del SII. Ej: "4711".</td></tr>
+      <tr><td class="col-name">sector_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → sectors</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Sector al que pertenece la actividad.</td></tr>
+      <tr><td class="col-name">description</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Descripción textual de la actividad económica.</td></tr>
+      <tr><td class="col-name">subject_to_vat</td><td class="col-type">VARCHAR(5)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Indica si la actividad está afecta a IVA.</td></tr>
+      <tr><td class="col-name">tax_category</td><td class="col-type">VARCHAR(5)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Categoría tributaria de la actividad.</td></tr>
+      <tr><td class="col-name">available_online</td><td class="col-type">VARCHAR(5)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Indica si la actividad puede ejercerse en modalidad online. Relevante para determinar requisitos de privacidad web.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── roles / permissions ── -->
+<div class="section" id="roles">
+  <div class="section-header">
+    <div class="section-icon gray">🛡️</div>
+    <div class="section-title">
+      <h2>Control de acceso (Spatie)</h2>
+      <div class="table-name">roles · permissions · model_has_roles · model_has_permissions · role_has_permissions</div>
+      <div class="section-desc">Cinco tablas del paquete <strong>Spatie Laravel Permission</strong>. Implementan RBAC (Control de Acceso Basado en Roles). Permiten asignar permisos granulares a usuarios del panel de la Pyme.</div>
+    </div>
+    <span class="badge-module m1">Módulo 1</span>
+  </div>
+  <table class="data-table" id="permissions">
+    <thead><tr><th>Tabla / Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td class="col-name" colspan="4" style="background:var(--surface-2);font-family:var(--font);font-weight:600;color:var(--text-secondary)">roles</td></tr>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Identificador del rol.</td></tr>
+      <tr><td class="col-name">name</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Nombre del rol. Ej: "admin", "viewer". Único por guard.</td></tr>
+      <tr><td class="col-name">guard_name</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Guard de autenticación al que aplica. Generalmente "web" o "api".</td></tr>
+      <tr><td class="col-name" colspan="4" style="background:var(--surface-2);font-family:var(--font);font-weight:600;color:var(--text-secondary)">permissions</td></tr>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Identificador del permiso.</td></tr>
+      <tr><td class="col-name">name</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Nombre del permiso. Ej: "policies.publish", "consent.view".</td></tr>
+      <tr><td class="col-name">guard_name</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Guard al que aplica el permiso.</td></tr>
+      <tr><td class="col-name" colspan="4" style="background:var(--surface-2);font-family:var(--font);font-weight:600;color:var(--text-secondary)">model_has_roles · model_has_permissions · role_has_permissions</td></tr>
+      <tr><td class="col-name">role_id / permission_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Referencias a los roles y permisos correspondientes.</td></tr>
+      <tr><td class="col-name">model_type / model_id</td><td class="col-type">VARCHAR / BIGINT</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Polimorfismo de Spatie: permite asignar roles/permisos a cualquier modelo Eloquent (User, Company, etc.).</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── legal_templates ── -->
+<div class="section" id="legal_templates">
+  <div class="section-header">
+    <div class="section-icon teal">📄</div>
+    <div class="section-title">
+      <h2>Plantillas legales maestras</h2>
+      <div class="table-name">legal_templates</div>
+      <div class="section-desc">Repositorio de plantillas legales versionadas, gestionadas por el equipo de la plataforma. Cada plantilla define la estructura y contenido base de un tipo de documento legal que las Pymes pueden personalizar.</div>
+    </div>
+    <span class="badge-module m1">Módulo 1</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Identificador de la plantilla.</td></tr>
+      <tr><td class="col-name">document_type</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Tipo de documento. Valores conocidos: <code>cookie_policy</code>, <code>privacy_policy</code>, <code>workers_policy</code>. Único por versión.</td></tr>
+      <tr><td class="col-name">name</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Nombre descriptivo de la plantilla. Ej: "Política de Cookies v3 — E-commerce Chile".</td></tr>
+      <tr><td class="col-name">version</td><td class="col-type">INT(11)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Versión numérica de la plantilla. Junto con <code>document_type</code> forma una clave única.</td></tr>
+      <tr><td class="col-name">content</td><td class="col-type">LONGTEXT</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Contenido HTML/Markdown de la plantilla con variables de reemplazo tipo <code>{{company_name}}</code>.</td></tr>
+      <tr><td class="col-name">wizard_schema</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Esquema JSON del wizard de personalización. Define los campos, tipos y validaciones que la Pyme debe completar para generar su documento.</td></tr>
+      <tr><td class="col-name">required_condition</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Condiciones de negocio bajo las cuales esta plantilla es obligatoria. Ej: si la empresa hace e-commerce, la política de cookies es requerida.</td></tr>
+      <tr><td class="col-name">is_active</td><td class="col-type">TINYINT(1)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Flag de activación. Solo las plantillas activas están disponibles para nuevas Pymes. Permite deprecar versiones antiguas.</td></tr>
+      <tr><td class="col-name">created_at / updated_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Timestamps estándar.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── company_policies ── -->
+<div class="section" id="company_policies">
+  <div class="section-header">
+    <div class="section-icon teal">📜</div>
+    <div class="section-title">
+      <h2>Políticas legales de la empresa</h2>
+      <div class="table-name">company_policies</div>
+      <div class="section-desc">Instancias personalizadas de políticas legales por empresa. Cada registro es una versión específica de una política, desde borrador hasta archivada. Los consentimientos del Módulo 2 referencian siempre a esta tabla.</div>
+    </div>
+    <span class="badge-module m1">Módulo 1</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Identificador de la política. Referenciado como <code>company_policy_id</code> en consent_logs y pending_consents.</td></tr>
+      <tr><td class="col-name">company_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → companies</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Empresa propietaria de la política. CASCADE DELETE.</td></tr>
+      <tr><td class="col-name">legal_template_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → legal_templates</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Plantilla maestra de la que deriva esta política.</td></tr>
+      <tr><td class="col-name">document_type</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Tipo de documento. Desnormalizado desde la plantilla para consultas eficientes. Valores: <code>cookie_policy</code>, <code>privacy_policy</code>, <code>workers_policy</code>.</td></tr>
+      <tr><td class="col-name">company_version</td><td class="col-type">INT(11)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Versión de la política dentro de la empresa. Se incrementa cada vez que la Pyme publica una actualización. Único por empresa + tipo.</td></tr>
+      <tr><td class="col-name">wizard_data</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Respuestas de la Pyme al wizard de personalización. Junto con la plantilla, genera el documento final.</td></tr>
+      <tr><td class="col-name">integrity_hash</td><td class="col-type">VARCHAR(64)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">SHA-256 del contenido renderizado final de la política. Se copia a <code>consent_logs.policy_hash</code> al registrar cada consentimiento. Permite probar exactamente qué versión leyó el usuario.</td></tr>
+      <tr><td class="col-name">status</td><td class="col-type">ENUM</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-enum">draft | published | archived</span></div></td><td class="col-desc">Estado del ciclo de vida de la política. Solo las políticas <code>published</code> son servidas por el widget.</td></tr>
+      <tr><td class="col-name">published_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Momento exacto de publicación. Cuando se publica, se dispara la purga del caché de Cloudflare para el endpoint del widget.</td></tr>
+      <tr><td class="col-name">created_at / updated_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Timestamps estándar.</td></tr>
+    </tbody>
+  </table>
+  <div class="note note-danger"><span class="note-icon">🔒</span><span><strong>Regla crítica de integridad:</strong> La FK desde <code>consent_logs</code> y <code>pending_consents</code> hacia esta tabla usa <code>RESTRICT ON DELETE</code>. No es posible eliminar una política que ya tiene consentimientos registrados — protección del ledger forense.</span></div>
+</div>
+
+<!-- ── triage_questions ── -->
+<div class="section" id="triage_questions">
+  <div class="section-header">
+    <div class="section-icon gray">❓</div>
+    <div class="section-title">
+      <h2>Preguntas de triaje</h2>
+      <div class="table-name">triage_questions</div>
+      <div class="section-desc">Catálogo de preguntas diagnósticas del wizard de onboarding. Determinan qué plantillas legales son obligatorias para cada empresa según su actividad y características.</div>
+    </div>
+    <span class="badge-module m1">Módulo 1</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Identificador de la pregunta.</td></tr>
+      <tr><td class="col-name">module_slug</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-idx">INDEX</span></div></td><td class="col-desc">Módulo al que pertenece la pregunta. Ej: "onboarding", "cookie_policy". Permite filtrar preguntas por contexto.</td></tr>
+      <tr><td class="col-name">key</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Clave identificadora de la pregunta dentro del módulo. Ej: "has_ecommerce". Único por módulo.</td></tr>
+      <tr><td class="col-name">label</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Texto de la pregunta mostrado al usuario en el wizard.</td></tr>
+      <tr><td class="col-name">description</td><td class="col-type">TEXT</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Explicación adicional o ayuda contextual para la pregunta.</td></tr>
+      <tr><td class="col-name">type</td><td class="col-type">ENUM</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-enum">boolean|select|multiselect|text|number</span></div></td><td class="col-desc">Tipo de campo del formulario. Determina la UI y la validación de la respuesta.</td></tr>
+      <tr><td class="col-name">options</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Opciones disponibles para tipos <code>select</code> y <code>multiselect</code>. Array de objetos <code>{value, label}</code>.</td></tr>
+      <tr><td class="col-name">required_condition</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Condición lógica bajo la cual esta pregunta es relevante. Permite triaje condicional.</td></tr>
+      <tr><td class="col-name">order</td><td class="col-type">INT(11)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Orden de presentación de la pregunta en el wizard. Ascendente.</td></tr>
+      <tr><td class="col-name">is_active</td><td class="col-type">TINYINT(1)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Flag para desactivar preguntas sin eliminarlas. Preguntas inactivas no aparecen en el wizard.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ════════════════════════════════════════════════
+     MÓDULO 2 — TABLAS NUEVAS
+     ════════════════════════════════════════════════ -->
+
+<!-- ── consent_logs ── -->
+<div class="section" id="consent_logs">
+  <div class="section-header">
+    <div class="section-icon blue">🔏</div>
+    <div class="section-title">
+      <h2>Ledger de consentimientos</h2>
+      <div class="table-name">consent_logs</div>
+      <div class="section-desc">El corazón forense del sistema. Tabla de solo inserción (append-only): ningún registro puede modificarse ni eliminarse. Cada fila es un consentimiento sellado criptográficamente que actúa como evidencia legal ante la Ley 21.719. Su integridad se garantiza a nivel de modelo Eloquent y de base de datos.</div>
+    </div>
+    <span class="badge-module m2-new">Módulo 2 — nuevo</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span><span class="pill pill-immut">INMUTABLE</span></div></td><td class="col-desc">Identificador interno autoincremental. Nunca se expone en APIs públicas.</td></tr>
+      <tr><td class="col-name">visitor_uuid</td><td class="col-type">CHAR(36) — UUID</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-idx">INDEX</span></div></td><td class="col-desc">Identificador del navegador/dispositivo del usuario. Generado en el cliente con UUID v4 y persistido en <code>localStorage</code>. No identifica a la persona, sí al contexto técnico del consentimiento.</td></tr>
+      <tr><td class="col-name">identifier</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span><span class="pill pill-idx">INDEX</span></div></td><td class="col-desc">Identificador del sujeto cuando es conocido: email o SHA-256 del RUT. NULL en capturas anónimas del Trust Widget. Nunca almacenar RUT en texto claro.</td></tr>
+      <tr><td class="col-name">company_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → companies</span><span class="pill pill-nn">NOT NULL</span><span class="pill pill-idx">INDEX</span></div></td><td class="col-desc">Empresa propietaria del consentimiento. Multi-tenancy por filas. CASCADE DELETE (si la empresa se elimina, su ledger también).</td></tr>
+      <tr><td class="col-name">company_policy_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → company_policies</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Versión exacta de la política que el usuario aceptó. RESTRICT ON DELETE — no se puede borrar una política con consentimientos registrados.</td></tr>
+      <tr><td class="col-name">purposes</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-immut">INMUTABLE</span></div></td><td class="col-desc">Propósitos aceptados/rechazados en formato JSON canónico con llaves ordenadas alfabéticamente. Ej: <code>{"analytics":true,"marketing":false,"necessary":true,"personalization":false}</code>. El orden de llaves es parte del contrato del ProofHashService.</td></tr>
+      <tr><td class="col-name">policy_hash</td><td class="col-type">VARCHAR(64)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-idx">INDEX</span></div></td><td class="col-desc">SHA-256 del contenido de la política vigente al momento del consentimiento. Copiado desde <code>company_policies.integrity_hash</code>. Permite demostrar qué versión exacta leyó el usuario, incluso si la política fue actualizada después.</td></tr>
+      <tr><td class="col-name">proof_hash</td><td class="col-type">VARCHAR(64)</td><td><div class="pills"><span class="pill pill-uq">UNIQUE</span><span class="pill pill-nn">NOT NULL</span><span class="pill pill-immut">INMUTABLE</span></div></td><td class="col-desc">El sello criptográfico del registro completo. SHA-256 del JSON canónico que contiene: <code>identifier</code>, <code>policy_hash</code>, <code>purposes</code> y <code>timestamp</code>. Calculado por <code>ProofHashService</code>. Si alguien modifica cualquier campo, el hash no coincide — el fraude es detectable.</td></tr>
+      <tr><td class="col-name">consent_occurred_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Cuándo ocurrió el consentimiento según la fuente. En capturas en vivo: igual a <code>recorded_at</code>. En bulk import: la fecha histórica declarada por la Pyme. Distinción crítica para auditorías.</td></tr>
+      <tr><td class="col-name">recorded_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-immut">INMUTABLE</span></div></td><td class="col-desc">Cuándo ingresó el registro a nuestro sistema. Siempre <code>NOW()</code>. Nunca editable. En una importación histórica, la diferencia entre <code>consent_occurred_at</code> y <code>recorded_at</code> es la evidencia honesta del proceso de migración.</td></tr>
+      <tr><td class="col-name">capture_method</td><td class="col-type">ENUM</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-idx">INDEX</span><span class="pill pill-enum">live_widget | live_portal | bulk_import</span></div></td><td class="col-desc">Canal por el que se capturó el consentimiento. Permite filtrar en el panel y determinar el nivel de certeza de identidad del registro.</td></tr>
+      <tr><td class="col-name">capture_notes</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Notas de contexto para importaciones bulk. Ej: "Formulario papel firmado enero 2024". NULL en capturas en vivo.</td></tr>
+      <tr><td class="col-name">import_row_hash</td><td class="col-type">VARCHAR(64)</td><td><div class="pills"><span class="pill pill-uq">UNIQUE</span><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">SHA-256 de <code>batch_id + ":" + identifier + ":" + consent_occurred_at</code>. Garantiza idempotencia en importaciones: si un job falla y se reintenta, las filas ya procesadas se omiten sin duplicar. NULL en capturas en vivo (MariaDB permite múltiples NULLs en índice UNIQUE).</td></tr>
+      <tr><td class="col-name">import_batch_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → import_batches</span><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Lote de importación al que pertenece este registro. NULL en capturas en vivo. NULL ON DELETE para no perder registros si se borra el batch.</td></tr>
+      <tr><td class="col-name">ip_hash</td><td class="col-type">VARCHAR(64)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">SHA-256 de <code>ip_address + app_key</code>. Nunca la IP en texto claro (es PII bajo Ley 21.719). Permite correlación forense sin almacenar el dato sensible.</td></tr>
+      <tr><td class="col-name">user_agent</td><td class="col-type">VARCHAR(500)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">User-Agent del navegador del firmante. Solo para capturas del Portal Cautivo (Mec. C). Evidencia adicional de la sesión de firma.</td></tr>
+      <tr><td class="col-name">context_fingerprint</td><td class="col-type">VARCHAR(64)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">SHA-256 de <code>user_agent + accept_language + accept_encoding</code>. Huella de entorno no identificable. Refuerza la evidencia de interacción humana real frente a bots.</td></tr>
+      <tr><td class="col-name">created_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-immut">INMUTABLE</span></div></td><td class="col-desc">Timestamp de inserción. Gestionado manualmente en el modelo (no usa <code>$timestamps</code> de Eloquent). <strong>No existe <code>updated_at</code></strong> — un ledger inmutable no se actualiza.</td></tr>
+    </tbody>
+  </table>
+  <div class="note note-danger">
+    <span class="note-icon">🔒</span>
+    <span><strong>Inmutabilidad doble:</strong> El modelo Eloquent lanza una excepción si se intenta hacer <code>update()</code> o <code>delete()</code>. A nivel de base de datos, el campo <code>updated_at</code> no existe, haciendo que cualquier UPDATE deje la fila inconsistente con el <code>proof_hash</code>.</span>
+  </div>
+</div>
+
+<!-- ── pending_consents ── -->
+<div class="section" id="pending_consents">
+  <div class="section-header">
+    <div class="section-icon orange">⏳</div>
+    <div class="section-title">
+      <h2>Consentimientos pendientes</h2>
+      <div class="table-name">pending_consents</div>
+      <div class="section-desc">Tabla efímera que actúa como sala de espera para PII en tránsito. Un registro vive aquí desde que la Pyme notifica un nuevo lead hasta que el usuario firma (pasa a consent_logs) o el TTL expira (se purga). Ningún PII sin autorización legal llega jamás al ledger.</div>
+    </div>
+    <span class="badge-module m2-new">Módulo 2 — nuevo</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Identificador interno del registro pendiente.</td></tr>
+      <tr><td class="col-name">company_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → companies</span><span class="pill pill-nn">NOT NULL</span><span class="pill pill-idx">INDEX</span></div></td><td class="col-desc">Empresa propietaria del proceso de consentimiento.</td></tr>
+      <tr><td class="col-name">company_policy_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → company_policies</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Política que el usuario debe aceptar. RESTRICT ON DELETE.</td></tr>
+      <tr><td class="col-name">token</td><td class="col-type">VARCHAR(64)</td><td><div class="pills"><span class="pill pill-uq">UNIQUE</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Token de acceso al portal de firma. Generado con <code>Str::random(64)</code>. Forma la URL: <code>/portal/consent/{token}</code>. De un solo uso: se invalida al confirmar.</td></tr>
+      <tr><td class="col-name">pii_payload</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">PII transitorio del lead. Mínimo: <code>{"email":"..."}</code>. Puede incluir nombre si la Pyme lo provee. RUT nunca en claro — solo hasheado. Este campo se purga cuando el registro expira.</td></tr>
+      <tr><td class="col-name">pii_hash</td><td class="col-type">VARCHAR(64)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-idx">INDEX</span></div></td><td class="col-desc">SHA-256 de <code>company_policy_id + ":" + lowercase(trim(email))</code>. Clave determinista para deduplicación. Usado por la columna generada <code>pending_uniqueness_key</code>.</td></tr>
+      <tr><td class="col-name">status</td><td class="col-type">ENUM</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-idx">INDEX</span><span class="pill pill-enum">pending | confirmed | expired</span></div></td><td class="col-desc">Estado del ciclo de vida. <code>pending</code>: esperando firma. <code>confirmed</code>: firmado y materializado en consent_logs. <code>expired</code>: TTL vencido sin firma — marcado por el cronjob antes del hard delete.</td></tr>
+      <tr><td class="col-name">source</td><td class="col-type">ENUM</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-idx">INDEX</span><span class="pill pill-enum">zapier | make | manual_panel | webhook_generic</span></div></td><td class="col-desc">Canal de entrada del lead. Determina si se envía webhook de retorno al confirmar: los leads de <code>zapier</code> y <code>make</code> reciben notificación automática; los de <code>manual_panel</code> solo actualizan el dashboard.</td></tr>
+      <tr><td class="col-name">expires_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-idx">INDEX</span></div></td><td class="col-desc">Fecha de expiración del link de firma. Calculado como <code>NOW() + 72 horas</code> al crear. El índice compuesto con <code>status</code> hace el cronjob de purga extremadamente eficiente.</td></tr>
+      <tr><td class="col-name">confirmed_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Momento en que el usuario firmó en el Portal Cautivo. NULL si aún está pending o expiró.</td></tr>
+      <tr><td class="col-name">pending_uniqueness_key</td><td class="col-type">VARCHAR(200) — GENERATED</td><td><div class="pills"><span class="pill pill-uq">UNIQUE</span><span class="pill pill-gen">GENERATED STORED</span><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Columna generada que simula un índice parcial único en MariaDB. Valor: <code>CONCAT(pii_hash, ":", company_policy_id)</code> cuando <code>status = "pending"</code>, NULL en cualquier otro estado. Esto garantiza que solo pueda existir un registro pendiente por email+política, sin impedir futuros consentimientos del mismo usuario.</td></tr>
+      <tr><td class="col-name">created_at / updated_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Timestamps estándar de Eloquent.</td></tr>
+    </tbody>
+  </table>
+  <div class="note note-success">
+    <span class="note-icon">✅</span>
+    <span><strong>Garantía de privacidad:</strong> El PII en <code>pii_payload</code> nunca migra al ledger sin consentimiento. El cronjob hace hard DELETE de registros expirados tras una ventana de 24h de gracia. Registros confirmados se purgan 7 días después de la firma.</span>
+  </div>
+</div>
+
+<!-- ── import_batches ── -->
+<div class="section" id="import_batches">
+  <div class="section-header">
+    <div class="section-icon purple">📦</div>
+    <div class="section-title">
+      <h2>Lotes de importación CSV</h2>
+      <div class="table-name">import_batches</div>
+      <div class="section-desc">Control de progreso para las importaciones masivas de consentimientos históricos. Permite pausar, reintentar y monitorear desde el panel sin riesgo de duplicar datos. Prerequisito de consent_logs (FK).</div>
+    </div>
+    <span class="badge-module m2-new">Módulo 2 — nuevo</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Identificador del lote.</td></tr>
+      <tr><td class="col-name">company_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → companies</span><span class="pill pill-nn">NOT NULL</span><span class="pill pill-idx">INDEX</span></div></td><td class="col-desc">Empresa propietaria del lote de importación.</td></tr>
+      <tr><td class="col-name">company_policy_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → company_policies</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Política a la que se asociarán todos los registros importados en este lote.</td></tr>
+      <tr><td class="col-name">file_path</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Ruta relativa del archivo CSV en el storage de Laravel. Ej: <code>imports/company_142/batch_20260623.csv</code>.</td></tr>
+      <tr><td class="col-name">status</td><td class="col-type">ENUM</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-idx">INDEX</span><span class="pill pill-enum">pending | processing | completed | failed | paused</span></div></td><td class="col-desc">Estado actual del proceso de importación. Permite pausar y reanudar sin perder progreso.</td></tr>
+      <tr><td class="col-name">total_rows</td><td class="col-type">INT UNSIGNED</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Total de filas del CSV detectadas en la validación inicial. Usado para calcular el porcentaje de progreso en el panel.</td></tr>
+      <tr><td class="col-name">last_processed_row</td><td class="col-type">INT UNSIGNED</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Checkpoint de la última fila exitosamente procesada. Si el job falla en la fila 2.500, el siguiente reintento empieza desde aquí sin duplicar lo ya procesado.</td></tr>
+      <tr><td class="col-name">skipped_rows</td><td class="col-type">INT UNSIGNED</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Contador de filas omitidas por ser duplicados (import_row_hash ya existente). Evidencia de idempotencia.</td></tr>
+      <tr><td class="col-name">failed_rows</td><td class="col-type">INT UNSIGNED</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Contador de filas que fallaron la validación de negocio (fecha inválida, policy_version inexistente, etc.).</td></tr>
+      <tr><td class="col-name">validation_errors</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Errores del validador pre-procesamiento. Array de objetos con fila y mensaje de error. NULL si el CSV pasó la validación inicial sin problemas.</td></tr>
+      <tr><td class="col-name">completed_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Fecha de finalización del proceso. NULL hasta que el status sea <code>completed</code>.</td></tr>
+      <tr><td class="col-name">created_at / updated_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Timestamps estándar de Eloquent.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── person_visitor_uuids ── -->
+<div class="section" id="person_visitor_uuids">
+  <div class="section-header">
+    <div class="section-icon purple">🔗</div>
+    <div class="section-title">
+      <h2>Costura de identidad</h2>
+      <div class="table-name">person_visitor_uuids</div>
+      <div class="section-desc">Tabla pivote que une el historial anónimo de un navegador (visitor_uuid) con un usuario autenticado de la Pyme, sin almacenar PII directo. La vinculación solo ocurre cuando el backend de la Pyme genera un HMAC válido que nuestro sistema verifica.</div>
+    </div>
+    <span class="badge-module m2-new">Módulo 2 — nuevo</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">PK surrogate de la relación.</td></tr>
+      <tr><td class="col-name">company_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → companies</span><span class="pill pill-nn">NOT NULL</span><span class="pill pill-idx">INDEX</span></div></td><td class="col-desc">Empresa cuyo usuario fue identificado. El mismo visitor_uuid puede existir en distintas empresas sin colisión.</td></tr>
+      <tr><td class="col-name">person_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">ID interno de la persona en nuestro sistema. Resuelto por <code>firstOrCreate</code> sobre <code>external_ref_hash</code>. No es FK física para preservar independencia del modelo de identidad externo.</td></tr>
+      <tr><td class="col-name">external_ref_hash</td><td class="col-type">VARCHAR(64)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-idx">INDEX</span></div></td><td class="col-desc">SHA-256 de <code>company_id + ":" + user_ref_externo</code>. Nunca el ID real del usuario de la Pyme. Permite resolver el <code>person_id</code> sin almacenar PII externo.</td></tr>
+      <tr><td class="col-name">visitor_uuid</td><td class="col-type">CHAR(36) — UUID</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">UUID del navegador que fue identificado. El mismo que aparece en <code>consent_logs.visitor_uuid</code>, permitiendo vincular retroactivamente el historial anónimo de cookies con el usuario real.</td></tr>
+      <tr><td class="col-name">created_at / updated_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Timestamps estándar de Eloquent.</td></tr>
+    </tbody>
+  </table>
+  <div class="note note-info">
+    <span class="note-icon">ℹ️</span>
+    <span><strong>Índice único compuesto</strong> sobre <code>(person_id, visitor_uuid)</code> con nombre <code>uq_person_visitor</code>. Este constraint es el que garantiza que abrir 4 pestañas simultáneas no genera duplicados — el UPSERT atómico de MariaDB serializa las escrituras sobre este índice a nivel de motor de almacenamiento (InnoDB), sin race condition posible.</span>
+  </div>
+</div>
+
+<div style="max-width:1200px;margin:0 auto 32px;padding:14px 18px;background:var(--surface-2);border-radius:10px;font-size:12px;color:var(--text-muted);text-align:center;border:1px solid var(--border);">
+  Diccionario generado para el proyecto SaaS Compliance Pymes · Stack: Laravel 11 · MariaDB · Angular 18 · Ley 21.719 Chile / GDPR
+</div>
+
+</body>
+</html>

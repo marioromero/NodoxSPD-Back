@@ -27,17 +27,29 @@
             font-size: 1.05em;
             margin-bottom: 32px;
         }
+
+        .section-title {
+            font-size: 0.85em;
+            font-weight: 700;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 32px 0 12px 0;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #dce3ec;
+        }
+
         .card {
             background: #fff;
             border-radius: 10px;
             padding: 20px 24px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             border-left: 4px solid #1a3c5e;
             transition: box-shadow 0.2s;
         }
         .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
-        .card h2 { margin: 0 0 4px 0; font-size: 1.1em; }
+        .card h2 { margin: 0 0 4px 0; font-size: 1.05em; }
         .card h2 a {
             text-decoration: none;
             color: #1a3c5e;
@@ -46,51 +58,100 @@
         .card p {
             margin: 0;
             color: #666;
-            font-size: 0.92em;
+            font-size: 0.9em;
         }
+        .card .tags { margin-top: 6px; }
         .card .tag {
             display: inline-block;
-            font-size: 0.72em;
+            font-size: 0.7em;
             font-weight: 600;
             padding: 2px 10px;
             border-radius: 12px;
-            margin-top: 8px;
+            margin-right: 4px;
             background: #e8eef5;
             color: #1a3c5e;
         }
+
+        .card .tag.ledger { background: #fef2f2; color: #b91c1c; }
+        .card .tag.security { background: #fef3c7; color: #92400e; }
+        .card .tag.api { background: #d1fae5; color: #065f46; }
+        .card .tag.hash { background: #ede9fe; color: #5b21b6; }
+        .card .tag.data { background: #e0f2fe; color: #0369a1; }
+
+        .card.module-2 { border-left-color: #b91c1c; }
+        .card.module-1 { border-left-color: #1a3c5e; }
+        .card.data-card { border-left-color: #0369a1; }
+        .card.arch-card { border-left-color: #7c3aed; }
+
         .footer {
-            margin-top: 40px;
+            margin-top: 48px;
             font-size: 0.82em;
             color: #999;
             text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
         }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>&#128218; Documentación NodoxSPD</h1>
-    <p class="subtitle">Índice general de documentos técnicos, diagramas y guías del proyecto.</p>
+    <p class="subtitle">Índice general de documentos técnicos, diagramas y guías del proyecto SaaS Compliance Pymes.</p>
 
-    <div class="card">
+    <!-- ════════════════════════════════════ -->
+    <div class="section-title">&#128202; Diagramas y Arquitectura</div>
+    <!-- ════════════════════════════════════ -->
+
+    <div class="card arch-card">
         <h2><a href="arbol-logico.html">Árbol Lógico de Políticas</a></h2>
         <p>Árbol de decisión del Wizard: cada respuesta del formulario determina qué texto legal se inyecta en el documento final. Cubre Privacidad Web, Trabajadores, Cookies y Personalizado.</p>
-        <span class="tag">Diagrama</span> <span class="tag">Wizard</span> <span class="tag">Políticas</span>
+        <div class="tags"><span class="tag">Diagrama</span> <span class="tag">Wizard</span> <span class="tag">Políticas</span> <span class="tag">Ley 21.719</span></div>
     </div>
 
-    <div class="card">
+    <div class="card arch-card">
         <h2><a href="arquitectura-trust-widget.html">Arquitectura — Trust Widget</a></h2>
         <p>Diagrama de segmentación de políticas y mecanismos de consentimiento: Trust Widget, Portal Cautivo, Importador Histórico y el ledger inmutable consent_logs.</p>
-        <span class="tag">Diagrama</span> <span class="tag">Arquitectura</span> <span class="tag">Consentimiento</span>
+        <div class="tags"><span class="tag">Diagrama</span> <span class="tag">Arquitectura</span> <span class="tag">Consentimiento</span></div>
     </div>
 
+    <!-- ════════════════════════════════════ -->
+    <div class="section-title">&#128295; Aspectos Generales del Proyecto</div>
+    <!-- ════════════════════════════════════ -->
+
     <div class="card">
-        <h2><a href="trust-widget.html">Flujo Didáctico — Trust Widget</a></h2>
-        <p>Recorrido visual paso a paso del widget de consentimiento: desde la llegada del usuario, selección de categorías, decisión, efecto inmediato en el navegador hasta el registro legal inmutable.</p>
-        <span class="tag">Interactivo</span> <span class="tag">Flujo</span> <span class="tag">Consentimiento</span>
+        <h2><a href="estandares-api.html">Estándares de API</a></h2>
+        <p>Convenciones generales del proyecto: formato de respuestas JSON, manejo centralizado de excepciones (404, 401, 403, 422, 409, 500), autenticación con Sanctum, RBAC con Spatie y middleware de onboarding.</p>
+        <div class="tags"><span class="tag">API</span> <span class="tag">Errores</span> <span class="tag">Auth</span></div>
+    </div>
+
+    <!-- ════════════════════════════════════ -->
+    <div class="section-title">&#128451; Estructura de Datos</div>
+    <!-- ════════════════════════════════════ -->
+
+    <div class="card data-card">
+        <h2><a href="diccionario-de-datos.html">Diccionario de Datos</a></h2>
+        <p>Estructura completa de la base de datos MariaDB: 19 tablas documentadas con tipos, restricciones y descripciones. Cubre los Módulos 1 (Generador de políticas) y 2 (Ledger de consentimientos).</p>
+        <div class="tags"><span class="tag data">Base de datos</span> <span class="tag data">MariaDB</span> <span class="tag data">Migraciones</span></div>
+    </div>
+
+    <!-- ════════════════════════════════════ -->
+    <div class="section-title">&#128274; Consentimientos (Módulo 2)</div>
+    <!-- ════════════════════════════════════ -->
+
+    <div class="card module-2">
+        <h2><a href="seguridad-middleware.html">Seguridad del Trust Widget</a></h2>
+        <p>DynamicCorsMiddleware: validación dinámica de orígenes CORS contra la lista blanca de dominios autorizados por cada Pyme.</p>
+        <div class="tags"><span class="tag security">CORS</span> <span class="tag">Middleware</span></div>
+    </div>
+
+    <div class="card module-2">
+        <h2><a href="servicios-consentimiento.html">Servicios de Consentimiento</a></h2>
+        <p>ProofHashService, inmutabilidad del ConsentLog (ledger append-only) y canonicalización JSON del sello criptográfico.</p>
+        <div class="tags"><span class="tag hash">Proof Hash</span> <span class="tag ledger">Ledger</span> <span class="tag">Inmutabilidad</span></div>
     </div>
 
     <div class="footer">
-        NodoxSPD — Documentación generada para el proyecto
+        NodoxSPD — Documentación generada para el proyecto. Stack: Laravel 13 · MariaDB · Ley 21.719 Chile
     </div>
 </div>
 </body>
