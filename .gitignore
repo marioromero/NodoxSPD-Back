@@ -26,3 +26,7 @@ Thumbs.db
 /NodoxSPD-Back.zip
 /nodoxspd-postman-collection.json
 /politicas-explained.http
+
+# Engram AI agent memory
+.engram/
+/opencode.json
