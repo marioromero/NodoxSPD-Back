@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Widget\WidgetConfigController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Billing\PaymentController;
 use App\Http\Controllers\Billing\PlanController;
@@ -19,6 +20,11 @@ Route::get('/plans', [PlanController::class, 'index']); // Catálogo de planes
 
 // Ruta pública para compartir/incrustar políticas legalmente selladas
 Route::get('/public/policies/{integrityHash}', [CompanyPolicyController::class, 'publicRender']);
+
+// Widget público: configuración del Trust Widget embebible (sin autenticación)
+// Aplica CORS dinámico por empresa + rate limiting multicapa
+Route::middleware(['cors.dynamic', 'throttle:widget'])
+    ->get('/widget/{company_public_uuid}/config', [WidgetConfigController::class, 'show']);
 
 // 2. Rutas Protegidas (Cualquier usuario autenticado)
 Route::middleware('auth:sanctum')->group(function () {
