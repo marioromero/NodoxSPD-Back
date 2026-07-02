@@ -68,38 +68,35 @@ class WidgetConfigController extends Controller
             ], 404);
         }
 
-        // 5. Extraer la configuración del widget desde el JSON column de la empresa.
-        $widgetConfig = $company->widget_config ?? [];
-
-        // 6. Mapear los propósitos del consentimiento con sus labels y estado de obligatoriedad.
-        //    'necessary' siempre es required: true (no se puede desactivar).
-        $purposes = $this->buildPurposes($widgetConfig);
-
-        // 7. Construir la URL pública de la política usando el integrity_hash (CDN-friendly).
-        $policyUrl = url("/api/public/policies/{$policy->integrity_hash}");
-
-        // 8. Ensamblar la respuesta final. Regla estricta: sin IDs internos.
+        // 5. Ensamblar la respuesta final. Regla estricta: sin IDs internos, sin datos de empresa.
         $response = [
-            'company' => [
-                'public_uuid' => $company->public_uuid,
-                'business_name' => $company->business_name,
+            'policy_hash' => $policy->integrity_hash,
+            'policy_version' => $policy->company_version,
+            'widget_config' => $company->widget_config ?? [
+                'position' => 'bottom-left',
+                'primary_color' => '#1a73e8',
+                'show_reject_all' => true,
+                'cookie_duration_days' => 365,
+                'providers' => [
+                    'analytics' => ['google_analytics', 'hotjar'],
+                    'marketing' => ['meta_pixel', 'google_ads'],
+                    'personalization' => ['intercom'],
+                ],
             ],
-            'policy' => [
-                'hash' => $policy->integrity_hash,
-                'version' => $policy->company_version,
-                'published_at' => $policy->published_at?->toIso8601String(),
-                'url' => $policyUrl,
+            'purposes' => [
+                'necessary' => ['label' => 'Técnicas / Necesarias', 'required' => true],
+                'analytics' => ['label' => 'Analítica / Medición', 'required' => false],
+                'marketing' => ['label' => 'Publicidad', 'required' => false],
+                'personalization' => ['label' => 'Funcionalidad', 'required' => false],
             ],
-            'widget' => [
-                'theme' => $widgetConfig['theme'] ?? 'light',
-                'position' => $widgetConfig['position'] ?? 'bottom-right',
-                'language' => $widgetConfig['language'] ?? 'es',
-                'banner_text' => $widgetConfig['banner_text'] ?? null,
+            'legal_texts' => [
+                'banner_title' => 'Este sitio usa cookies',
+                'banner_body' => 'Usamos cookies para...',
+                'policy_url' => "https://cdn.tudominio.com/policies/{$policy->integrity_hash}.html",
             ],
-            'purposes' => $purposes,
         ];
 
-        // 9. Aplicar headers de caché para CDN (Cloudflare).
+        // 6. Aplicar headers de caché para CDN (Cloudflare).
         //    ETag basado en uuid + hash de política para invalidación automática.
         //    Sin Set-Cookie: rompe el caché de Cloudflare (must-revalidate por cookie de sesión).
         return response()->json($response, 200, [
@@ -107,42 +104,6 @@ class WidgetConfigController extends Controller
             'Vary' => 'Accept-Encoding',
             'ETag' => "{$publicUuid}-{$policy->integrity_hash}",
         ])->withoutCookie('session')->withoutCookie('XSRF-TOKEN');
-    }
-
-    /**
-     * Construye el array de propósitos del consentimiento con labels y estado required.
-     *
-     * 'necessary' es siempre required: true (normativa legal).
-     * Los demás propósitos toman su configuración desde widget_config o defaults.
-     *
-     * @return array<int, array{key: string, label: string, required: bool}>
-     */
-    private function buildPurposes(array $widgetConfig): array
-    {
-        $config = $widgetConfig['purposes'] ?? [];
-
-        return [
-            [
-                'key' => 'necessary',
-                'label' => $config['necessary']['label'] ?? 'Necesarias',
-                'required' => true,
-            ],
-            [
-                'key' => 'analytics',
-                'label' => $config['analytics']['label'] ?? 'Analíticas',
-                'required' => $config['analytics']['required'] ?? false,
-            ],
-            [
-                'key' => 'marketing',
-                'label' => $config['marketing']['label'] ?? 'Marketing',
-                'required' => $config['marketing']['required'] ?? false,
-            ],
-            [
-                'key' => 'personalization',
-                'label' => $config['personalization']['label'] ?? 'Personalización',
-                'required' => $config['personalization']['required'] ?? false,
-            ],
-        ];
     }
 
     /**
