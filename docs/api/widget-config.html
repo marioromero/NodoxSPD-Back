@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>API — Configuración del Widget — NodoxSPD</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { font-family: system-ui, Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #333; margin: 0; padding: 32px 24px; background: #f5f7fa; }
+
+  .container { max-width: 960px; margin: 0 auto; }
+
+  h1 { color: #1a3c5e; border-bottom: 3px solid #1a3c5e; padding-bottom: 12px; margin-top: 0; font-size: 1.5em; }
+  h2 { color: #2c3e50; margin-top: 35px; border-bottom: 2px solid #3498db; padding-bottom: 6px; font-size: 1.2em; }
+  h3 { color: #16a085; margin-top: 25px; font-size: 1.05em; }
+
+  .nav-back { margin-bottom: 20px; }
+  .nav-back a { font-size: 12px; color: #1a3c5e; text-decoration: none; font-weight: 600; }
+  .nav-back a:hover { text-decoration: underline; }
+
+  .endpoint { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 0; margin: 20px 0; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .endpoint-summary { padding: 16px 20px; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .endpoint-method { display: inline-block; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 5px; color: #fff; min-width: 56px; text-align: center; }
+  .method-get { background: #3498db; }
+  .endpoint-url { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: #1a1a2e; }
+  .endpoint-tag { font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 12px; background: #e8eef5; color: #1a3c5e; }
+  .endpoint-body { padding: 16px 20px; }
+
+  .endpoint-body h3 { margin-top: 20px; margin-bottom: 8px; font-size: 0.95em; color: #2c3e50; border: none; padding: 0; }
+  .endpoint-body h3:first-child { margin-top: 0; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0 16px 0; }
+  th { background: #f0f2f5; padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #777; text-transform: uppercase; border-bottom: 1px solid #ddd; }
+  td { padding: 7px 12px; border-bottom: 1px solid #eee; vertical-align: top; }
+  td code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #f5f5f5; padding: 1px 5px; border-radius: 3px; }
+  td.type { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #7c3aed; white-space: nowrap; }
+
+  .json-sample { background: #1e293b; color: #e2e8f0; border-radius: 8px; padding: 14px 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; margin: 8px 0; white-space: pre; }
+  .json-sample .c { color: #94a3b8; }
+  .json-sample .s { color: #34d399; }
+  .json-sample .k { color: #60a5fa; }
+  .json-sample .b { color: #c084fc; }
+  .json-sample .n { color: #f472b6; }
+
+  .status-badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 5px; margin-right: 6px; min-width: 32px; text-align: center; }
+  .s200 { background: #d1fae5; color: #065f46; }
+  .s400 { background: #fef3c7; color: #92400e; }
+  .s403 { background: #fef2f2; color: #b91c1c; }
+  .s404 { background: #fee2e2; color: #991b1b; }
+  .s429 { background: #fce7f3; color: #9d174d; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<div class="nav-back"><a href="../index.html">&larr; Volver al índice</a></div>
+
+<h1>API &mdash; Configuración del Widget</h1>
+
+<div class="endpoint">
+  <div class="endpoint-summary">
+    <span class="endpoint-method method-get">GET</span>
+    <span class="endpoint-url">/api/widget/{company_public_uuid}/config</span>
+    <span class="endpoint-tag">Público</span>
+    <span class="endpoint-tag">Sin autenticación</span>
+  </div>
+  <div class="endpoint-body">
+
+  <h3>Headers</h3>
+  <table>
+    <tr><th>Header</th><th>Requerido</th><th>Descripción</th></tr>
+    <tr><td><code>Origin</code></td><td>Sí</td><td>Origen del sitio donde está embebido el widget. Lo valida <code>DynamicCorsMiddleware</code> contra la lista blanca de la empresa.</td></tr>
+  </table>
+
+  <h3>Parámetros</h3>
+  <table>
+    <tr><th>Parámetro</th><th>Tipo</th><th>Ubicación</th><th>Requerido</th><th>Descripción</th></tr>
+    <tr><td><code>company_public_uuid</code></td><td class="type">UUID v4</td><td>URL</td><td>Sí</td><td>Identificador público de la empresa. Nunca el ID numérico interno.</td></tr>
+    <tr><td><code>visitor_uuid</code></td><td class="type">UUID v4</td><td>Query</td><td>No</td><td>Identificador del navegador del visitante. Evaluado por el rate limiter por visitante.</td></tr>
+  </table>
+
+  <h3>Middleware aplicado</h3>
+  <table>
+    <tr><th>Middleware</th><th>Función</th></tr>
+    <tr><td><code>cors.dynamic</code></td><td>Valida el <code>Origin</code> contra los dominios autorizados de la empresa. Rechaza con 403 si no está en lista blanca.</td></tr>
+    <tr><td><code>throttle:widget</code></td><td>Rate limiter multicapa: 10 req/min por visitante, 60 req/min por empresa, 5 req/min por IP.</td></tr>
+  </table>
+
+  <h3>Respuesta exitosa <span class="status-badge s200">200</span></h3>
+  <div class="json-sample"><span class="c">// Respuesta plana, sin objetos anidados company/policy/widget.</span>
+<span class="c">// Nunca incluye id, company_id ni user_id.</span>
+{
+  <span class="k">"policy_hash"</span>: <span class="s">"a1b2c3d4..."</span>,
+  <span class="k">"policy_version"</span>: <span class="b">3</span>,
+  <span class="k">"widget_config"</span>: {
+    <span class="k">"position"</span>: <span class="s">"bottom-left"</span>,
+    <span class="k">"primary_color"</span>: <span class="s">"#1a73e8"</span>,
+    <span class="k">"show_reject_all"</span>: <span class="b">true</span>,
+    <span class="k">"cookie_duration_days"</span>: <span class="b">365</span>,
+    <span class="k">"providers"</span>: {
+      <span class="k">"analytics"</span>: [<span class="s">"google_analytics"</span>, <span class="s">"hotjar"</span>],
+      <span class="k">"marketing"</span>: [<span class="s">"meta_pixel"</span>, <span class="s">"google_ads"</span>],
+      <span class="k">"personalization"</span>: [<span class="s">"intercom"</span>]
+    }
+  },
+  <span class="k">"purposes"</span>: {
+    <span class="k">"necessary"</span>:      { <span class="k">"label"</span>: <span class="s">"Técnicas / Necesarias"</span>, <span class="k">"required"</span>: <span class="b">true</span> },
+    <span class="k">"analytics"</span>:        { <span class="k">"label"</span>: <span class="s">"Analítica / Medición"</span>, <span class="k">"required"</span>: <span class="b">false</span> },
+    <span class="k">"marketing"</span>:        { <span class="k">"label"</span>: <span class="s">"Publicidad"</span>, <span class="k">"required"</span>: <span class="b">false</span> },
+    <span class="k">"personalization"</span>: { <span class="k">"label"</span>: <span class="s">"Funcionalidad"</span>, <span class="k">"required"</span>: <span class="b">false</span> }
+  },
+  <span class="k">"legal_texts"</span>: {
+    <span class="k">"banner_title"</span>: <span class="s">"Este sitio usa cookies"</span>,
+    <span class="k">"banner_body"</span>: <span class="s">"Usamos cookies para..."</span>,
+    <span class="k">"policy_url"</span>: <span class="s">"https://cdn.tudominio.com/policies/a1b2c3d4....html"</span>
+  }
+}</div>
+
+  <h3>Campos de la respuesta</h3>
+  <table>
+    <tr><th>Campo</th><th>Tipo</th><th>Descripción</th></tr>
+    <tr><td><code>policy_hash</code></td><td class="type">string</td><td>SHA-256 del contenido de la política de cookies publicada.</td></tr>
+    <tr><td><code>policy_version</code></td><td class="type">int</td><td>Versión numérica de la política dentro de la empresa.</td></tr>
+    <tr><td><code>widget_config</code></td><td class="type">object</td><td>Configuración visual y funcional del widget. Si la empresa no tiene configurada, se devuelven valores por defecto.</td></tr>
+    <tr><td><code>purposes</code></td><td class="type">object</td><td>Mapa de propósitos de cookies. Cada clave (<code>necessary</code>, <code>analytics</code>, <code>marketing</code>, <code>personalization</code>) tiene <code>label</code> (string) y <code>required</code> (bool). <code>necessary</code> es siempre <code>true</code>.</td></tr>
+    <tr><td><code>legal_texts</code></td><td class="type">object</td><td>Textos legales pre-renderizados para el banner del widget: título, cuerpo y URL de la política completa.</td></tr>
+  </table>
+
+  <h3>Códigos de error</h3>
+  <table>
+    <tr><th>HTTP</th><th>Código</th><th>Descripción</th></tr>
+    <tr><td><span class="status-badge s400">400</span></td><td><code>invalid_uuid</code></td><td>El company_public_uuid no es un UUID v4 válido.</td></tr>
+    <tr><td><span class="status-badge s403">403</span></td><td><code>origin_not_allowed</code></td><td>El origen del request no está en la lista blanca de la empresa (DynamicCorsMiddleware).</td></tr>
+    <tr><td><span class="status-badge s404">404</span></td><td><code>no_active_policy</code></td><td>La empresa no tiene una política de cookies publicada.</td></tr>
+    <tr><td><span class="status-badge s429">429</span></td><td><code>Too Many Attempts.</code></td><td>Se excedió alguno de los tres límites de tasa (visitante, empresa o IP).</td></tr>
+  </table>
+
+  <h3>Headers de respuesta</h3>
+  <table>
+    <tr><th>Header</th><th>Valor</th><th>Propósito</th></tr>
+    <tr><td><code>Cache-Control</code></td><td><code>public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400</code></td><td>Caché pública en CDN por 1 hora, con stale-while-revalidate de 24h.</td></tr>
+    <tr><td><code>ETag</code></td><td><code>"{uuid}-{policy_hash}"</code></td><td>Identificador único de versión para invalidación de caché.</td></tr>
+    <tr><td><code>Vary</code></td><td><code>Accept-Encoding</code></td><td>Variación por codificación (gzip, br).</td></tr>
+    <tr><td><code>Access-Control-Allow-Origin</code></td><td><code>{Origin}</code></td><td>Origen permitido (nunca <code>*</code>). Incluido por DynamicCorsMiddleware.</td></tr>
+    <tr><td><code>Access-Control-Allow-Methods</code></td><td><code>GET, POST, OPTIONS</code></td><td>Métodos permitidos para CORS.</td></tr>
+    <tr><td><code>Access-Control-Allow-Headers</code></td><td><code>Content-Type, X-Requested-With</code></td><td>Headers permitidos para CORS.</td></tr>
+  </table>
+
+  </div>
+</div>
+
+</div>
+</body>
+</html>

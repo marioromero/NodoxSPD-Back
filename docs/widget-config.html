@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget Config — Mecánica Interna — NodoxSPD</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: system-ui, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f5f7fa; }
+
+        .layout { display: flex; min-height: 100vh; }
+        .sidebar {
+            position: sticky; top: 0; width: 300px; min-width: 300px; height: 100vh; overflow-y: auto;
+            background: #f7f9fc; border-right: 2px solid #dce3ec; padding: 20px 0; z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        .sidebar-header { padding: 0 20px 16px 20px; border-bottom: 1px solid #dce3ec; margin-bottom: 12px; }
+        .sidebar-header h2 { margin: 0; font-size: 0.95em; color: #1a3c5e; border: none; padding: 0; }
+        .sidebar-header p { margin: 4px 0 0 0; font-size: 0.78em; color: #7f8c8d; }
+        .sidebar-back { display: block; font-size: 0.75em; color: #1a3c5e; margin-top: 8px; text-decoration: none; font-weight: 600; }
+        .sidebar-back:hover { text-decoration: underline; }
+
+        .nav-section { margin-bottom: 14px; }
+        .nav-section-title {
+            display: block; padding: 8px 20px; font-weight: 700; font-size: 0.82em;
+            text-decoration: none; color: #1a3c5e; background: #e8eef5;
+            border-left: 3px solid #1a3c5e; margin-bottom: 2px; cursor: pointer; user-select: none;
+        }
+        .nav-section-title:hover { background: #dce3ec; }
+        .nav-section-items { padding: 0; margin: 0; list-style: none; }
+        .nav-section-items li a {
+            display: block; padding: 4px 20px 4px 32px; font-size: 0.78em;
+            text-decoration: none; color: #555; line-height: 1.5; transition: background 0.15s;
+        }
+        .nav-section-items li a:hover { background: #e4eaf3; color: #1a3c5e; }
+        .nav-section-items li a.nav-h3 { padding-left: 46px; font-size: 0.74em; }
+        .nav-section-items.collapsed { display: none; }
+        .nav-section-title::after { content: ' \25BC'; font-size: 0.7em; margin-left: 4px; }
+        .nav-section-title.collapsed-group::after { content: ' \25BA'; }
+
+        .content { flex: 1; padding: 20px 40px; max-width: 960px; min-width: 0; }
+
+        .hamburger {
+            display: none; position: fixed; top: 12px; left: 12px; z-index: 200;
+            width: 44px; height: 44px; border: none; background: #1a3c5e; color: #fff;
+            border-radius: 8px; font-size: 22px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .hamburger:hover { background: #2c5282; }
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 90; }
+        .overlay.show { display: block; }
+
+        @media (max-width: 900px) {
+            .hamburger { display: block; }
+            .sidebar { position: fixed; left: 0; top: 0; transform: translateX(-100%); width: 300px; }
+            .sidebar.open { transform: translateX(0); }
+            .content { padding: 60px 16px 20px 16px; }
+            .layout { flex-direction: column; }
+        }
+
+        html { scroll-behavior: smooth; }
+        h1, h2, h3, h4 { scroll-margin-top: 20px; }
+
+        .doc-header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #1a3c5e; }
+        .doc-header h1 { margin-top: 0; font-size: 1.8em; border: none; padding: 0; color: #1a3c5e; }
+        .doc-header p { font-size: 1.05em; color: #555; max-width: 780px; margin: 10px auto 0 auto; }
+
+        h1 { color: #1a3c5e; border-bottom: 3px solid #1a3c5e; padding-bottom: 12px; margin-top: 50px; font-size: 1.4em; }
+        h2 { color: #2c3e50; margin-top: 35px; border-bottom: 2px solid #3498db; padding-bottom: 6px; }
+        h3 { color: #16a085; margin-top: 25px; }
+
+        .card {
+            background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
+            padding: 20px 24px; margin: 20px 0; box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+        .card h3 { margin: 0 0 4px 0; color: #1a3c5e; font-size: 1.1em; border: none; padding: 0; }
+        .card .path { font-family: 'JetBrains Mono', monospace; font-size: 0.82em; color: #888; margin-bottom: 8px; }
+        .card p { margin: 0 0 10px 0; color: #555; font-size: 0.93em; }
+        .card p:last-child { margin-bottom: 0; }
+        .card .tag {
+            display: inline-block; font-size: 0.72em; font-weight: 600; padding: 2px 10px;
+            border-radius: 12px; margin-right: 4px; background: #e8eef5; color: #1a3c5e;
+        }
+        .card .tag.endpoint { background: #d1fae5; color: #065f46; }
+
+        .code-block {
+            background: #1e293b; color: #e2e8f0; border-radius: 8px; padding: 14px 16px;
+            font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6;
+            overflow-x: auto; margin: 10px 0;
+        }
+        .code-block .comment { color: #94a3b8; }
+        .code-block .string { color: #34d399; }
+        .code-block .key { color: #60a5fa; }
+        .code-block .bool { color: #c084fc; }
+        .code-block .null { color: #f472b6; }
+
+        .nota { background: #e8f8f5; border-left: 4px solid #1abc9c; padding: 10px 14px; margin: 12px 0; font-size: 0.93em; }
+        .nota-warn { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px 14px; margin: 12px 0; font-size: 0.93em; }
+        .nota-danger { background: #fef2f2; border-left: 4px solid #ef4444; padding: 10px 14px; margin: 12px 0; font-size: 0.93em; }
+
+        .resp-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+        .resp-table th { background: #f0f2f5; padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #777; text-transform: uppercase; border-bottom: 1px solid #ddd; }
+        .resp-table td { padding: 7px 12px; border-bottom: 1px solid #eee; vertical-align: top; }
+        .resp-table td code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #f5f5f5; padding: 1px 5px; border-radius: 3px; }
+        .resp-table .meth { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; color: #fff; min-width: 48px; text-align: center; }
+        .meth.get { background: #3498db; }
+
+        .flow-diagram { background: #fff; border: 1px solid #dce3ec; border-radius: 10px; padding: 24px; margin: 20px 0; }
+        .flow-step { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+        .flow-step .num { width: 28px; height: 28px; border-radius: 50%; background: #1a3c5e; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+        .flow-step .desc { font-size: 13px; color: #555; }
+        .flow-arrow { text-align: center; color: #ccc; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<button class="hamburger" id="hamburgerBtn">&#9776;</button>
+<div class="overlay" id="overlay"></div>
+
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h2>&#128218; Documentación</h2>
+        <p>Widget — Mecánica</p>
+        <a class="sidebar-back" href="index.html">&larr; Volver al índice</a>
+    </div>
+
+    <div class="nav-section">
+        <a class="nav-section-title" href="#controlador" data-toggle="controlador-items">Controlador</a>
+        <ul class="nav-section-items" id="controlador-items">
+            <li><a href="#controlador">WidgetConfigController</a></li>
+            <li><a href="#flujo">Flujo interno</a></li>
+        </ul>
+    </div>
+    <div class="nav-section">
+        <a class="nav-section-title" href="#seguridad" data-toggle="seguridad-items">Seguridad</a>
+        <ul class="nav-section-items" id="seguridad-items">
+            <li><a href="#seguridad">Validaciones y filtros</a></li>
+            <li><a href="#rate-limit">Rate Limiting multicapa</a></li>
+            <li><a href="#cache">Caché Edge (Cloudflare)</a></li>
+        </ul>
+    </div>
+</nav>
+
+<main class="content" id="main-content">
+
+<div class="doc-header">
+    <h1>API Pública del Trust Widget</h1>
+    <p>Controlador, seguridad, rate limiting y estrategia de caché para CDN del endpoint de configuración del widget embebible.</p>
+</div>
+
+
+
+
+
+<!-- ──────────────────────────────────────────── -->
+<h1 id="controlador">WidgetConfigController</h1>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="card">
+    <h3>WidgetConfigController</h3>
+    <div class="path">app/Http/Controllers/Api/Widget/WidgetConfigController.php</div>
+    <p>
+        Controlador público del Trust Widget. Único endpoint: <code>show()</code>. 
+        Resuelve la configuración del widget embebible para una empresa, sin requerir autenticación.
+    </p>
+
+    <h3 id="flujo">Flujo del método <code>show()</code></h3>
+    <div class="flow-diagram">
+        <div class="flow-step"><span class="num">1</span><span class="desc">Valida que <code>$publicUuid</code> sea un UUID v4 válido (regex RFC 4122). Si no: 400.</span></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><span class="num">2</span><span class="desc">Resuelve la empresa con <code>Company::where('public_uuid', $uuid)->firstOrFail()</code>. Nunca por ID numérico. Si no existe: 404.</span></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><span class="num">3</span><span class="desc">Obtiene la política de cookies activa: <code>document_type = 'cookie_policy'</code>, <code>status = 'published'</code>, excluye <code>workers_policy</code> (defensa en profundidad).</span></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><span class="num">4</span><span class="desc">Si no hay política: 404 con <code>no_active_policy</code>. Si existe: extrae <code>widget_config</code> de la empresa y construye los propósitos.</span></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><span class="num">5</span><span class="desc">Ensambla respuesta JSON (sin IDs internos) y aplica headers de caché para CDN.</span></div>
+    </div>
+</div>
+
+<!-- ──────────────────────────────────────────── -->
+<h1 id="seguridad">Seguridad</h1>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="card">
+    <h3>Validaciones y Filtros</h3>
+    <p>El endpoint aplica tres capas de seguridad en el controlador:</p>
+    <ul>
+        <li><strong>Validación de UUID:</strong> El parámetro <code>$publicUuid</code> se valida con una expresión regular que verifica el formato UUID v4 (RFC 4122). Cualquier string que no cumpla recibe 400.</li>
+        <li><strong>Resolución por public_uuid:</strong> La empresa se busca exclusivamente por su identificador público. El ID numérico interno (<code>id</code>, <code>company_id</code>) nunca se expone en la URL ni en la respuesta.</li>
+        <li><strong>Filtro de política activa:</strong> Solo se devuelve configuración si existe una política de cookies con <code>status = 'published'</code>. Además se fuerza <code>document_type = 'cookie_policy'</code> y se excluye explícitamente <code>workers_policy</code> como defensa en profundidad.</li>
+    </ul>
+    <div class="nota-danger">
+        <strong>Regla estricta:</strong> La respuesta JSON no contiene <code>id</code>, <code>company_id</code>, <code>user_id</code> ni ningún identificador interno. Solo datos públicos.
+    </div>
+</div>
+
+<h2 id="rate-limit">Rate Limiting Multicapa</h2>
+
+<div class="card">
+    <div class="path">config/rate_limits.php · app/Providers/AppServiceProvider.php</div>
+    <p>
+        El rate limiter <code>widget</code> aplica <strong>tres límites simultáneos</strong> por cada request al endpoint. 
+        Si <em>cualquiera</em> de los tres se excede, Laravel retorna HTTP 429. Esto protege contra abusos sin depender de autenticación.
+    </p>
+
+    <table class="resp-table">
+        <thead><tr><th>Límite</th><th>Clave</th><th>Valor por defecto</th><th>Variable .env</th></tr></thead>
+        <tbody>
+            <tr><td>Por visitante</td><td><code>visitor:{visitor_uuid}</code></td><td>10 req/min</td><td><code>RATE_LIMIT_WIDGET_VISITOR</code></td></tr>
+            <tr><td>Por empresa</td><td><code>company:{company_public_uuid}</code></td><td>60 req/min</td><td><code>RATE_LIMIT_WIDGET_COMPANY</code></td></tr>
+            <tr><td>Por IP</td><td><code>ip:{ip}</code></td><td>5 req/min</td><td><code>RATE_LIMIT_WIDGET_IP</code></td></tr>
+        </tbody>
+    </table>
+
+    <div class="nota-warn">
+        <strong>Nota:</strong> El rate limiter por visitante depende de que el widget JS envíe el parámetro <code>visitor_uuid</code> en el query string. Si no se envía, ese límite no se evalúa, pero los otros dos (empresa e IP) siguen activos.
+    </div>
+</div>
+
+<h2 id="cache">Estrategia de Caché Edge (Cloudflare)</h2>
+
+<div class="card">
+    <div class="path">WidgetConfigController.php — response headers</div>
+    <p>
+        La respuesta está optimizada para caché en CDN (Cloudflare). Se envían los siguientes headers para que Cloudflare cachee la respuesta a nivel de edge y reduzca la carga en el servidor:
+    </p>
+
+    <table class="resp-table">
+        <thead><tr><th>Header</th><th>Valor</th><th>Propósito</th></tr></thead>
+        <tbody>
+            <tr><td><code>Cache-Control</code></td><td><code>public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400</code></td><td>Permite caché pública (CDN y navegador) por 1 hora. Si el CDN tiene una copia stale, puede servirla por hasta 24h mientras revalida en segundo plano.</td></tr>
+            <tr><td><code>ETag</code></td><td><code>"{public_uuid}-{policy_hash}"</code></td><td>Identificador único de versión. Combina el UUID de la empresa con el hash de la política. Si cambia la política, el ETag cambia y el CDN invalida automáticamente.</td></tr>
+            <tr><td><code>Vary</code></td><td><code>Accept-Encoding</code></td><td>Indica al CDN que la respuesta varía según codificación (gzip, br). No incluye <code>Origin</code> porque CORS se maneja aparte con DynamicCorsMiddleware.</td></tr>
+        </tbody>
+    </table>
+
+    <div class="nota">
+        <strong>Sin Set-Cookie:</strong> La respuesta usa explícitamente <code>->withoutCookie('session')->withoutCookie('XSRF-TOKEN')</code> para garantizar que Cloudflare no invalide el caché por presencia de cookies. Esto es crítico: si Laravel envía Set-Cookie, Cloudflare trata la respuesta como dinámica y no la cachea.
+    </div>
+</div>
+
+</main>
+</div>
+
+<script>
+(function() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('overlay');
+    var hamburger = document.getElementById('hamburgerBtn');
+    if (hamburger) { hamburger.addEventListener('click', function() { sidebar.classList.toggle('open'); overlay.classList.toggle('show'); }); }
+    if (overlay) { overlay.addEventListener('click', function() { sidebar.classList.remove('open'); overlay.classList.remove('show'); }); }
+    var titles = document.querySelectorAll('.nav-section-title');
+    titles.forEach(function(title) {
+        title.addEventListener('click', function(e) {
+            e.preventDefault();
+            var items = document.getElementById(this.getAttribute('data-toggle'));
+            if (items) { items.classList.toggle('collapsed'); this.classList.toggle('collapsed-group'); }
+        });
+    });
+    var links = document.querySelectorAll('.nav-section-items a');
+    links.forEach(function(link) { link.addEventListener('click', function() { if (window.innerWidth <= 900) { sidebar.classList.remove('open'); overlay.classList.remove('show'); } }); });
+})();
+</script>
+</body>
+</html>
