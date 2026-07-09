@@ -634,7 +634,7 @@
       <tr><td class="col-name">type</td><td class="col-type">ENUM</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-enum">boolean|select|multiselect|text|number</span></div></td><td class="col-desc">Tipo de campo del formulario. Determina la UI y la validación de la respuesta.</td></tr>
       <tr><td class="col-name">options</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Opciones disponibles para tipos <code>select</code> y <code>multiselect</code>. Array de objetos <code>{value, label}</code>.</td></tr>
       <tr><td class="col-name">required_condition</td><td class="col-type">LONGTEXT (JSON)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Condición lógica bajo la cual esta pregunta es relevante. Permite triaje condicional.</td></tr>
-      <tr><td class="col-name">order</td><td class="col-type">INT(11)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Orden de presentación de la pregunta en el wizard. Ascendente.</td></tr>
+      <tr><td class="col-name">order</td><td class="col-type">INT(11)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Orden de presentación de la pregunta en el wizard. Ascendente. DEFAULT 0.</td></tr>
       <tr><td class="col-name">is_active</td><td class="col-type">TINYINT(1)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Flag para desactivar preguntas sin eliminarlas. Preguntas inactivas no aparecen en el wizard.</td></tr>
     </tbody>
   </table>

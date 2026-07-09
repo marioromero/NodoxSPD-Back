@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seguridad del Trust Widget — NodoxSPD</title>
+    <title>Seguridad — DynamicCorsMiddleware — NodoxSPD</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body { font-family: system-ui, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f5f7fa; }
@@ -100,7 +100,7 @@
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <h2>&#128218; Documentación</h2>
-        <p>Seguridad del Trust Widget</p>
+        <p>Seguridad — DynamicCorsMiddleware</p>
         <a class="sidebar-back" href="index.html">&larr; Volver al índice</a>
     </div>
 
@@ -116,8 +116,8 @@
 <main class="content" id="main-content">
 
 <div class="doc-header">
-    <h1>Seguridad del Trust Widget</h1>
-    <p>Middleware de validación dinámica de orígenes CORS para el Trust Widget, específico del Módulo 2.</p>
+    <h1>Seguridad — DynamicCorsMiddleware</h1>
+    <p>Middleware de validación dinámica de orígenes CORS para el widget de cookies, específico del Módulo 2.</p>
 </div>
 
 <!-- ──────────────────────────────────────────── -->
@@ -128,10 +128,10 @@
     <h3>DynamicCorsMiddleware</h3>
     <div class="path">app/Http/Middleware/DynamicCorsMiddleware.php</div>
     <p>
-        Middleware del <strong>Trust Widget</strong> que valida dinámicamente el origen (<code>Origin</code> header) de cada solicitud contra la lista blanca de dominios autorizados por cada Pyme. 
+        Middleware del <strong>widget de cookies</strong> que valida dinámicamente el origen (<code>Origin</code> header) de cada solicitud contra la lista blanca de dominios autorizados por cada Pyme. 
         Registrado como alias <code>cors.dynamic</code> en <code>bootstrap/app.php</code>.
     </p>
-    <span class="tag sec">Trust Widget</span>
+    <span class="tag sec">Widget Cookies</span>
 
     <p><strong>Flujo de validación:</strong></p>
     <div class="diagram-flow">
