@@ -39,8 +39,9 @@ class WidgetConfigController extends Controller
         // 1. Validar que el parámetro sea un UUID v4 válido.
         if (! $this->isValidUuidV4($publicUuid)) {
             return response()->json([
-                'error' => 'invalid_uuid',
+                'status' => false,
                 'message' => 'El identificador proporcionado no es un UUID v4 válido.',
+                'data' => null,
             ], 400);
         }
 
@@ -63,8 +64,9 @@ class WidgetConfigController extends Controller
             ]);
 
             return response()->json([
-                'error' => 'no_active_policy',
+                'status' => false,
                 'message' => 'Esta empresa no tiene una política de cookies publicada.',
+                'data' => null,
             ], 404);
         }
 
