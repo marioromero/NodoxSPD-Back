@@ -1,492 +1,294 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Servicios de Consentimiento — NodoxSPD</title>
-    <style>
-        *, *::before, *::after { box-sizing: border-box; }
-        body { font-family: system-ui, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f5f7fa; }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>API Docs — Módulo 2: Gestión de Consentimientos</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --surface-2: #f0f2f5;
+    --border: #e2e5ea;
+    --border-strong: #c8cdd6;
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+    --text-muted: #9ca3af;
+    --font: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
 
-        .layout { display: flex; min-height: 100vh; }
-        .sidebar {
-            position: sticky; top: 0; width: 300px; min-width: 300px; height: 100vh; overflow-y: auto;
-            background: #f7f9fc; border-right: 2px solid #dce3ec; padding: 20px 0; z-index: 100;
-            transition: transform 0.3s ease;
-        }
-        .sidebar-header { padding: 0 20px 16px 20px; border-bottom: 1px solid #dce3ec; margin-bottom: 12px; }
-        .sidebar-header h2 { margin: 0; font-size: 0.95em; color: #1a3c5e; border: none; padding: 0; }
-        .sidebar-header p { margin: 4px 0 0 0; font-size: 0.78em; color: #7f8c8d; }
-        .sidebar-back { display: block; font-size: 0.75em; color: #1a3c5e; margin-top: 8px; text-decoration: none; font-weight: 600; }
-        .sidebar-back:hover { text-decoration: underline; }
+    --get: #0f766e; --get-bg: #f0fdfa; --get-border: #5eead4;
+    --post: #1d4ed8; --post-bg: #eff6ff; --post-border: #93c5fd;
+    --patch: #92400e; --patch-bg: #fffbeb; --patch-border: #fbbf24;
+    --delete: #991b1b; --delete-bg: #fef2f2; --delete-border: #fca5a5;
 
-        .nav-section { margin-bottom: 14px; }
-        .nav-section-title {
-            display: block; padding: 8px 20px; font-weight: 700; font-size: 0.82em;
-            text-decoration: none; color: #1a3c5e; background: #e8eef5;
-            border-left: 3px solid #1a3c5e; margin-bottom: 2px; cursor: pointer; user-select: none;
-        }
-        .nav-section-title:hover { background: #dce3ec; }
-        .nav-section-items { padding: 0; margin: 0; list-style: none; }
-        .nav-section-items li a {
-            display: block; padding: 4px 20px 4px 32px; font-size: 0.78em;
-            text-decoration: none; color: #555; line-height: 1.5; transition: background 0.15s;
-        }
-        .nav-section-items li a:hover { background: #e4eaf3; color: #1a3c5e; }
-        .nav-section-items li a.nav-h3 { padding-left: 46px; font-size: 0.74em; }
-        .nav-section-items.collapsed { display: none; }
-        .nav-section-title::after { content: ' \25BC'; font-size: 0.7em; margin-left: 4px; }
-        .nav-section-title.collapsed-group::after { content: ' \25BA'; }
+    --green: #166534; --green-bg: #f0fdf4; --green-border: #bbf7d0;
+    --red: #991b1b; --red-bg: #fef2f2; --red-border: #fecaca;
+    --yellow: #92400e; --yellow-bg: #fffbeb; --yellow-border: #fde68a;
+    --blue: #1e40af; --blue-bg: #eff6ff; --blue-border: #bfdbfe;
+    --purple: #5b21b6; --purple-bg: #faf5ff; --purple-border: #ddd6fe;
+  }
 
-        .content { flex: 1; padding: 20px 40px; max-width: 960px; min-width: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .hamburger {
-            display: none; position: fixed; top: 12px; left: 12px; z-index: 200;
-            width: 44px; height: 44px; border: none; background: #1a3c5e; color: #fff;
-            border-radius: 8px; font-size: 22px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-        .hamburger:hover { background: #2c5282; }
-        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 90; }
-        .overlay.show { display: block; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 32px 24px;
+  }
 
-        @media (max-width: 900px) {
-            .hamburger { display: block; }
-            .sidebar { position: fixed; left: 0; top: 0; transform: translateX(-100%); width: 300px; }
-            .sidebar.open { transform: translateX(0); }
-            .content { padding: 60px 16px 20px 16px; }
-            .layout { flex-direction: column; }
-        }
+  /* ── Doc header ── */
+  .doc-header {
+    max-width: 980px;
+    margin: 0 auto 36px;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 22px;
+  }
+  .doc-header h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.4px; }
+  .doc-header p  { font-size: 13px; color: var(--text-secondary); margin-top: 5px; }
+  .doc-meta { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; }
+  .doc-meta span { font-size: 12px; color: var(--text-muted); }
+  .doc-meta strong { color: var(--text-secondary); }
 
-        html { scroll-behavior: smooth; }
-        h1, h2, h3, h4 { scroll-margin-top: 20px; }
+  /* ── TOC ── */
+  .toc {
+    max-width: 980px; margin: 0 auto 36px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 20px;
+  }
+  .toc h2 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--text-muted); margin-bottom: 12px; }
+  .toc-list { display: flex; flex-direction: column; gap: 4px; }
+  .toc-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 10px; border-radius: 8px; text-decoration: none;
+    color: var(--text-secondary); font-size: 12.5px; font-weight: 500;
+    transition: background .15s;
+  }
+  .toc-item:hover { background: var(--surface-2); color: var(--text-primary); }
+  .toc-num { font-size: 11px; font-weight: 700; color: var(--text-muted); width: 20px; }
+  .toc-path { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); margin-left: auto; }
 
-        .doc-header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #1a3c5e; }
-        .doc-header h1 { margin-top: 0; font-size: 1.8em; border: none; padding: 0; color: #1a3c5e; }
-        .doc-header p { font-size: 1.05em; color: #555; max-width: 780px; margin: 10px auto 0 auto; }
+  /* ── Verb badge ── */
+  .verb {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 2px 9px; border-radius: 6px; font-size: 11px;
+    font-weight: 800; font-family: var(--font-mono); letter-spacing: .3px;
+    border: 1.5px solid; white-space: nowrap;
+  }
+  .verb-get    { color: var(--get);    background: var(--get-bg);    border-color: var(--get-border); }
+  .verb-post   { color: var(--post);   background: var(--post-bg);   border-color: var(--post-border); }
+  .verb-patch  { color: var(--patch);  background: var(--patch-bg);  border-color: var(--patch-border); }
+  .verb-delete { color: var(--delete); background: var(--delete-bg); border-color: var(--delete-border); }
+  .verb-options{ color: var(--purple); background: var(--purple-bg); border-color: var(--purple-border); }
 
-        h1 { color: #1a3c5e; border-bottom: 3px solid #1a3c5e; padding-bottom: 12px; margin-top: 50px; font-size: 1.4em; }
-        h2 { color: #2c3e50; margin-top: 35px; border-bottom: 2px solid #3498db; padding-bottom: 6px; }
-        h3 { color: #16a085; margin-top: 25px; }
+  /* ── Endpoint card ── */
+  .endpoint {
+    max-width: 980px; margin: 0 auto 28px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden;
+  }
+  .ep-header {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .ep-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--text-primary); color: #fff;
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .ep-title-block { flex: 1; }
+  .ep-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .ep-desc  { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; }
+  .ep-route {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 20px; background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .ep-path {
+    font-family: var(--font-mono); font-size: 13px;
+    font-weight: 600; color: var(--text-primary);
+  }
+  .ep-body { padding: 0; }
 
-        .card {
-            background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
-            padding: 20px 24px; margin: 20px 0; box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-        }
-        .card h3 { margin: 0 0 4px 0; color: #1a3c5e; font-size: 1.1em; border: none; padding: 0; }
-        .card .path { font-family: 'JetBrains Mono', monospace; font-size: 0.82em; color: #888; margin-bottom: 8px; }
-        .card p { margin: 0 0 10px 0; color: #555; font-size: 0.93em; }
-        .card p:last-child { margin-bottom: 0; }
-        .card .tag {
-            display: inline-block; font-size: 0.72em; font-weight: 600; padding: 2px 10px;
-            border-radius: 12px; margin-right: 4px; background: #e8eef5; color: #1a3c5e;
-        }
-        .card .tag.ledger { background: #fef2f2; color: #b91c1c; }
-        .card .tag.hash { background: #ede9fe; color: #5b21b6; }
-        .card .tag.core { background: #d1fae5; color: #065f46; }
+  /* ── Section inside card ── */
+  .ep-section { padding: 14px 20px; border-bottom: 1px solid var(--border); }
+  .ep-section:last-child { border-bottom: none; }
+  .ep-section-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .5px; color: var(--text-muted); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .ep-section-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-strong); }
 
-        .code-block {
-            background: #1e293b; color: #e2e8f0; border-radius: 8px; padding: 14px 16px;
-            font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6;
-            overflow-x: auto; margin: 10px 0;
-        }
-        .code-block .comment { color: #94a3b8; }
-        .code-block .keyword { color: #c084fc; }
-        .code-block .string { color: #34d399; }
-        .code-block .function { color: #60a5fa; }
+  /* ── Code block ── */
+  pre {
+    background: #1e1e2e; color: #cdd6f4;
+    border-radius: 8px; padding: 12px 14px;
+    font-family: var(--font-mono); font-size: 12px;
+    line-height: 1.6; overflow-x: auto; margin-top: 6px;
+  }
+  .hl-key   { color: #89b4fa; }
+  .hl-str   { color: #a6e3a1; }
+  .hl-num   { color: #fab387; }
+  .hl-bool  { color: #f38ba8; }
+  .hl-null  { color: #6c7086; }
+  .hl-cmt   { color: #585b70; font-style: italic; }
+  code.inline {
+    font-family: var(--font-mono); font-size: 12px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 6px; color: var(--text-primary);
+  }
 
-        .nota { background: #e8f8f5; border-left: 4px solid #1abc9c; padding: 10px 14px; margin: 12px 0; font-size: 0.93em; }
-        .nota-warn { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px 14px; margin: 12px 0; font-size: 0.93em; }
-        .nota-danger { background: #fef2f2; border-left: 4px solid #ef4444; padding: 10px 14px; margin: 12px 0; font-size: 0.93em; }
+  /* ── Table ── */
+  .param-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 6px; }
+  .param-table th {
+    background: var(--surface-2); padding: 7px 10px;
+    text-align: left; font-size: 11px; font-weight: 600;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .param-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .param-table tr:last-child td { border-bottom: none; }
+  .param-table td:first-child { font-family: var(--font-mono); font-size: 12px; color: var(--blue); font-weight: 600; }
+  .param-table td:nth-child(2) { font-family: var(--font-mono); font-size: 11px; color: var(--purple); }
+  .param-table td:nth-child(3) { color: var(--text-secondary); }
 
-        .verb {
-            display: inline-flex; align-items: center; justify-content: center;
-            padding: 2px 9px; border-radius: 6px; font-size: 11px;
-            font-weight: 800; font-family: 'JetBrains Mono', monospace; letter-spacing: .3px;
-            border: 1.5px solid; white-space: nowrap;
-        }
-        .verb-get    { color: #0f766e; background: #f0fdfa; border-color: #5eead4; }
-        .verb-post   { color: #1d4ed8; background: #eff6ff; border-color: #93c5fd; }
-        .verb-patch  { color: #92400e; background: #fffbeb; border-color: #fbbf24; }
-        .verb-delete { color: #991b1b; background: #fef2f2; border-color: #fca5a5; }
+  /* ── Pills ── */
+  .pill {
+    display: inline-block; padding: 1px 7px; border-radius: 10px;
+    font-size: 10px; font-weight: 700; border: 1px solid; white-space: nowrap;
+  }
+  .pill-req  { background: var(--red-bg);    color: var(--red);    border-color: var(--red-border); }
+  .pill-opt  { background: var(--surface-2); color: var(--text-muted); border-color: var(--border); }
+  .pill-200  { background: var(--green-bg);  color: var(--green);  border-color: var(--green-border); }
+  .pill-201  { background: var(--green-bg);  color: var(--green);  border-color: var(--green-border); }
+  .pill-204  { background: var(--blue-bg);   color: var(--blue);   border-color: var(--blue-border); }
+  .pill-400  { background: var(--yellow-bg); color: var(--yellow); border-color: var(--yellow-border); }
+  .pill-401  { background: var(--red-bg);    color: var(--red);    border-color: var(--red-border); }
+  .pill-403  { background: var(--red-bg);    color: var(--red);    border-color: var(--red-border); }
+  .pill-404  { background: var(--yellow-bg); color: var(--yellow); border-color: var(--yellow-border); }
+  .pill-422  { background: var(--yellow-bg); color: var(--yellow); border-color: var(--yellow-border); }
+  .pill-429  { background: var(--red-bg);    color: var(--red);    border-color: var(--red-border); }
 
-        .endpoint {
-            background: #fff; border: 1px solid #e0e0e0; border-radius: 14px;
-            margin: 20px 0; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-        }
-        .ep-header {
-            display: flex; align-items: flex-start; gap: 12px;
-            padding: 16px 20px; border-bottom: 1px solid #e0e0e0; background: #f0f2f5;
-        }
-        .ep-num {
-            width: 28px; height: 28px; border-radius: 50%;
-            background: #1a3c5e; color: #fff;
-            font-size: 12px; font-weight: 700;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; margin-top: 1px;
-        }
-        .ep-title-block { flex: 1; }
-        .ep-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; color: #1a3c5e; }
-        .ep-desc  { font-size: 12.5px; color: #555; line-height: 1.5; }
-        .ep-route {
-            display: flex; align-items: center; gap: 8px;
-            padding: 10px 20px; background: #f5f7fa;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        .ep-path {
-            font-family: 'JetBrains Mono', monospace; font-size: 13px;
-            font-weight: 600; color: #1a3c5e;
-        }
-        .ep-body { padding: 0; }
+  /* ── Collapsible ── */
+  details { margin-top: 8px; border-radius: 8px; overflow: hidden; }
+  details + details { margin-top: 6px; }
+  summary {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; cursor: pointer;
+    font-size: 12.5px; font-weight: 600;
+    border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface-2); list-style: none;
+    user-select: none; transition: background .15s;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary:hover { background: var(--border); }
+  details[open] summary { border-radius: 8px 8px 0 0; }
+  .summary-arrow {
+    width: 16px; height: 16px; display: flex; align-items: center;
+    justify-content: center; transition: transform .2s; flex-shrink: 0;
+    font-size: 10px; color: var(--text-muted);
+  }
+  details[open] .summary-arrow { transform: rotate(90deg); }
+  .details-body {
+    border: 1px solid var(--border); border-top: none;
+    border-radius: 0 0 8px 8px; padding: 12px 14px;
+    background: var(--surface);
+  }
 
-        .ep-section { padding: 14px 20px; border-bottom: 1px solid #e0e0e0; }
-        .ep-section:last-child { border-bottom: none; }
-        .ep-section-title {
-            font-size: 11px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .5px; color: #888; margin-bottom: 10px;
-            display: flex; align-items: center; gap: 6px;
-        }
-        .ep-section-title .dot { width: 6px; height: 6px; border-radius: 50%; background: #ccc; }
+  /* ── Error rows ── */
+  .error-row {
+    display: flex; gap: 10px; padding: 8px 0;
+    border-bottom: 1px solid var(--border); align-items: flex-start;
+  }
+  .error-row:last-child { border-bottom: none; }
+  .error-code { font-family: var(--font-mono); font-size: 12px; font-weight: 700; flex-shrink: 0; min-width: 40px; }
+  .error-body { flex: 1; }
+  .error-msg  { font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
+  .error-cause{ font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
 
-        .param-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 6px; }
-        .param-table th {
-            background: #f0f2f5; padding: 7px 10px;
-            text-align: left; font-size: 11px; font-weight: 600;
-            color: #888; text-transform: uppercase; letter-spacing: .4px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        .param-table td { padding: 7px 10px; border-bottom: 1px solid #e0e0e0; vertical-align: top; color: #555; }
-        .param-table tr:last-child td { border-bottom: none; }
-        .param-table td:first-child { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #1a3c5e; font-weight: 600; }
-        .param-table td:nth-child(2) { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5b21b6; }
+  /* ── Note boxes ── */
+  .note {
+    display: flex; gap: 8px; align-items: flex-start;
+    padding: 10px 12px; border-radius: 8px;
+    font-size: 12.5px; line-height: 1.55; margin-top: 8px;
+  }
+  .note-icon { flex-shrink: 0; font-size: 14px; margin-top: 1px; }
+  .note-warn { background: var(--yellow-bg); border: 1px solid var(--yellow-border); color: var(--yellow); }
+  .note-info { background: var(--blue-bg);   border: 1px solid var(--blue-border);   color: var(--blue); }
+  .note-fe   { background: var(--purple-bg); border: 1px solid var(--purple-border); color: var(--purple); }
+  .note-success { background: var(--green-bg); border: 1px solid var(--green-border); color: var(--green); }
 
-        code.inline {
-            font-family: 'JetBrains Mono', monospace; font-size: 12px;
-            background: #f0f2f5; border: 1px solid #e0e0e0;
-            border-radius: 4px; padding: 1px 6px; color: #1a3c5e;
-        }
+  /* ── Auth badge ── */
+  .auth-badge {
+    font-size: 11px; font-weight: 600; padding: 3px 8px;
+    border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .auth-public  { background: var(--green-bg);  color: var(--green);  border: 1px solid var(--green-border); }
+  .auth-private { background: var(--red-bg);    color: var(--red);    border: 1px solid var(--red-border); }
 
-        .pill {
-            display: inline-block; padding: 1px 7px; border-radius: 10px;
-            font-size: 10px; font-weight: 700; border: 1px solid; white-space: nowrap;
-        }
-        .pill-req  { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-        .pill-opt  { background: #f0f2f5; color: #888; border-color: #e0e0e0; }
-        .pill-200  { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
-        .pill-201  { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
-        .pill-204  { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
-        .pill-400  { background: #fffbeb; color: #92400e; border-color: #fde68a; }
-        .pill-401  { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-        .pill-403  { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-        .pill-404  { background: #fffbeb; color: #92400e; border-color: #fde68a; }
-        .pill-409  { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-        .pill-410  { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-        .pill-413  { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
-        .pill-422  { background: #fffbeb; color: #92400e; border-color: #fde68a; }
-        .pill-429  { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+  /* ── Divider ── */
+  .section-divider {
+    max-width: 980px; margin: 8px auto 24px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-divider h2 {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .7px; color: var(--text-muted); white-space: nowrap;
+  }
+  .section-divider hr { flex: 1; border: none; border-top: 1px solid var(--border); }
 
-        details { margin-top: 8px; border-radius: 8px; overflow: hidden; }
-        details + details { margin-top: 6px; }
-        summary {
-            display: flex; align-items: center; gap: 8px;
-            padding: 8px 12px; cursor: pointer;
-            font-size: 12.5px; font-weight: 600; color: #1a3c5e;
-            border-radius: 8px; border: 1px solid #e0e0e0;
-            background: #f0f2f5; list-style: none;
-            user-select: none; transition: background .15s;
-        }
-        summary::-webkit-details-marker { display: none; }
-        summary:hover { background: #e0e0e0; }
-        details[open] summary { border-radius: 8px 8px 0 0; }
-        .summary-arrow {
-            width: 16px; height: 16px; display: flex; align-items: center;
-            justify-content: center; transition: transform .2s; flex-shrink: 0;
-            font-size: 10px; color: #888;
-        }
-        details[open] .summary-arrow { transform: rotate(90deg); }
-        .details-body {
-            border: 1px solid #e0e0e0; border-top: none;
-            border-radius: 0 0 8px 8px; padding: 12px 14px;
-            background: #fff;
-        }
-
-        .error-row {
-            display: flex; gap: 10px; padding: 8px 0;
-            border-bottom: 1px solid #e0e0e0; align-items: flex-start;
-        }
-        .error-row:last-child { border-bottom: none; }
-        .error-code { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; flex-shrink: 0; min-width: 40px; }
-        .error-body { flex: 1; }
-        .error-msg  { font-size: 12.5px; font-weight: 600; color: #1a3c5e; }
-        .error-cause{ font-size: 12px; color: #555; margin-top: 2px; }
-
-        .note {
-            display: flex; gap: 8px; align-items: flex-start;
-            padding: 10px 12px; border-radius: 8px;
-            font-size: 12.5px; line-height: 1.55; margin-top: 8px;
-        }
-        .note-icon { flex-shrink: 0; font-size: 14px; margin-top: 1px; }
-        .note-warn { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
-        .note-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
-        .note-fe   { background: #faf5ff; border: 1px solid #ddd6fe; color: #5b21b6; }
-        .note-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
-
-        .auth-badge {
-            font-size: 11px; font-weight: 600; padding: 3px 8px;
-            border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;
-        }
-        .auth-public  { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-        .auth-private { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-
-        .section-divider {
-            display: flex; align-items: center; gap: 12px; margin: 32px 0 16px;
-        }
-        .section-divider h2 {
-            font-size: 12px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .7px; color: #888; white-space: nowrap;
-        }
-        .section-divider hr { flex: 1; border: none; border-top: 1px solid #e0e0e0; }
-    </style>
+  @media (max-width:640px) {
+    body { padding: 14px 10px; }
+    .ep-header { flex-wrap: wrap; }
+  }
+</style>
 </head>
 <body>
 
-<button class="hamburger" id="hamburgerBtn">&#9776;</button>
-<div class="overlay" id="overlay"></div>
-
-<div class="layout">
-<nav class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <h2>&#128218; Documentación</h2>
-        <p>Servicios de Consentimiento</p>
-        <a class="sidebar-back" href="index.html">&larr; Volver al índice</a>
-    </div>
-
-    <div class="nav-section">
-        <a class="nav-section-title" href="#proof-hash" data-toggle="proof-hash-items">ProofHashService</a>
-        <ul class="nav-section-items" id="proof-hash-items">
-            <li><a href="#proof-hash">Servicio de sellado criptográfico</a></li>
-            <li><a href="#canonicalizacion" class="nav-h3">Canonicalización JSON</a></li>
-            <li><a href="#verificacion" class="nav-h3">Verificación de integridad</a></li>
-        </ul>
-    </div>
-    <div class="nav-section">
-        <a class="nav-section-title" href="#inmutabilidad" data-toggle="inmutabilidad-items">Inmutabilidad</a>
-        <ul class="nav-section-items" id="inmutabilidad-items">
-            <li><a href="#inmutabilidad">ConsentLog — Ledger inmutable</a></li>
-            <li><a href="#doble-proteccion" class="nav-h3">Doble capa de protección</a></li>
-        </ul>
-    </div>
-    <div class="nav-section">
-        <a class="nav-section-title" href="#ep1" data-toggle="ep1-items">Endpoint 01</a>
-        <ul class="nav-section-items" id="ep1-items">
-            <li><a href="#ep1">Configuración del widget</a></li>
-        </ul>
-    </div>
-    <div class="nav-section">
-        <a class="nav-section-title" href="#ep2" data-toggle="ep2-items">Endpoint 02</a>
-        <ul class="nav-section-items" id="ep2-items">
-            <li><a href="#ep2">Registrar consentimiento</a></li>
-        </ul>
-    </div>
-    <div class="nav-section">
-        <a class="nav-section-title" href="#ep3" data-toggle="ep3-items">Endpoint 03</a>
-        <ul class="nav-section-items" id="ep3-items">
-            <li><a href="#ep3">Sincronizar identidad</a></li>
-        </ul>
-    </div>
-    <div class="nav-section">
-        <a class="nav-section-title" href="#ep4" data-toggle="ep4-items">Endpoint 04</a>
-        <ul class="nav-section-items" id="ep4-items">
-            <li><a href="#ep4">Webhook nuevo lead</a></li>
-        </ul>
-    </div>
-    <div class="nav-section">
-        <a class="nav-section-title" href="#ep5" data-toggle="ep5-items">Endpoint 05</a>
-        <ul class="nav-section-items" id="ep5-items">
-            <li><a href="#ep5">Ver portal de firma</a></li>
-        </ul>
-    </div>
-    <div class="nav-section">
-        <a class="nav-section-title" href="#ep6" data-toggle="ep6-items">Endpoint 06</a>
-        <ul class="nav-section-items" id="ep6-items">
-            <li><a href="#ep6">Confirmar firma</a></li>
-        </ul>
-    </div>
-    <div class="nav-section">
-        <a class="nav-section-title" href="#ep7" data-toggle="ep7-items">Endpoint 07</a>
-        <ul class="nav-section-items" id="ep7-items">
-            <li><a href="#ep7">Subir importación CSV</a></li>
-        </ul>
-    </div>
-    <div class="nav-section">
-        <a class="nav-section-title" href="#ep8" data-toggle="ep8-items">Endpoint 08</a>
-        <ul class="nav-section-items" id="ep8-items">
-            <li><a href="#ep8">Estado de importación</a></li>
-        </ul>
-    </div>
-    <div class="nav-section">
-        <a class="nav-section-title" href="#ep9" data-toggle="ep9-items">Endpoint 09</a>
-        <ul class="nav-section-items" id="ep9-items">
-            <li><a href="#ep9">Historial de consentimientos</a></li>
-        </ul>
-    </div>
-    <div class="nav-section">
-        <a class="nav-section-title" href="#ep10" data-toggle="ep10-items">Endpoint 10</a>
-        <ul class="nav-section-items" id="ep10-items">
-            <li><a href="#ep10">Consentimientos pendientes</a></li>
-        </ul>
-    </div>
-    <div class="nav-section">
-        <a class="nav-section-title" href="#ep11" data-toggle="ep11-items">Endpoint 11</a>
-        <ul class="nav-section-items" id="ep11-items">
-            <li><a href="#ep11">Reenviar link de firma</a></li>
-        </ul>
-    </div>
-    <div class="nav-section">
-        <a class="nav-section-title" href="#ep12" data-toggle="ep12-items">Endpoint 12</a>
-        <ul class="nav-section-items" id="ep12-items">
-            <li><a href="#ep12">Actualizar dominios</a></li>
-        </ul>
-    </div>
-    <div class="nav-section">
-        <a class="nav-section-title" href="#ep13" data-toggle="ep13-items">Endpoint 13</a>
-        <ul class="nav-section-items" id="ep13-items">
-            <li><a href="#ep13">Actualizar config widget</a></li>
-        </ul>
-    </div>
-    <div class="nav-section">
-        <a class="nav-section-title" href="#ep14" data-toggle="ep14-items">Endpoint 14</a>
-        <ul class="nav-section-items" id="ep14-items">
-            <li><a href="#ep14">Rotar secreto HMAC</a></li>
-        </ul>
-    </div>
-</nav>
-
-<main class="content" id="main-content">
-
+<!-- ── Header ── -->
 <div class="doc-header">
-    <h1>Servicios de Consentimiento</h1>
-    <p>Servicios core del Módulo 2: sellado criptográfico, inmutabilidad del ledger, gestión de consentimientos y API Reference completa de endpoints.</p>
+  <h1>API Reference — Módulo 2: Gestión de Consentimientos</h1>
+  <p>Documentación de endpoints para el Trust Widget (captura anónima de cookies), Identity Stitching, Portal Cautivo, importación masiva y panel de administración.</p>
+  <div class="doc-meta">
+    <span>🌐 <strong>Base URL:</strong> <code style="font-family:var(--font-mono);font-size:12px">https://api.tudominio.com</code></span>
+    <span>📦 <strong>Versión:</strong> MVP — Módulo 2</span>
+    <span>🔐 <strong>Auth:</strong> Laravel Sanctum (rutas privadas)</span>
+    <span>📄 <strong>Formato:</strong> JSON · UTF-8</span>
+  </div>
 </div>
 
-<!-- ──────────────────────────────────────────── -->
-<h1 id="proof-hash">ProofHashService</h1>
-<!-- ──────────────────────────────────────────── -->
-
-<div class="card">
-    <h3>Servicio de Sellado Criptográfico</h3>
-    <div class="path">app/Services/Consent/ProofHashService.php</div>
-    <p>
-        Es el servicio responsable de calcular el <strong>proof_hash</strong> de cada registro en <code>consent_logs</code>. 
-        Este hash es el sello que garantiza la integridad forense del consentimiento: si alguien modifica cualquier campo del registro, 
-        el hash deja de coincidir y el fraude es detectable.
-    </p>
-    <span class="tag hash">Criptografía</span>
-    <span class="tag core">Core</span>
-
-    <p><strong>¿Qué datos sella?</strong> El hash se calcula sobre cuatro campos:</p>
-    <ul>
-        <li><code>identifier</code> — email o SHA-256 del RUT del titular</li>
-        <li><code>policy_hash</code> — SHA-256 del contenido de la política que el usuario aceptó</li>
-        <li><code>purposes</code> — JSON canónico con los propósitos aceptados/rechazados</li>
-        <li><code>timestamp</code> — fecha ISO 8601 de cuándo ocurrió el consentimiento</li>
-    </ul>
-
-    <p><strong>Método compute( ): </strong>Toma un payload, lo canonicaliza y devuelve <code>hash('sha256', $canonical)</code>.</p>
-
-    <h3 id="canonicalizacion">Canonicalización JSON</h3>
-    <p>
-        El método <code>canonicalize()</code> ordena todas las llaves del payload recursivamente con <code>ksort()</code> antes de serializar a JSON. 
-        Esto garantiza que el mismo contenido siempre produzca el mismo hash, independientemente del orden en que se construyó el array en PHP.
-    </p>
-    <div class="code-block">
-<span class="comment">// Ejemplo de un payload canonicalizado</span>
-{<br>
-&nbsp;&nbsp;<span class="string">"identifier"</span>: <span class="string">"usuario@email.com"</span>,<br>
-&nbsp;&nbsp;<span class="string">"policy_hash"</span>: <span class="string">"a1b2c3d4..."</span>,<br>
-&nbsp;&nbsp;<span class="string">"purposes"</span>: {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"analytics"</span>: <span class="keyword">true</span>,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"marketing"</span>: <span class="keyword">false</span>,<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"necessary"</span>: <span class="keyword">true</span><br>
-&nbsp;&nbsp;},<br>
-&nbsp;&nbsp;<span class="string">"timestamp"</span>: <span class="string">"2026-06-26T23:20:11+00:00"</span><br>
-}
-    </div>
-
-    <h3 id="verificacion">Verificación de Integridad</h3>
-    <p>
-        El método <code>computeForLog(ConsentLog $log)</code> reconstruye el payload desde el modelo y recalcula el hash. 
-        Para verificar que un registro no ha sido alterado, se compara el hash calculado contra el <code>proof_hash</code> almacenado:
-    </p>
-
-    <div class="code-block">
-<span class="comment">// Verificación manual (ejemplo conceptual)</span><br>
-$esperado = $log->proof_hash;<br>
-$calculado = (new <span class="function">ProofHashService</span>())->computeForLog($log);<br>
-<br>
-<span class="keyword">if</span> ($esperado !== $calculado) {<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">// Alguien modificó el registro — alerta forense</span><br>
-}
-    </div>
-
-    <div class="nota">
-        El proof_hash está almacenado con restricción <strong>UNIQUE</strong> en la base de datos. Esto no solo evita duplicados accidentales, 
-        sino que también es una protección adicional contra manipulaciones.
-    </div>
+<!-- ── TOC ── -->
+<div class="toc">
+  <h2>Índice de endpoints</h2>
+  <div class="toc-list">
+    <a href="#ep1" class="toc-item"><span class="toc-num">01</span><span class="verb verb-get">GET</span> Configuración del widget<span class="toc-path">/api/widget/config/{uuid}</span></a>
+    <a href="#ep2" class="toc-item"><span class="toc-num">02</span><span class="verb verb-post">POST</span> Registrar consentimiento de cookies<span class="toc-path">/api/widget/consent</span></a>
+    <a href="#ep3" class="toc-item"><span class="toc-num">03</span><span class="verb verb-post">POST</span> Sincronizar identidad (HMAC)<span class="toc-path">/api/widget/sync-identity</span></a>
+    <a href="#ep4" class="toc-item"><span class="toc-num">04</span><span class="verb verb-post">POST</span> Webhook de nuevo lead<span class="toc-path">/api/webhooks/lead-created</span></a>
+    <a href="#ep5" class="toc-item"><span class="toc-num">05</span><span class="verb verb-get">GET</span> Ver portal de firma<span class="toc-path">/portal/consent/{token}</span></a>
+    <a href="#ep6" class="toc-item"><span class="toc-num">06</span><span class="verb verb-post">POST</span> Confirmar firma en portal<span class="toc-path">/portal/consent/{token}/confirm</span></a>
+    <a href="#ep7" class="toc-item"><span class="toc-num">07</span><span class="verb verb-post">POST</span> Subir importación CSV<span class="toc-path">/api/panel/imports</span></a>
+    <a href="#ep8" class="toc-item"><span class="toc-num">08</span><span class="verb verb-get">GET</span> Estado de importación<span class="toc-path">/api/panel/imports/{id}</span></a>
+    <a href="#ep9" class="toc-item"><span class="toc-num">09</span><span class="verb verb-get">GET</span> Historial de consentimientos<span class="toc-path">/api/panel/consent-logs</span></a>
+    <a href="#ep10" class="toc-item"><span class="toc-num">10</span><span class="verb verb-get">GET</span> Consentimientos pendientes<span class="toc-path">/api/panel/pending-consents</span></a>
+    <a href="#ep11" class="toc-item"><span class="toc-num">11</span><span class="verb verb-post">POST</span> Reenviar link de firma<span class="toc-path">/api/panel/pending-consents/{id}/resend</span></a>
+    <a href="#ep12" class="toc-item"><span class="toc-num">12</span><span class="verb verb-patch">PATCH</span> Actualizar dominios autorizados<span class="toc-path">/api/panel/companies/domains</span></a>
+    <a href="#ep13" class="toc-item"><span class="toc-num">13</span><span class="verb verb-patch">PATCH</span> Actualizar config del widget<span class="toc-path">/api/panel/companies/widget-config</span></a>
+    <a href="#ep14" class="toc-item"><span class="toc-num">14</span><span class="verb verb-post">POST</span> Rotar secreto de integración<span class="toc-path">/api/panel/companies/rotate-secret</span></a>
+  </div>
 </div>
 
-<!-- ──────────────────────────────────────────── -->
-<h1 id="inmutabilidad">Inmutabilidad del Ledger</h1>
-<!-- ──────────────────────────────────────────── -->
-
-<div class="card">
-    <h3>ConsentLog — El modelo que nunca cambia</h3>
-    <div class="path">app/Models/ConsentLog.php</div>
-    <p>
-        El modelo <code>ConsentLog</code> está diseñado para ser <strong>append-only</strong>. No se puede modificar ni eliminar un registro 
-        una vez creado. Esto es el corazón de la estrategia forense del sistema: cada consentimiento queda congelado en el tiempo.
-    </p>
-    <span class="tag ledger">Ledger</span>
-    <span class="tag core">Core</span>
-
-    <p><strong>Características clave del modelo:</strong></p>
-    <ul>
-        <li><code>$timestamps = false</code> — desactiva los timestamps automáticos de Eloquent. No existe columna <code>updated_at</code>.</li>
-        <li>En el evento <code>creating</code>: asigna <code>recorded_at</code> y <code>created_at</code> manualmente con <code>now()</code></li>
-        <li>En el evento <code>updating</code>: lanza <code>LogicException</code> — impide cualquier UPDATE</li>
-        <li>En el evento <code>deleting</code>: lanza <code>LogicException</code> — impide cualquier DELETE</li>
-        <li>El campo <code>proof_hash</code> tiene restricción UNIQUE a nivel de BD</li>
-    </ul>
-
-    <h3 id="doble-proteccion">Doble Capa de Protección</h3>
-    <p>La inmutabilidad se garantiza en dos niveles:</p>
-    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:10px;">
-        <thead><tr style="background:#f0f2f5;">
-            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#777;text-transform:uppercase">Capa</th>
-            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#777;text-transform:uppercase">Mecanismo</th>
-            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:#777;text-transform:uppercase">Qué protege</th>
-        </tr></thead>
-        <tbody>
-            <tr><td style="padding:7px 12px;border-bottom:1px solid #eee"><strong>1. Eloquent</strong></td>
-                <td style="padding:7px 12px;border-bottom:1px solid #eee">Eventos <code>updating</code> y <code>deleting</code> lanzan <code>LogicException</code></td>
-                <td style="padding:7px 12px;border-bottom:1px solid #eee">Protege contra código que intente modificar registros</td></tr>
-            <tr><td style="padding:7px 12px;border-bottom:1px solid #eee"><strong>2. Base de datos</strong></td>
-                <td style="padding:7px 12px;border-bottom:1px solid #eee">No existe columna <code>updated_at</code>. <code>proof_hash</code> es UNIQUE.</td>
-                <td style="padding:7px 12px;border-bottom:1px solid #eee">Cualquier UPDATE dejaría la fila inconsistente con el hash</td></tr>
-        </tbody>
-    </table>
-
-    <div class="nota-danger" style="margin-top:12px;">
-        <strong>Importante:</strong> Las excepciones de inmutabilidad son capturadas por el handler centralizado en <code>bootstrap/app.php</code> 
-        y devueltas como HTTP 409 con mensaje "No se puede modificar ni eliminar este recurso."
-    </div>
-</div>
 
 <!-- ══════════════════════════════════════════
-     API REFERENCE — ENDPOINTS
+     GRUPO 1 — TRUST WIDGET (PÚBLICO)
      ══════════════════════════════════════════ -->
-
-<div class="section-divider"><h2>API Reference — Endpoints de Consentimientos</h2><hr></div>
-
 <div class="section-divider"><h2>Grupo 1 — Trust Widget (endpoints públicos)</h2><hr></div>
 
 <!-- EP 01 -->
@@ -528,67 +330,43 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
 
     <div class="ep-section">
       <div class="ep-section-title"><span class="dot"></span>Query Parameters</div>
-      <p style="font-size:12.5px;color:#888">Ninguno.</p>
+      <p style="font-size:12.5px;color:var(--text-muted)">Ninguno.</p>
     </div>
 
     <div class="ep-section">
       <div class="ep-section-title"><span class="dot"></span>Body</div>
-      <p style="font-size:12.5px;color:#888">No aplica (método GET).</p>
+      <p style="font-size:12.5px;color:var(--text-muted)">No aplica (método GET).</p>
     </div>
 
     <div class="ep-section">
       <div class="ep-section-title"><span class="dot"></span>Respuesta exitosa <span class="pill pill-200">200 OK</span></div>
       <pre>{
-  <span class="hl-key">"policy_hash"</span>: <span class="hl-str">"3a9f2c8d1e4b7f2a..."</span>,
+  <span class="hl-key">"policy_hash"</span>: <span class="hl-str">"3a9f2c8d1e4b7f2a..."</span>,          <span class="hl-cmt">// SHA-256 de la política activa</span>
   <span class="hl-key">"policy_version"</span>: <span class="hl-num">3</span>,
   <span class="hl-key">"widget_config"</span>: {
-    <span class="hl-key">"position"</span>:            <span class="hl-str">"bottom-left"</span>,
-    <span class="hl-key">"primary_color"</span>:       <span class="hl-str">"#1a73e8"</span>,
-    <span class="hl-key">"show_reject_all"</span>:     <span class="hl-bool">true</span>,
+    <span class="hl-key">"position"</span>: <span class="hl-str">"bottom-left"</span>,
+    <span class="hl-key">"primary_color"</span>: <span class="hl-str">"#1a73e8"</span>,
+    <span class="hl-key">"show_reject_all"</span>: <span class="hl-bool">true</span>,
     <span class="hl-key">"cookie_duration_days"</span>: <span class="hl-num">365</span>,
     <span class="hl-key">"providers"</span>: {
-      <span class="hl-key">"analytics"</span>:       [<span class="hl-str">"google_analytics"</span>, <span class="hl-str">"hotjar"</span>],
-      <span class="hl-key">"marketing"</span>:       [<span class="hl-str">"meta_pixel"</span>, <span class="hl-str">"google_ads"</span>],
+      <span class="hl-key">"analytics"</span>: [<span class="hl-str">"google_analytics"</span>, <span class="hl-str">"hotjar"</span>],
+      <span class="hl-key">"marketing"</span>: [<span class="hl-str">"meta_pixel"</span>, <span class="hl-str">"google_ads"</span>],
       <span class="hl-key">"personalization"</span>: [<span class="hl-str">"intercom"</span>]
     }
   },
   <span class="hl-key">"purposes"</span>: {
-    <span class="hl-key">"necessary"</span>: {
-      <span class="hl-key">"label"</span>:       <span class="hl-str">"Técnicas / Necesarias"</span>,
-      <span class="hl-key">"description"</span>: <span class="hl-str">"Indispensables para el funcionamiento del sitio: sesión, carrito, seguridad. No pueden desactivarse."</span>,
-      <span class="hl-key">"required"</span>:    <span class="hl-bool">true</span>,
-      <span class="hl-key">"default"</span>:     <span class="hl-bool">true</span>,
-      <span class="hl-key">"legal_basis"</span>: <span class="hl-str">"legitimate_interest"</span>
-    },
-    <span class="hl-key">"analytics"</span>: {
-      <span class="hl-key">"label"</span>:       <span class="hl-str">"Analítica / Medición"</span>,
-      <span class="hl-key">"description"</span>: <span class="hl-str">"Permiten cuantificar visitas y fuentes de tráfico para evaluar y mejorar el rendimiento del sitio."</span>,
-      <span class="hl-key">"required"</span>:    <span class="hl-bool">false</span>,
-      <span class="hl-key">"default"</span>:     <span class="hl-bool">false</span>,
-      <span class="hl-key">"legal_basis"</span>: <span class="hl-str">"consent"</span>
-    },
-    <span class="hl-key">"marketing"</span>: {
-      <span class="hl-key">"label"</span>:       <span class="hl-str">"Publicidad / Perfilamiento"</span>,
-      <span class="hl-key">"description"</span>: <span class="hl-str">"Habilitan anuncios personalizados en plataformas como Google, Instagram y TikTok basados en tu comportamiento."</span>,
-      <span class="hl-key">"required"</span>:    <span class="hl-bool">false</span>,
-      <span class="hl-key">"default"</span>:     <span class="hl-bool">false</span>,
-      <span class="hl-key">"legal_basis"</span>: <span class="hl-str">"consent"</span>
-    },
-    <span class="hl-key">"personalization"</span>: {
-      <span class="hl-key">"label"</span>:       <span class="hl-str">"Funcionalidad de Terceros"</span>,
-      <span class="hl-key">"description"</span>: <span class="hl-str">"Activan widgets externos como chats de soporte, videos incrustados y mapas interactivos."</span>,
-      <span class="hl-key">"required"</span>:    <span class="hl-bool">false</span>,
-      <span class="hl-key">"default"</span>:     <span class="hl-bool">false</span>,
-      <span class="hl-key">"legal_basis"</span>: <span class="hl-str">"consent"</span>
-    }
+    <span class="hl-key">"necessary"</span>:       { <span class="hl-key">"label"</span>: <span class="hl-str">"Técnicas / Necesarias"</span>, <span class="hl-key">"required"</span>: <span class="hl-bool">true</span> },
+    <span class="hl-key">"analytics"</span>:      { <span class="hl-key">"label"</span>: <span class="hl-str">"Analítica / Medición"</span>,  <span class="hl-key">"required"</span>: <span class="hl-bool">false</span> },
+    <span class="hl-key">"marketing"</span>:      { <span class="hl-key">"label"</span>: <span class="hl-str">"Publicidad"</span>,             <span class="hl-key">"required"</span>: <span class="hl-bool">false</span> },
+    <span class="hl-key">"personalization"</span>: { <span class="hl-key">"label"</span>: <span class="hl-str">"Funcionalidad"</span>,         <span class="hl-key">"required"</span>: <span class="hl-bool">false</span> }
   },
   <span class="hl-key">"legal_texts"</span>: {
     <span class="hl-key">"banner_title"</span>: <span class="hl-str">"Este sitio usa cookies"</span>,
-    <span class="hl-key">"banner_body"</span>:  <span class="hl-str">"Usamos cookies para mejorar tu experiencia. Puedes elegir cuáles aceptar."</span>,
+    <span class="hl-key">"banner_body"</span>:  <span class="hl-str">"Usamos cookies para mejorar tu experiencia..."</span>,
     <span class="hl-key">"policy_url"</span>:   <span class="hl-str">"https://cdn.tudominio.com/policies/3a9f2c8d.html"</span>
   }
 }</pre>
-      <p style="font-size:12px;color:#888;margin-top:6px">Headers de respuesta: <code class="inline">Cache-Control: public, max-age=3600, s-maxage=3600</code> · <code class="inline">Vary: Accept-Encoding</code> · <code class="inline">ETag: "{uuid}-{hash}"</code></p>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:6px">Headers de respuesta incluidos: <code class="inline">Cache-Control: public, max-age=3600, s-maxage=3600</code> · <code class="inline">Vary: Accept-Encoding</code> · <code class="inline">ETag: "{uuid}-{hash}"</code></p>
     </div>
 
     <div class="ep-section">
@@ -610,16 +388,7 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
       <details>
         <summary><span class="summary-arrow">▶</span>Comentarios para Frontend</summary>
         <div class="details-body">
-          <div class="note note-fe"><span class="note-icon">🖥️</span><span><strong>Antes del fetch — evaluar si mostrar banner</strong><br>
-          Revisar <code class="inline">localStorage</code> por clave <code class="inline">consent_{publicUuid}</code>: si existe y su <code class="inline">policy_hash</code> coincide con el recibido → no mostrar banner. Si difiere → la política cambió, mostrar banner aunque haya consentimiento previo.<br><br>
-          <strong>Construir banner</strong><br>
-          (1) Posicionar contenedor según <code class="inline">widget_config.position</code>.<br>
-          (2) Iterar <code class="inline">purposes</code> en orden: necessary → analytics → marketing → personalization.<br>
-          (3) Renderizar fila por propósito con <code class="inline">label</code> como título y <code class="inline">description</code> como texto expandible.<br>
-          (4) <code class="inline">required: true</code> → toggle desactivado y bloqueado visualmente. <code class="inline">legal_basis: "consent"</code> → toggle activable con estado inicial = <code class="inline">default</code>.<br>
-          (5) Aplicar <code class="inline">widget_config.primary_color</code> al botón de confirmación y toggles activos.<br>
-          (6) Botón "Rechazar todo" solo si <code class="inline">show_reject_all</code> es <code class="inline">true</code>.<br>
-          (7) Enlace "Ver política completa" desde <code class="inline">legal_texts.policy_url</code>, abrir en nueva pestaña.</span></div>
+          <div class="note note-fe"><span class="note-icon">🖥️</span><span>Llamar este endpoint con <code class="inline">fetch</code> simple sin credenciales. El resultado debe guardarse en memoria JS por la duración de la sesión — no volver a llamarlo en cada navegación de página. Si el widget detecta que el <code class="inline">policy_hash</code> en <code class="inline">localStorage</code> coincide con el recibido, el usuario ya consintió esta versión y no debe mostrarse el banner nuevamente.</span></div>
         </div>
       </details>
     </div>
@@ -676,7 +445,7 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
   <span class="hl-key">"status"</span>:     <span class="hl-str">"recorded"</span>,
   <span class="hl-key">"proof_hash"</span>: <span class="hl-str">"8b4e1a7f3c9d2e5b..."</span>  <span class="hl-cmt">// El sello del registro</span>
 }</pre>
-      <p style="font-size:12px;color:#888;margin-top:6px">Si el <code class="inline">proof_hash</code> ya existía (mismo consentimiento enviado dos veces): HTTP <strong>200</strong> con <code class="inline">{"status":"already_recorded"}</code></p>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:6px">Si el <code class="inline">proof_hash</code> ya existía (mismo consentimiento enviado dos veces): HTTP <strong>200</strong> con <code class="inline">{"status":"already_recorded"}</code></p>
     </div>
 
     <div class="ep-section">
@@ -700,17 +469,7 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
       <details>
         <summary><span class="summary-arrow">▶</span>Comentarios para Frontend</summary>
         <div class="details-body">
-          <div class="note note-fe"><span class="note-icon">🖥️</span><span><strong>Flujo síncrono (inmediato)</strong><br>
-          (1) Usuario hace clic en confirmar.<br>
-          (2) Ocultar banner de inmediato — sin esperar respuesta del servidor.<br>
-          (3) Actualizar <code class="inline">gtag</code> consent y <code class="inline">localStorage</code> de forma síncrona.<br><br>
-          <strong>POST en background (async)</strong><br>
-          (4) Construir body: <code class="inline">necessary</code> siempre <code class="inline">true</code>, resto según toggles. <code class="inline">timestamp</code> = <code class="inline">new Date().toISOString()</code>.<br>
-          (5) Disparar <code class="inline">fetch</code> sin <code class="inline">await</code> — nunca bloquea UI.<br><br>
-          <strong>Manejo de respuestas</strong><br>
-          • 201 <code class="inline">"recorded"</code> → guardar <code class="inline">proof_hash</code> + <code class="inline">policy_hash</code> en <code class="inline">localStorage</code> bajo <code class="inline">consent_{publicUuid}</code>.<br>
-          • 200 <code class="inline">"already_recorded"</code> → no hacer nada (idempotencia normal).<br>
-          • Error de red → no mostrar nada al usuario. El reintento ocurre en la próxima visita al detectar que no hay <code class="inline">proof_hash</code> en <code class="inline">localStorage</code>.</span></div>
+          <div class="note note-fe"><span class="note-icon">🖥️</span><span>Este POST debe enviarse <strong>en segundo plano</strong>, nunca bloqueando la UX. El widget primero actualiza <code class="inline">localStorage</code> y Consent Mode v2 de forma síncrona, y luego dispara este fetch de forma asíncrona. Si falla (red caída, timeout), el sitio del cliente no debe verse afectado. Implementar un reintento silencioso en la próxima visita del usuario.</span></div>
         </div>
       </details>
     </div>
@@ -783,15 +542,7 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
       <details>
         <summary><span class="summary-arrow">▶</span>Comentarios para Frontend</summary>
         <div class="details-body">
-          <div class="note note-fe"><span class="note-icon">🖥️</span><span><strong>¿Cuándo llamar este endpoint?</strong><br>
-          Solo si el HTML del sitio contiene <code class="inline">data-user-ref</code> y <code class="inline">data-hmac</code> en el script tag del widget, o <code class="inline">window.__widgetAuth</code>. Leer con <code class="inline">document.currentScript.dataset.userRef</code> o desde la variable global. Si no están presentes → no llamar (no es error).<br><br>
-          <strong>Orden</strong><br>
-          Llamar <strong>después</strong> de que EP 02 haya registrado el consentimiento, nunca antes.<br><br>
-          <strong>Body</strong><br>
-          <code class="inline">timestamp</code> = <code class="inline">Math.trunc(Date.now() / 1000)</code> — Unix timestamp en segundos.<br><br>
-          <strong>Errores</strong><br>
-          • 401 <code class="inline">hmac_expired</code> → no reintentar. La ventana de 10 min venció (el HTML del servidor Pyme se generó hace demasiado tiempo).<br>
-          • No mostrar ningún error al usuario final. Este proceso es completamente invisible.</span></div>
+          <div class="note note-fe"><span class="note-icon">🖥️</span><span>El widget JS debe detectar la presencia de <code class="inline">data-user-ref</code> y <code class="inline">data-hmac</code> en el script tag o en una variable global antes de llamar a este endpoint. Si no están presentes, simplemente no llama — no es un error. Abrir 4 pestañas simultáneas es seguro: el UPSERT del backend es atómico y no genera duplicados.</span></div>
         </div>
       </details>
     </div>
@@ -799,6 +550,10 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
   </div>
 </div>
 
+
+<!-- ══════════════════════════════════════════
+     GRUPO 2 — PORTAL CAUTIVO Y WEBHOOKS
+     ══════════════════════════════════════════ -->
 <div class="section-divider"><h2>Grupo 2 — Portal Cautivo y Webhooks de leads</h2><hr></div>
 
 <!-- EP 04 -->
@@ -870,12 +625,7 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
       <details>
         <summary><span class="summary-arrow">▶</span>Comentarios para Frontend</summary>
         <div class="details-body">
-          <div class="note note-fe"><span class="note-icon">🖥️</span><span><strong>¿Quién llama este endpoint?</strong><br>
-          No lo llama el widget JS ni el panel Angular. Lo llaman Make.com, Zapier o el backend de la Pyme.<br><br>
-          <strong>Panel Angular — polling en tiempo real</strong><br>
-          Implementar polling cada 5 segundos al EP 10 en la sección "Pendientes" para ver aparecer leads nuevos sin refrescar.<br><br>
-          <strong>Make.com — manejo de idempotencia</strong><br>
-          HTTP 200 con <code class="inline">"already_pending"</code> debe interpretarse como éxito, no como error. No reintentar. Configurar esto explícitamente en el escenario.</span></div>
+          <div class="note note-fe"><span class="note-icon">🖥️</span><span>Este endpoint no lo llama el widget JS. Lo llama Make.com o Zapier directamente desde su plataforma no-code. El panel Angular puede mostrar el estado de los registros pendientes generados por este webhook en tiempo real mediante polling del endpoint 10.</span></div>
         </div>
       </details>
     </div>
@@ -936,16 +686,7 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
       <details>
         <summary><span class="summary-arrow">▶</span>Comentarios para Frontend</summary>
         <div class="details-body">
-          <div class="note note-fe"><span class="note-icon">🖥️</span><span><strong>Vista pública (desde email, generalmente móvil)</strong><br>
-          UI completamente independiente del panel Angular — sin autenticación, sin estado global. Responsive desde 320px.<br><br>
-          <strong>status = pending → mostrar política + botón</strong><br>
-          (1) Cargar HTML desde <code class="inline">policy.content_url</code> en iframe o div sanitizado.<br>
-          (2) Botón de confirmación visible.<br>
-          (3) Contador regresivo desde <code class="inline">expires_at</code>.<br><br>
-          <strong>HTTP 410 → link vencido</strong><br>
-          Pantalla con instrucción de contactar a <code class="inline">company_name</code>.<br><br>
-          <strong>HTTP 409 → ya firmaste</strong><br>
-          Pantalla con fecha de <code class="inline">confirmed_at</code>.</span></div>
+          <div class="note note-fe"><span class="note-icon">🖥️</span><span>Esta ruta puede renderizarse como Blade (SSR) o como SPA Angular con fetch. Si es Angular, la vista debe manejar los tres estados: <code class="inline">pending</code> (mostrar política + botón firmar), <code class="inline">expired</code> (pantalla de error con instrucción de contactar a la empresa) y <code class="inline">confirmed</code> (pantalla de éxito). Diseñar mobile-first: la mayoría de usuarios abrirán el link desde su teléfono.</span></div>
         </div>
       </details>
     </div>
@@ -1004,17 +745,7 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
       <details>
         <summary><span class="summary-arrow">▶</span>Comentarios para Frontend</summary>
         <div class="details-body">
-          <div class="note note-fe"><span class="note-icon">🖥️</span><span><strong>Botón de confirmación</strong><br>
-          Texto explícito: <strong>"Acepto la Política de Privacidad de [company_name]"</strong> — no "Continuar", no "Ok". Deshabilitar durante el POST para evitar doble envío.<br><br>
-          <strong>200 OK — confirmed</strong><br>
-          Reemplazar toda la vista con pantalla de éxito que muestre:<br>
-          • Mensaje de confirmación<br>
-          • Nombre de la empresa<br>
-          • Fecha de firma formateada<br>
-          • <code class="inline">proof_hash</code> truncado a 16 caracteres como referencia (ej: "Referencia: 8b4e1a7f3c9d2e5b")<br><br>
-          No redirigir al sitio de la Pyme — el usuario llegó desde un email y no tiene contexto de navegación previo.<br><br>
-          <strong>410 / 409</strong><br>
-          Mostrar pantalla correspondiente sin loop de reintento.</span></div>
+          <div class="note note-fe"><span class="note-icon">🖥️</span><span>El botón de firma debe ser explícito: texto como "Acepto la Política de Privacidad" (no "Continuar" ni "Ok"). Tras la respuesta 200, mostrar pantalla de éxito con el <code class="inline">proof_hash</code> truncado como número de referencia. No hay redirección automática al sitio de la Pyme — el usuario ya puede cerrar esta ventana.</span></div>
         </div>
       </details>
     </div>
@@ -1022,6 +753,10 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
   </div>
 </div>
 
+
+<!-- ══════════════════════════════════════════
+     GRUPO 3 — PANEL ANGULAR (PRIVADO)
+     ══════════════════════════════════════════ -->
 <div class="section-divider"><h2>Grupo 3 — Panel de administración (autenticado)</h2><hr></div>
 
 <!-- EP 07 -->
@@ -1060,7 +795,7 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
           <tr><td>company_policy_id</td><td>integer</td><td>ID de la política a la que se asociarán los registros. <span class="pill pill-req">Requerido</span></td></tr>
         </tbody>
       </table>
-      <p style="margin-top:8px;font-size:12px;color:#555">Columnas requeridas en el CSV: <code class="inline">identificador</code> · <code class="inline">fecha_consentimiento</code> · <code class="inline">metodo_captura_original</code> · <code class="inline">propositos_aceptados</code> · <code class="inline">policy_version_referencia</code></p>
+      <p style="margin-top:8px;font-size:12px;color:var(--text-secondary)">Columnas requeridas en el CSV: <code class="inline">identificador</code> · <code class="inline">fecha_consentimiento</code> · <code class="inline">metodo_captura_original</code> · <code class="inline">propositos_aceptados</code> · <code class="inline">policy_version_referencia</code></p>
     </div>
 
     <div class="ep-section">
@@ -1085,14 +820,7 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
       <details>
         <summary><span class="summary-arrow">▶</span>Comentarios para Frontend</summary>
         <div class="details-body">
-          <div class="note note-fe"><span class="note-icon">🖥️</span><span><strong>Request</strong><br>
-          (1) Crear <code class="inline">FormData</code> con archivo CSV + <code class="inline">company_policy_id</code>.<br>
-          (2) <code class="inline">withCredentials: true</code> en todas las llamadas del panel (Sanctum cookie-based).<br>
-          (3) Validar antes de enviar: extensión <code class="inline">.csv</code>, peso &lt; 10MB.<br>
-          (4) Mostrar spinner durante el upload.<br><br>
-          <strong>Respuesta 201 — batch_id recibido</strong><br>
-          (5) Almacenar <code class="inline">batch_id</code> en el estado del componente.<br>
-          (6) Activar polling al EP 08 inmediatamente — no esperar a que procese. Mostrar barra de progreso desde el primer poll.</span></div>
+          <div class="note note-fe"><span class="note-icon">🖥️</span><span>Tras recibir el <code class="inline">batch_id</code>, el panel debe iniciar un polling cada 3 segundos al endpoint 08 para mostrar la barra de progreso. Calcular porcentaje como <code class="inline">last_processed_row / total_rows * 100</code>. No usar WebSockets en el MVP — el polling es suficiente a esta escala.</span></div>
         </div>
       </details>
     </div>
@@ -1132,13 +860,7 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
       <details>
         <summary><span class="summary-arrow">▶</span>Comentarios para Frontend</summary>
         <div class="details-body">
-          <div class="note note-fe"><span class="note-icon">🖥️</span><span><strong>Polling</strong><br>
-          (1) <code class="inline">interval(3000)</code> de RxJS + <code class="inline">switchMap</code> — cada 3 segundos.<br>
-          (2) Porcentaje: <code class="inline">Math.round(last_processed_row / total_rows * 100)</code> → barra de progreso.<br>
-          (3) Destruir el <code class="inline">interval</code> en <code class="inline">ngOnDestroy</code>.<br><br>
-          <strong>Detener en completed o failed</strong><br>
-          • <strong>completed</strong>: mostrar resumen final — insertados (<code class="inline">last_processed_row - skipped_rows - failed_rows</code>), duplicados omitidos (<code class="inline">skipped_rows</code>), errores (<code class="inline">failed_rows</code>). Si <code class="inline">skipped_rows > 0</code>, explicar que son registros ya existentes ignorados correctamente (no es error).<br>
-          • <strong>failed</strong>: mostrar <code class="inline">failed_rows</code> y botón de descarga del log si el backend lo provee.</span></div>
+          <div class="note note-fe"><span class="note-icon">🖥️</span><span>Detener el polling cuando <code class="inline">status</code> sea <code class="inline">completed</code> o <code class="inline">failed</code>. Si es <code class="inline">failed</code>, mostrar <code class="inline">failed_rows</code> y ofrecer descarga del log de errores. Si <code class="inline">skipped_rows > 0</code>, informar al usuario que esas filas ya existían y fueron omitidas correctamente (no es un error).</span></div>
         </div>
       </details>
     </div>
@@ -1206,22 +928,6 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
           <div class="note note-info"><span class="note-icon">ℹ️</span><span>Los registros de tipo <code class="inline">workers_policy</code> solo son visibles para usuarios con rol RRHH dentro de la empresa. El endpoint filtra automáticamente según el rol del token Sanctum.</span></div>
         </div>
       </details>
-      <details>
-        <summary><span class="summary-arrow">▶</span>Comentarios para Frontend</summary>
-        <div class="details-body">
-          <div class="note note-fe"><span class="note-icon">🖥️</span><span><strong>Tabla paginada</strong><br>
-          Columnas recomendadas:<br>
-          • Fecha — <code class="inline">consent_occurred_at</code> formateada<br>
-          • Canal — <code class="inline">capture_method</code> como badge: verde = <code class="inline">live_widget</code>, azul = <code class="inline">live_portal</code>, gris = <code class="inline">bulk_import</code><br>
-          • Propósitos aceptados — chips por cada purpose con <code class="inline">true</code>, omitir <code class="inline">false</code><br>
-          • Proof hash truncado<br><br>
-          <strong>Filtros</strong><br>
-          Controles en la parte superior para <code class="inline">capture_method</code>, <code class="inline">policy_id</code>, rango de fechas. Disparan nueva llamada al cambiar. Usar query params del endpoint — no filtrar en cliente.<br><br>
-          <strong>Reglas UI</strong><br>
-          • <code class="inline">identifier = null</code> → mostrar "Anónimo"<br>
-          • No mostrar botón eliminar ni editar — el ledger es inmutable.</span></div>
-        </div>
-      </details>
     </div>
 
   </div>
@@ -1275,19 +981,7 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
       <details>
         <summary><span class="summary-arrow">▶</span>Comentarios para Frontend</summary>
         <div class="details-body">
-          <div class="note note-fe"><span class="note-icon">🖥️</span><span><strong>Tres pestañas</strong>, cada una filtrando por <code class="inline">status</code>: Pendientes | Confirmados | Expirados<br><br>
-          <strong>Pendientes</strong><br>
-          Por cada registro mostrar:<br>
-          • Email<br>
-          • Tiempo restante: <code class="inline">expires_at - Date.now()</code> → "Vence en X horas"<br>
-          • Badge de origen: Make / Zapier / Manual<br>
-          • Botón "Reenviar link" → EP 11<br>
-          • Resaltar con color de advertencia los que tengan &lt; 12h restantes<br><br>
-          <strong>Confirmados</strong><br>
-          Mostrar <code class="inline">confirmed_at</code>.<br><br>
-          <strong>Expirados</strong><br>
-          Opción de generar nuevo link (crea nuevo pending_consent vía EP 04 en modo manual).<br><br>
-          <strong>⚠️ El token nunca debe mostrarse en la UI.</strong></span></div>
+          <div class="note note-fe"><span class="note-icon">🖥️</span><span>Mostrar visualmente el tiempo restante antes de expiración. Resaltar registros con menos de 12h restantes. Proveer botón "Reenviar link" que llama al endpoint 11. El token nunca debe exponerse en la UI — solo el estado y el email.</span></div>
         </div>
       </details>
     </div>
@@ -1313,7 +1007,7 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
 
     <div class="ep-section">
       <div class="ep-section-title"><span class="dot"></span>Body</div>
-      <p style="font-size:12.5px;color:#888">Sin body requerido.</p>
+      <p style="font-size:12.5px;color:var(--text-muted)">Sin body requerido.</p>
     </div>
 
     <div class="ep-section">
@@ -1332,22 +1026,15 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
           <div class="error-row"><span class="error-code pill pill-429">429</span><div class="error-body"><div class="error-msg">Demasiados reenvíos</div><div class="error-cause">Límite de 3 reenvíos por registro en las últimas 24 horas.</div></div></div>
         </div>
       </details>
-      <details>
-        <summary><span class="summary-arrow">▶</span>Comentarios para Frontend</summary>
-        <div class="details-body">
-          <div class="note note-fe"><span class="note-icon">🖥️</span><span><strong>Control del botón</strong><br>
-          Deshabilitar "Reenviar" durante el request y por 30 segundos tras éxito para evitar reenvíos múltiples.<br><br>
-          <strong>Respuestas</strong><br>
-          • 200 → toast de confirmación con nuevo <code class="inline">expires_at</code> formateado.<br>
-          • 429 → mostrar "Límite de reenvíos alcanzado para este registro" sin opción de reintento.<br>
-          • 409 (ya confirmado) → actualizar el estado del registro en la lista a "Confirmado" sin recargar toda la lista. El usuario pudo haber firmado entre que cargó la página y presionó reenviar.</span></div>
-        </div>
-      </details>
     </div>
 
   </div>
 </div>
 
+
+<!-- ══════════════════════════════════════════
+     GRUPO 4 — CONFIGURACIÓN DE LA EMPRESA
+     ══════════════════════════════════════════ -->
 <div class="section-divider"><h2>Grupo 4 — Configuración de la empresa</h2><hr></div>
 
 <!-- EP 12 -->
@@ -1393,16 +1080,7 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
       <details>
         <summary><span class="summary-arrow">▶</span>Comentarios para Frontend</summary>
         <div class="details-body">
-          <div class="note note-fe"><span class="note-icon">🖥️</span><span><strong>Chip input</strong><br>
-          Usuario escribe dominio → Enter o coma → aparece como chip removible.<br><br>
-          <strong>Validación cliente</strong><br>
-          Regex: <code class="inline">/^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/i</code><br>
-          • Sin protocolo (<code class="inline">https://</code>) ni rutas (<code class="inline">/path</code>)<br>
-          • Texto de ayuda: "Ingresa el dominio raíz. Los subdominios quedan cubiertos automáticamente."<br><br>
-          <strong>Request</strong><br>
-          Enviar el array completo en cada PATCH — no solo el delta.<br><br>
-          <strong>200 OK</strong><br>
-          Banner verde: "Cambio activo de inmediato. El widget ya acepta peticiones desde los nuevos dominios." No requiere recarga ni redespliegue.</span></div>
+          <div class="note note-fe"><span class="note-icon">🖥️</span><span>Implementar como un campo de tags/chips en el formulario del panel. Validar en el cliente que cada entrada tenga formato de dominio válido (sin <code class="inline">https://</code> ni rutas). Mostrar confirmación visual de que el cambio es inmediato — no requiere redespliegue del widget.</span></div>
         </div>
       </details>
     </div>
@@ -1457,20 +1135,7 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
       <details>
         <summary><span class="summary-arrow">▶</span>Comentarios para Frontend</summary>
         <div class="details-body">
-          <div class="note note-fe"><span class="note-icon">🖥️</span><span><strong>Formulario con preview en vivo</strong><br><br>
-          <strong>Campos del formulario</strong><br>
-          • Posición — selector visual (no dropdown de texto): opciones bottom-left, bottom-right, bottom-center<br>
-          • <code class="inline">primary_color</code> — color picker<br>
-          • <code class="inline">show_reject_all</code> — toggle<br>
-          • <code class="inline">cookie_duration_days</code> — input numérico<br><br>
-          <strong>Providers</strong><br>
-          Agrupados por propósito (analytics, marketing, personalization). Cada grupo muestra checkboxes con slugs del catálogo en <code class="inline">config/trust_widget.php</code>. El backend rechaza slugs no reconocidos.<br><br>
-          <strong>webhook_url (opcional)</strong><br>
-          Etiqueta: "URL de notificación (Make.com / Zapier)" con test de conexión opcional.<br><br>
-          <strong>Request</strong><br>
-          Enviar objeto <code class="inline">widget_config</code> completo en cada PATCH — no parcial.<br><br>
-          <strong>200 OK</strong><br>
-          Informar que el cambio puede tardar hasta 1 hora en sitios con widget ya cargado (caché Cloudflare).</span></div>
+          <div class="note note-fe"><span class="note-icon">🖥️</span><span>Los valores de <code class="inline">providers</code> deben corresponderse con los slugs definidos en el seeder de <code class="inline">legal_templates</code>. El panel debe listar solo los slugs disponibles, no permitir texto libre para evitar errores de configuración que impidan al widget cargar scripts.</span></div>
         </div>
       </details>
     </div>
@@ -1496,7 +1161,7 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
 
     <div class="ep-section">
       <div class="ep-section-title"><span class="dot"></span>Body</div>
-      <p style="font-size:12.5px;color:#888">Sin body. La rotación se confirma por el método POST.</p>
+      <p style="font-size:12.5px;color:var(--text-muted)">Sin body. La rotación se confirma por el método POST.</p>
     </div>
 
     <div class="ep-section">
@@ -1523,18 +1188,7 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
       <details>
         <summary><span class="summary-arrow">▶</span>Comentarios para Frontend</summary>
         <div class="details-body">
-          <div class="note note-fe"><span class="note-icon">🖥️</span><span><strong>Paso 1 — Modal de confirmación</strong><br>
-          Advertencia explícita antes del POST:<br>
-          "Rotar el secreto invalidará inmediatamente todos los HMACs activos. El Identity Stitching dejará de funcionar hasta que tu equipo técnico actualice el snippet PHP."<br>
-          Solo tras confirmar, disparar el POST.<br><br>
-          <strong>Paso 2 — Modal del nuevo secreto (solo tras 200 OK)</strong><br>
-          Modal a pantalla completa con fondo oscuro:<br>
-          • Campo de texto no editable con el secreto completo<br>
-          • Botón "Copiar" → <code class="inline">navigator.clipboard.writeText()</code><br>
-          • Advertencia prominente: "Este valor no se mostrará de nuevo"<br>
-          • Sin botón de cerrar hasta copiar o marcar checkbox "Lo guardé"<br><br>
-          <strong>Después de cerrar</strong><br>
-          Nunca volver a mostrar el secreto. Solo estado: "Secreto configurado · Última rotación: [fecha]"</span></div>
+          <div class="note note-fe"><span class="note-icon">🖥️</span><span>Mostrar el secreto en un modal con fondo oscuro, sin scroll de página, con botón de copiar al portapapeles. Una vez que el usuario cierre el modal o navegue, el secreto ya no es recuperable desde la API. Incluir una advertencia visible tipo <code class="inline">⚠️ Este valor no se mostrará de nuevo</code> antes de que el usuario confirme la rotación.</span></div>
         </div>
       </details>
     </div>
@@ -1542,27 +1196,9 @@ $calculado = (new <span class="function">ProofHashService</span>())->computeForL
   </div>
 </div>
 
-</main>
+<div style="max-width:980px;margin:16px auto 0;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-size:12px;color:var(--text-muted);text-align:center;">
+  API Reference — Módulo 2: Gestión de Consentimientos · SaaS Compliance Pymes · Laravel 11 · Ley 21.719 Chile
 </div>
 
-<script>
-(function() {
-    var sidebar = document.getElementById('sidebar');
-    var overlay = document.getElementById('overlay');
-    var hamburger = document.getElementById('hamburgerBtn');
-    if (hamburger) { hamburger.addEventListener('click', function() { sidebar.classList.toggle('open'); overlay.classList.toggle('show'); }); }
-    if (overlay) { overlay.addEventListener('click', function() { sidebar.classList.remove('open'); overlay.classList.remove('show'); }); }
-    var titles = document.querySelectorAll('.nav-section-title');
-    titles.forEach(function(title) {
-        title.addEventListener('click', function(e) {
-            e.preventDefault();
-            var items = document.getElementById(this.getAttribute('data-toggle'));
-            if (items) { items.classList.toggle('collapsed'); this.classList.toggle('collapsed-group'); }
-        });
-    });
-    var links = document.querySelectorAll('.nav-section-items a');
-    links.forEach(function(link) { link.addEventListener('click', function() { if (window.innerWidth <= 900) { sidebar.classList.remove('open'); overlay.classList.remove('show'); } }); });
-})();
-</script>
 </body>
 </html>

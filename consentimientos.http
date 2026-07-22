@@ -1,0 +1,96 @@
+# ==============================================================================
+# NODOX SPD - Endpoints de Consentimientos (Fase Trust Widget)
+# ==============================================================================
+# Este archivo acumula y prueba cada endpoint creado en la fase de
+# consentimientos: Trust Widget, consent logs, pending consents, etc.
+#
+# Base URL: https://spd-service.nodox.cl
+# Los endpoints publicos no requieren autenticacion.
+# Los endpoints protegidos requieren cookie de sesion + XSRF-TOKEN.
+# ==============================================================================
+
+@company_public_uuid = 39ce42d3-f179-4290-8edf-2eaf01efb82b
+
+
+# ==============================================================================
+# TRUST WIDGET - CONFIGURACION PUBLICA
+# ==============================================================================
+# Endpoint publico (sin autenticacion) que devuelve la configuracion del
+# widget embebible de una empresa. Aplica CORS dinamico + rate limiting.
+#
+# Variables necesarias:
+#   company_public_uuid: UUID v4 publico de la empresa (de la tabla companies)
+# ==============================================================================
+
+###
+# 1. Obtener configuracion del widget (UUID valido)
+#    Esperado: 200 con policy_hash, widget_config, purposes, legal_texts
+#    Headers de respuesta: Cache-Control, ETag, Vary
+GET https://spd-service.nodox.cl/api/widget/{{company_public_uuid}}/config
+Accept: application/json
+
+###
+# 2. Preflight CORS (OPTIONS) - origen permitido
+#    Esperado: 204 No Content con headers CORS
+OPTIONS https://spd-service.nodox.cl/api/widget/{{company_public_uuid}}/config
+Origin: https://cliente.nodox.cl
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: Content-Type, X-Requested-With
+
+###
+# 3. Preflight CORS (OPTIONS) - origen NO permitido
+#    Esperado: 403 sin body
+OPTIONS https://spd-service.nodox.cl/api/widget/{{company_public_uuid}}/config
+Origin: https://sitio-malicioso.cl
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: Content-Type, X-Requested-With
+
+###
+# 4. UUID invalido (no es UUID v4)
+#    Esperado: 400 {"status": false, "message": "...", "data": null}
+GET https://spd-service.nodox.cl/api/widget/no-es-un-uuid/config
+Accept: application/json
+
+###
+# 5. UUID valido pero empresa inexistente
+#    Esperado: 404 (firstOrFail)
+GET https://spd-service.nodox.cl/api/widget/00000000-0000-4000-a000-000000000000/config
+Accept: application/json
+
+###
+# 6. Empresa sin politica de cookies publicada
+#    Esperado: 404 {"status": false, "message": "Esta empresa no tiene una politica de cookies publicada.", "data": null}
+#    Usar un UUID de empresa que exista pero sin cookie_policy publicada
+GET https://spd-service.nodox.cl/api/widget/{{company_without_policy_uuid}}/config
+Accept: application/json
+
+###
+# 7. Rate limiting - exceder limite por IP (5 req/min)
+#    Ejecutar 6 veces seguidas. La 6ta debe retornar 429 Too Many Requests
+GET https://spd-service.nodox.cl/api/widget/{{company_public_uuid}}/config
+Accept: application/json
+
+###
+# 8. Rate limiting - exceder limite por IP (repeticion 2)
+GET https://spd-service.nodox.cl/api/widget/{{company_public_uuid}}/config
+Accept: application/json
+
+###
+# 9. Rate limiting - exceder limite por IP (repeticion 3)
+GET https://spd-service.nodox.cl/api/widget/{{company_public_uuid}}/config
+Accept: application/json
+
+###
+# 10. Rate limiting - exceder limite por IP (repeticion 4)
+GET https://spd-service.nodox.cl/api/widget/{{company_public_uuid}}/config
+Accept: application/json
+
+###
+# 11. Rate limiting - exceder limite por IP (repeticion 5)
+GET https://spd-service.nodox.cl/api/widget/{{company_public_uuid}}/config
+Accept: application/json
+
+###
+# 12. Rate limiting - exceder limite por IP (repeticion 6 - debe dar 429)
+GET https://spd-service.nodox.cl/api/widget/{{company_public_uuid}}/config
+Accept: application/json
