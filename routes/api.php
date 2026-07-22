@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Panel\ConsentLogController;
 use App\Http\Controllers\Api\Panel\ConsentPurposeController;
 use App\Http\Controllers\Api\Widget\WidgetConfigController;
 use App\Http\Controllers\Api\Widget\WidgetConsentController;
@@ -45,6 +46,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Panel: catálogo de fines legales para el generador de políticas (wizard)
     Route::get('/panel/consent-purposes', [ConsentPurposeController::class, 'index']);
+
+    // Panel: auditoría de consentimientos (ledger inmutable) con filtros y paginación
+    Route::get('/panel/consent-logs', [ConsentLogController::class, 'index']);
 
     // 3. Módulo de Empresa (Solo Admins de Empresa)
     Route::middleware('role:company_admin')->prefix('company')->group(function () {
