@@ -24,7 +24,7 @@ class WizardPurposeResolverService
     public function resolve(CompanyPolicy $policy): Collection
     {
         $wizardData = $policy->wizard_data;
-        $wizardSchema = $policy->legalTemplate->wizard_schema;
+        $wizardSchema = $policy->template->wizard_schema;
 
         // El propósito técnico/necesario siempre está activo (base legal: interés legítimo).
         $activeSlugs = ['necessary_technical'];
