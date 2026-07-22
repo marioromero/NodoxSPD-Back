@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             BusinessActivitiesSeeder::class,
             LegalTemplateSeeder::class,
             TriageQuestionSeeder::class,
+            ConsentPurposesSeeder::class,
         ]);
     }
 }
