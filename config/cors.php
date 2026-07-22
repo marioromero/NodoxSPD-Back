@@ -15,7 +15,22 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    // Rutas que usan el CORS global estático de Laravel.
+    // Las rutas del widget (api/widget/*) se excluyen deliberadamente porque
+    // usan DynamicCorsMiddleware, que valida dominios por empresa desde la BD.
+    // Si se incluyeran aquí, HandleCors interceptaría el preflight OPTIONS
+    // antes de que DynamicCorsMiddleware pueda ejecutarse.
+    'paths' => [
+        'api/register',
+        'api/login',
+        'api/plans',
+        'api/public/*',
+        'api/me',
+        'api/logout',
+        'api/company/*',
+        'api/portal/*',
+        'sanctum/csrf-cookie',
+    ],
 
     'allowed_methods' => ['*'],
 

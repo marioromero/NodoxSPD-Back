@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Widget\WidgetConfigController;
+use App\Http\Controllers\Api\Widget\WidgetConsentController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Billing\PaymentController;
 use App\Http\Controllers\Billing\PlanController;
@@ -25,6 +26,14 @@ Route::get('/public/policies/{integrityHash}', [CompanyPolicyController::class, 
 // Aplica CORS dinámico por empresa + rate limiting multicapa
 Route::middleware(['cors.dynamic', 'throttle:widget'])
     ->get('/widget/{company_public_uuid}/config', [WidgetConfigController::class, 'show']);
+
+// Widget público: recepción de consentimientos desde el Trust Widget (sin autenticación)
+// Aplica CORS dinámico por empresa + rate limiting multicapa
+// El company_public_uuid va en la URL para que el middleware CORS pueda resolver la
+// empresa incluso en preflight OPTIONS (que no tiene body).
+// Se registra OPTIONS explicitamente para que DynamicCorsMiddleware intercepte el preflight.
+Route::middleware(['cors.dynamic', 'throttle:widget'])
+    ->match(['post', 'options'], '/widget/{company_public_uuid}/consent', [WidgetConsentController::class, 'store']);
 
 // 2. Rutas Protegidas (Cualquier usuario autenticado)
 Route::middleware('auth:sanctum')->group(function () {
