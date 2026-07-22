@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Widget;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\CompanyPolicy;
+use App\Services\Consent\WizardPurposeResolverService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -31,10 +32,12 @@ class WidgetConfigController extends Controller
      * 2. Resuelve la empresa por public_uuid (firstOrFail → 404 si no existe).
      * 3. Obtiene la política de cookies publicada más reciente.
      * 4. Si no hay política publicada, retorna 404 con error específico.
-     * 5. Construye la respuesta JSON con propósitos, configuración del widget y URL de política.
-     * 6. Aplica headers de caché para CDN (Cache-Control, ETag, Vary).
+     * 5. Resuelve los propósitos activos dinámicamente via WizardPurposeResolverService.
+     * 6. Extrae los proveedores desde wizard_data de la política.
+     * 7. Construye la respuesta JSON con propósitos, configuración del widget y URL de política.
+     * 8. Aplica headers de caché para CDN (Cache-Control, ETag, Vary).
      */
-    public function show(Request $request, string $publicUuid): JsonResponse
+    public function show(Request $request, string $publicUuid, WizardPurposeResolverService $purposeResolver): JsonResponse
     {
         // 1. Validar que el parámetro sea un UUID v4 válido.
         if (! $this->isValidUuidV4($publicUuid)) {
@@ -70,35 +73,54 @@ class WidgetConfigController extends Controller
             ], 404);
         }
 
-        // 5. Ensamblar la respuesta final. Regla estricta: sin IDs internos, sin datos de empresa.
+        // 5. Resolver los propósitos activos dinámicamente desde el wizard de la política.
+        //    Conecta el Módulo 2 (catálogo de fines legales) con el Módulo 1 (Trust Widget).
+        $activePurposes = $purposeResolver->resolve($policy);
+
+        // 6. Construir el nodo de providers desde wizard_data de la política (no desde config estático).
+        //    Cada categoría lee su lista de proveedores seleccionados en el wizard.
+        $providers = [
+            'analytics' => $this->extractProviders($policy->wizard_data, 'step_2_analytics'),
+            'marketing' => $this->extractProviders($policy->wizard_data, 'step_3_marketing'),
+            'personalization' => $this->extractProviders($policy->wizard_data, 'step_4_functionality'),
+        ];
+
+        // 7. Ensamblar la respuesta final. Regla estricta: sin IDs internos, sin datos de empresa.
+        //    Los propósitos se resuelven dinámicamente desde el wizard via WizardPurposeResolverService.
+        //    La empresa puede sobrescribir label y description en widget_config, pero required,
+        //    default y legal_basis son inmutables (provienen del catálogo ConsentPurpose).
+        $widgetConfig = $company->widget_config ?? [];
         $response = [
             'policy_hash' => $policy->integrity_hash,
             'policy_version' => $policy->company_version,
-            'widget_config' => $company->widget_config ?? [
-                'position' => 'bottom-left',
-                'primary_color' => '#1a73e8',
-                'show_reject_all' => true,
-                'cookie_duration_days' => 365,
-                'providers' => [
-                    'analytics' => ['google_analytics', 'hotjar'],
-                    'marketing' => ['meta_pixel', 'google_ads'],
-                    'personalization' => ['intercom'],
-                ],
+            'widget_config' => [
+                'position' => $widgetConfig['position'] ?? 'bottom-left',
+                'primary_color' => $widgetConfig['primary_color'] ?? '#1a73e8',
+                'show_reject_all' => $widgetConfig['show_reject_all'] ?? true,
+                'cookie_duration_days' => $widgetConfig['cookie_duration_days'] ?? 365,
+                'providers' => $providers,
             ],
-            'purposes' => [
-                'necessary' => ['label' => 'Técnicas / Necesarias', 'required' => true],
-                'analytics' => ['label' => 'Analítica / Medición', 'required' => false],
-                'marketing' => ['label' => 'Publicidad', 'required' => false],
-                'personalization' => ['label' => 'Funcionalidad', 'required' => false],
-            ],
+            'purposes' => $activePurposes->mapWithKeys(function ($purpose) use ($widgetConfig) {
+                $custom = $widgetConfig['purposes'][$purpose->slug] ?? [];
+
+                return [
+                    $purpose->slug => [
+                        'label' => $custom['label'] ?? $purpose->label,
+                        'description' => $custom['description'] ?? $purpose->description,
+                        'required' => ! $purpose->requires_consent,
+                        'default' => $purpose->default_value,
+                        'legal_basis' => $purpose->legal_basis,
+                    ],
+                ];
+            })->toArray(),
             'legal_texts' => [
-                'banner_title' => 'Este sitio usa cookies',
-                'banner_body' => 'Usamos cookies para...',
+                'banner_title' => $widgetConfig['legal_texts']['banner_title'] ?? config('trust_widget.default_legal_texts.banner_title'),
+                'banner_body' => $widgetConfig['legal_texts']['banner_body'] ?? config('trust_widget.default_legal_texts.banner_body'),
                 'policy_url' => "https://cdn.tudominio.com/policies/{$policy->integrity_hash}.html",
             ],
         ];
 
-        // 6. Aplicar headers de caché para CDN (Cloudflare).
+        // 8. Aplicar headers de caché para CDN (Cloudflare).
         //    ETag basado en uuid + hash de política para invalidación automática.
         //    Sin Set-Cookie: rompe el caché de Cloudflare (must-revalidate por cookie de sesión).
         return response()->json($response, 200, [
@@ -106,6 +128,34 @@ class WidgetConfigController extends Controller
             'Vary' => 'Accept-Encoding',
             'ETag' => "{$publicUuid}-{$policy->integrity_hash}",
         ])->withoutCookie('session')->withoutCookie('XSRF-TOKEN');
+    }
+
+    /**
+     * Extrae la lista de proveedores desde wizard_data para un prefijo de paso dado.
+     *
+     * Combina el array de proveedores seleccionados ({prefix}_providers) con el
+     * valor de proveedor custom ({prefix}_other_provider) si existe y no está vacío.
+     * Retorna un array vacío si no hay proveedores configurados.
+     *
+     * @param  array  $wizardData  Respuestas del wizard almacenadas en la política.
+     * @param  string  $prefix  Prefijo del paso (ej: step_2_analytics, step_3_marketing).
+     * @return array<int, string> Lista de proveedores activos.
+     */
+    private function extractProviders(array $wizardData, string $prefix): array
+    {
+        $providers = $wizardData["{$prefix}_providers"] ?? [];
+
+        if (! is_array($providers)) {
+            $providers = [];
+        }
+
+        $other = $wizardData["{$prefix}_other_provider"] ?? null;
+
+        if (! empty($other)) {
+            $providers[] = $other;
+        }
+
+        return $providers;
     }
 
     /**
