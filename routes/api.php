@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Panel\ConsentPurposeController;
 use App\Http\Controllers\Api\Widget\WidgetConfigController;
 use App\Http\Controllers\Api\Widget\WidgetConsentController;
 use App\Http\Controllers\Auth\AuthController;
@@ -41,6 +42,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Perfil y Logout (Compartido entre Empresas y Personas)
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Panel: catálogo de fines legales para el generador de políticas (wizard)
+    Route::get('/panel/consent-purposes', [ConsentPurposeController::class, 'index']);
 
     // 3. Módulo de Empresa (Solo Admins de Empresa)
     Route::middleware('role:company_admin')->prefix('company')->group(function () {

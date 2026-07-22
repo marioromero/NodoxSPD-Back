@@ -27,6 +27,7 @@ return [
         'api/public/*',
         'api/me',
         'api/logout',
+        'api/panel/*',
         'api/company/*',
         'api/portal/*',
         'sanctum/csrf-cookie',
