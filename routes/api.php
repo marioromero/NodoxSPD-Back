@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Panel\CompanyDomainController;
 use App\Http\Controllers\Api\Panel\ConsentLogController;
 use App\Http\Controllers\Api\Panel\ConsentPurposeController;
 use App\Http\Controllers\Api\Widget\WidgetConfigController;
@@ -49,6 +50,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Panel: auditoría de consentimientos (ledger inmutable) con filtros y paginación
     Route::get('/panel/consent-logs', [ConsentLogController::class, 'index']);
+
+    // Panel: configuración de dominios autorizados para CORS dinámico del Trust Widget
+    Route::patch('/panel/companies/domains', [CompanyDomainController::class, 'update']);
 
     // 3. Módulo de Empresa (Solo Admins de Empresa)
     Route::middleware('role:company_admin')->prefix('company')->group(function () {
