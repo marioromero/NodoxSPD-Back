@@ -1,0 +1,189 @@
+﻿API REFERENCE FRONTEND — MÓDULO 2
+
+Base URL: https://api.tudominio.com
+Formato: JSON · UTF-8
+Widget: Público (sin auth) · Panel: Sanctum
+
+======================================================================
+ENDPOINT 1: GET /api/widget/{company_public_uuid}/config
+======================================================================
+
+PROPÓSITO / CUÁNDO SE USA
+Punto de partida del flujo del widget. Se llama una sola vez al cargar la página del sitio de la Pyme, inmediatamente después de que widget.js se inicializa. Devuelve toda la configuración para renderizar el banner de cookies: propósitos activos, colores, posición, textos legales y hash de la política.
+
+HEADERS REQUERIDOS
+- Accept: application/json (Requerido)
+- Origin: Dominio del sitio cliente (Requerido, validado por DynamicCorsMiddleware)
+
+PATH PARAMETERS
+- company_public_uuid: UUID v4. Identificador público de la empresa. Nunca por ID numérico.
+
+RESPUESTA EXITOSA — 200 OK
+
+Headers clave:
+- Cache-Control: public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400
+- ETag: "{public_uuid}-{policy_hash}"
+- Vary: Accept-Encoding
+
+Body:
+{
+  "policy_hash": "a1b2c3d4e5f67890abcdef1234567890abcdef1234567890abcdef1234567890",
+  "policy_version": 3,
+  "widget_config": {
+    "position": "bottom-left",
+    "primary_color": "#1a73e8",
+    "show_reject_all": true,
+    "cookie_duration_days": 365,
+    "providers": {
+      "analytics": ["google_analytics"],
+      "marketing": ["meta_pixel", "google_ads"],
+      "personalization": ["youtube", "google_maps"]
+    }
+  },
+  "purposes": {
+    "necessary_technical": {
+      "label": "Cookies técnicas y necesarias",
+      "description": "Indispensables para el funcionamiento básico del sitio...",
+      "required": true,
+      "default": true,
+      "legal_basis": "legitimate_interest"
+    },
+    "analytics_behavior": {
+      "label": "Análisis de visitas y comportamiento",
+      "description": "Nos permiten entender cómo navegas por el sitio...",
+      "required": false,
+      "default": false,
+      "legal_basis": "consent"
+    }
+  },
+  "legal_texts": {
+    "banner_title": "Este sitio usa cookies",
+    "banner_body": "Utilizamos cookies propias y de terceros...",
+    "policy_url": "https://cdn.tudominio.com/policies/a1b2c3...html"
+  }
+}
+
+Campos:
+- policy_hash: string. SHA-256 hex de la política activa. Vínculo criptográfico.
+- policy_version: int. Versión de la política (company_version).
+- widget_config.position: string. Posición del banner: bottom-left, bottom-right, top-left, top-right.
+- widget_config.primary_color: string. Color primario hex. Default: #1a73e8.
+- widget_config.show_reject_all: bool. Mostrar botón Rechazar todas. Default: true.
+- widget_config.cookie_duration_days: int. Días de duración cookie preferencia. Default: 365.
+- widget_config.providers: object. Proveedores por categoría: analytics, marketing, personalization. Array de strings con IDs de proveedores del wizard.
+- purposes: object. slug => {label, description, required, default, legal_basis}. required = !requires_consent. Si no requiere consentimiento, es obligatorio/bloqueado.
+- legal_texts: object. banner_title, banner_body (textos del banner), policy_url (URL del HTML completo de la política).
+
+ERRORES
+- 400: UUID inválido o no formato v4
+- 403: Origen CORS no permitido (sin body)
+- 404: Empresa no encontrada o sin cookie_policy publicada
+- 429: Rate limit excedido (5 IP, 60 empresa, 10 visitor req/min)
+
+NOTAS DE SEGURIDAD
+- La respuesta nunca incluye IDs internos (id, company_id, user_id).
+- No se envía Set-Cookie para no romper el caché de Cloudflare.
+- El widget debe usar el policy_hash recibido al construir el payload del consentimiento.
+- Si la respuesta es 404, el widget no debe renderizar el banner.
+
+======================================================================
+ENDPOINT 2: POST /api/widget/{company_public_uuid}/consent
+======================================================================
+
+PROPÓSITO / CUÁNDO SE USA
+Se invoca cuando el visitante hace clic en Aceptar, Rechazar o Guardar preferencias. El widget envía los fines aceptados como booleans + timestamp + policy_hash. El ledger consent_logs es inmutable. El endpoint es idempotente: reenvíos del mismo payload retornan 200 con already_recorded.
+
+HEADERS REQUERIDOS
+- Content-Type: application/json (Requerido)
+- Accept: application/json (Requerido)
+- Origin: Dominio del sitio (Requerido, validado por DynamicCorsMiddleware)
+
+PATH PARAMETERS
+- company_public_uuid: UUID v4. Va en la URL para que el middleware CORS resuelva la empresa en preflight OPTIONS (sin body).
+
+BODY PARAMS
+- visitor_uuid: UUID v4. Requerido. UUID anónimo del visitante. Sin PII.
+- company_public_uuid: UUID v4. Requerido. exists:companies,public_uuid. Mismo UUID de la URL.
+- timestamp: string (ISO-8601). Requerido. date_format:Y-m-d\TH:i:s\Z. UTC estricto. Ventana: no >5 min futuro, no >1 h pasado.
+- purposes: object. Requerido. Mapa dinámico slug => boolean según fines activos de /config. necessary_technical se fuerza a true en backend. Slugs no activos se ignoran silenciosamente.
+
+EJEMPLO DE REQUEST
+POST /api/widget/39ce42d3-f179-4290-8edf-2eaf01efb82b/consent
+{
+  "visitor_uuid": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+  "company_public_uuid": "39ce42d3-f179-4290-8edf-2eaf01efb82b",
+  "timestamp": "2026-07-22T14:30:00Z",
+  "purposes": {
+    "necessary_technical": true,
+    "analytics_behavior": true,
+    "functional_third_party": false,
+    "marketing_direct": false
+  }
+}
+
+RESPUESTA EXITOSA — 201 Created
+{
+  "status": true,
+  "message": "Consentimiento registrado correctamente.",
+  "data": { "status": "recorded", "proof_hash": "a1b2c3d4e5f67890abcdef..." }
+}
+
+IDEMPOTENCIA — 200 OK (mismo proof_hash = UNIQUE en BD)
+{
+  "status": true,
+  "message": "Consentimiento ya registrado previamente.",
+  "data": { "status": "already_recorded" }
+}
+El 200 + already_recorded no es error. El widget puede tratarlo como consentimiento exitoso.
+
+ERRORES
+- 403: workers_policy u origen CORS no permitido
+- 404: Empresa sin cookie_policy publicada
+- 422: Validación: timestamp fuera de ventana, slugs inválidos
+- 429: Rate limit excedido
+- 500: Error interno BD (no confundir con duplicado)
+
+NOTAS DE SEGURIDAD
+- proof_hash = SHA-256 del payload canonizado (ksort + JSON_UNESCAPED_SLASHES). Determinista.
+- necessary_technical siempre true en backend, incluso si el cliente envía false.
+- Slugs no activos se ignoran silenciosamente (no causan 422).
+- No exponer proof_hash en URL ni en console.log en producción.
+
+======================================================================
+ENDPOINT 3: GET /api/panel/consent-purposes
+======================================================================
+
+PROPÓSITO / CUÁNDO SE USA
+Se usa en el panel Angular cuando el usuario llena campos "Otro" con requires_purpose_selection: true en el wizard. Muestra un selector de checkboxes con los fines activos del catálogo global. La selección se guarda en wizard_data[{field_key}_purposes] y el backend los resuelve con WizardPurposeResolverService (regla 3).
+
+HEADERS REQUERIDOS
+- Accept: application/json (Requerido)
+- Authorization: Bearer {token} Sanctum (Requerido)
+
+RESPUESTA EXITOSA — 200 OK
+{
+  "status": true,
+  "message": "Catálogo de fines legales.",
+  "data": [
+    { "id": 1, "slug": "necessary_technical", "category": "gestion_general", "label": "Cookies técnicas y necesarias", "description": "Indispensables para el funcionamiento básico del sitio...", "requires_consent": false },
+    { "id": 2, "slug": "analytics_behavior", "category": "analisis_comportamiento", "label": "Análisis de visitas y comportamiento", "description": "Nos permiten entender cómo navegas por el sitio...", "requires_consent": true }
+  ]
+}
+
+Ordenado por display_order. Devuelve solo is_active = true.
+
+Campos:
+- id: int. ID interno del fin.
+- slug: string. Identificador único. Ej: analytics_behavior, marketing_direct.
+- category: string. Categoría UI: gestion_general, analisis_comportamiento, comercial_marketing, etc.
+- label: string. Nombre legible.
+- description: string. Texto explicativo.
+- requires_consent: bool. true = toggle editable. false = obligatorio, deshabilitado en widget.
+
+ERRORES
+- 401: No autenticado (falta Authorization o token inválido)
+
+NOTAS
+- Solo se usa en el panel Angular, no en el widget público.
+- Devuelve todos los fines activos del catálogo global (13 slugs), no solo los que aplican a la empresa.
+- Para el widget, los fines activos se resuelven dinámicamente con WizardPurposeResolverService.

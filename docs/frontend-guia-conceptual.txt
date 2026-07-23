@@ -1,0 +1,150 @@
+﻿GUÍA CONCEPTUAL FRONTEND — MÓDULO 2
+
+Tres artefactos frontend para integrar el Trust Widget de Consentimientos: Vanilla JS (widget de cookies embebible), Angular (patch de selección de propósitos legales) y Angular (pantalla de auditoría de consentimientos).
+
+INTRODUCCIÓN
+
+El Módulo 2 expone tres endpoints públicos del widget (/api/widget/{uuid}/config, /api/widget/{company_public_uuid}/consent, /api/panel/consent-purposes) y un flujo Angular que complementa el wizard de generación de políticas con la selección manual de propósitos legales cuando el usuario escribe texto libre en campos "Otro".
+
+Esta guía describe tres artefactos frontend independientes:
+- Artefacto A: Widget de cookies en Vanilla JS que las Pymes embeden en sus sitios web. Renderiza un banner, obtiene la config desde el backend y envía el consentimiento del visitante.
+- Artefacto B: Patch de selección de propósitos en Angular (panel interno de la Pyme). Se activa cuando un campo "Otro" del wizard tiene requires_purpose_selection: true.
+- Artefacto C: Pantalla de Registro de Consentimientos (Angular). Muestra el ledger inmutable con filtros, paginación y sellos legales.
+
+FLUJO GLOBAL FRONTEND-BACKEND
+
+1. El visitante carga el sitio de la Pyme. El widget JS se inicializa y llama a GET /api/widget/{uuid}/config.
+2. El servidor responde con purposes, widget_config (colores, posición), policy_hash.
+3. El widget renderiza el banner de cookies según la configuración visual recibida.
+4. El visitante acepta/rechaza/configura propósitos. El widget envía POST /api/widget/{company_public_uuid}/consent con los slugs aceptados.
+5. El backend registra en consent_logs (ledger inmutable), calcula el proof_hash y responde 201.
+6. (Angular) En el panel de políticas, el usuario llena campos "Otro". El template del wizard activa un selector de propósitos si requires_purpose_selection = true.
+
+======================================================================
+ARTEFACTO A — WIDGET DE COOKIES (VANILLA JS)
+======================================================================
+
+Script embebible que las Pymes insertan en su sitio web. Sin dependencias externas (sin jQuery, sin React). Compatible con CSP estrictas.
+
+⚠️ ORDEN DE INSTALACIÓN OBLIGATORIO (CUMPLIMIENTO LEGAL)
+
+El snippet de instalación son tres bloques que deben respetarse estrictamente en el orden indicado:
+
+BLOQUE 1 (Obligatorio, síncrono): Establece gtag('consent', 'default', {...denied...}) para Google Consent Mode v2. Esto bloquea cualquier cookie de analytics, ads y personalización desde el primer milisegundo de carga. Sin este bloque, el tracker de GA4 o Meta puede cargar y etiquetar al usuario antes de que el widget tenga oportunidad de denegar. Nulo de pleno derecho.
+
+BLOQUE 2: El Trust Widget (async, no bloquea el render). Carga el widget de consentimiento. Obtiene la configuración desde el backend y renderiza el banner. Cuando el visitante decide sus preferencias, ejecuta gtag('consent', 'update', ...). Debe cargarse antes que cualquier script de terceros.
+
+BLOQUE 3: Scripts de terceros (Google Analytics, Meta Pixel, Hotjar, etc.). Se cargan después del widget para que éste tenga tiempo de establecer el consentimiento default antes de que los trackers se ejecuten.
+
+Consecuencia legal: Si el Bloque 1 no está presente o los scripts de terceros se cargan antes del Bloque 2, cualquier cookie inyectada antes del consentimiento constituye una infracción a la Ley 21.719 (Art. 14, 15 y 15 bis).
+
+INICIALIZACIÓN
+
+El widget se instancia con un data-widget-uuid en un <script> tag embebido. El script construye la URL de configuración dinámicamente y llama al endpoint público.
+
+LLAMADA A /config
+
+const uuid = document.currentScript.getAttribute('data-widget-uuid');
+const res = await fetch(`https://api.nodoxspd.com/api/widget/${uuid}/config`, {
+  headers: { 'Accept': 'application/json' },
+  signal: AbortSignal.timeout(5000),
+});
+if (!res.ok) { return; } // 404 = no active policy -> no mostrar banner
+const config = await res.json();
+const { purposes, widget_config, policy_hash } = config.data;
+
+Timeout: Usar AbortSignal.timeout(5000). El widget no debe bloquear la carga del sitio.
+
+RENDER DEL BANNER
+
+Con la configuración recibida, el widget inserta un contenedor <div id="nodox-consent-banner"> al final del body, estilizado con los colores y posición configurados.
+
+Layout y jerarquía visual del widget:
+- La zona predominante del widget debe mostrar los propósitos a capturar (toggles/switches), agrupados por categoría. Cada toggle muestra el label y description que vienen del backend. Los propósitos con required: true (ej: necessary_technical) deben renderizarse con el toggle deshabilitado (grisado, siempre activo).
+- El widget debe incluir un botón/secuencia para ver el texto legal completo de la política de cookies. Este texto debe cargarse desde el policy_url (campo legal_texts.policy_url de la respuesta del config) y mostrarse en un <div> con overflow-y: auto y altura máxima fija (ej: max-height: 300px), de modo que sea scrollable sin abandonar el widget. No debe ser la vista por defecto — se accede mediante un enlace "Ver política completa" desde el banner principal.
+- El banner_title y banner_body (del nodo legal_texts) son los textos del banner inicial. Los botones de acción mínimos son: "Aceptar todo", "Rechazar todo", y "Configurar" (abre la vista granular de propósitos).
+- Los providers (analytics, marketing, personalization) del widget_config deben mostrarse como etiquetas informativas debajo de cada grupo de toggles correspondiente, para que el usuario sepa qué herramientas concretas se activan al aceptar cada fin.
+
+ENVÍO DE CONSENTIMIENTO
+
+Cuando el visitante hace clic en "Aceptar", "Rechazar" o "Guardar preferencias", el widget recolecta los slugs seleccionados y los envía al backend:
+
+async function sendConsent(acceptedSlugs, policyHash) {
+  const payload = {
+    purposes: acceptedSlugs, policy_hash: policyHash,
+    visitor_uuid: getVisitorUuid(), timestamp: new Date().toISOString(),
+    user_agent: navigator.userAgent, screen_resolution: `${screen.width}x${screen.height}`,
+  };
+  const res = await fetch('https://api.nodoxspd.com/api/widget/{company_public_uuid}/consent', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (res.ok) {
+    const { data } = await res.json();
+    localStorage.setItem('nodox_consent_proof', JSON.stringify({
+      proof_hash: data.hash, timestamp: data.timestamp, policy_hash: policyHash,
+    }));
+    banner.remove();
+  }
+}
+
+IMPORTANTE: Las acciones deben ejecutarse DESPUÉS de que el consentimiento se haya registrado exitosamente (201 de POST /api/widget/{company_public_uuid}/consent) o en paralelo sin bloquear la UI. No inyectar scripts antes de tener certeza del registro.
+
+======================================================================
+ARTEFACTO B — ANGULAR (PATCH DE SELECCIÓN DE PROPÓSITOS)
+======================================================================
+
+Módulo Angular dentro del panel de administración de la Pyme. Extiende el componente del wizard para mostrar un selector de propósitos legales cuando un campo "Otro/especificar" tiene requires_purpose_selection: true.
+
+ORIGEN DEL PATCH
+
+El LegalTemplateSeeder define 7 campos con requires_purpose_selection: true. Cuando el usuario escribe texto libre en estos campos, debe también seleccionar manualmente los propósitos legales que aplican a ese texto, ya que el backend no puede inferirlos automáticamente.
+
+Campos afectados: step_2_analytics_other_provider, step_3_marketing_other_provider, step_4_functionality_other_provider, step_3_sharing_hr_software_names, etc.
+
+CÓDIGO DEL PATCH ANGULAR
+
+El componente del wizard debe modificarse para detectar campos con requires_purpose_selection: true en el wizard_schema y mostrar un selector de propósitos debajo del input text. La selección se guarda en wizard_data[{fieldKey}_purposes] como array de slugs.
+
+Flujo:
+1. Angular consulta GET /api/panel/consent-purposes (autenticado con Sanctum) para obtener el catálogo completo de fines legales activos.
+2. Renderiza checkboxes debajo del input "Otro".
+3. Guarda la selección en wizard_data[{field_key}_purposes] (ej: step_2_analytics_other_provider_purposes).
+4. Backend lee esto en WizardPurposeResolverService (Regla 3: campos con requires_purpose_selection buscan {key}_purposes en wizard_data).
+
+Precaución: El backend valida en WizardPurposeResolverService (regla 3) que solo los slugs existentes en consent_purposes son aceptados. Si el frontend envía un slug inválido, se ignora silenciosamente.
+
+======================================================================
+ARTEFACTO C — ANGULAR: PANTALLA DE REGISTRO DE CONSENTIMIENTOS (LEDGER)
+======================================================================
+
+Componente Angular dentro del panel de administración de la Pyme. Muestra el ledger inmutable de consentimientos con filtros, paginación y sellos legales.
+
+RUTA Y ENDPOINT
+
+Ruta Angular: /panel/consentimientos (protegida, solo company_admin autenticados vía Sanctum).
+Endpoint: GET /api/panel/consent-logs (Sanctum, scope por company_id del usuario).
+
+Query params: page (int, opcional), capture_method (live_widget|live_portal|bulk_import), policy_hash (string), from (date Y-m-d), to (date Y-m-d, inclusivo hasta 23:59:59).
+
+LAYOUT Y ENCABEZADO
+
+Título: "Registro de Consentimientos" en <h1>. Badge dinámico con pagination.total.
+
+BARRA DE FILTROS
+
+Cuatro controles en línea: método de captura (select), política (select desde GET /api/company/policies?status=published), desde (date), hasta (date). Botón "Aplicar filtros". Estado de filtros reflejado en query params de la URL.
+
+TABLA DE DATOS
+
+Columnas:
+- Identificador: Si identifier no es nulo, mostrar valor completo. Si es nulo (hoy siempre), mostrar primeros 8 chars de visitor_uuid + "..." con tooltip "Visitante anónimo". Identity Stitching pendiente.
+- Fecha: consent_occurred_at en DD/MM/YYYY HH:mm (toLocaleDateString('es-CL')).
+- Canal: capture_method con badge de color (live_widget=verde, live_portal=azul, bulk_import=gris).
+- Propósitos: Iterar keys del objeto. true = chip verde, false = chip rojo tachado.
+- Sello Legal: proof_hash primeros 12 chars en monoespaciada. Botón copiar al portapapeles.
+
+PAGINACIÓN Y ESTADO VACÍO
+
+25 registros por página. Paginación con current_page, last_page, total, per_page. Estado vacío cuando data=[]: "Aún no hay consentimientos registrados. Instala el Trust Widget en tu sitio para comenzar a capturar."

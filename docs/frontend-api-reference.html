@@ -1,0 +1,556 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>API Reference Frontend — Módulo 2 — NodoxSPD</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --surface-2: #f0f2f5;
+    --border: #e2e5ea;
+    --border-strong: #c8cdd6;
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+    --text-muted: #9ca3af;
+    --font: Inter, system-ui, -apple-system, sans-serif;
+    --font-mono: JetBrains Mono, Fira Code, ui-monospace, monospace;
+    --get: #0f766e; --get-bg: #f0fdfa; --get-border: #5eead4;
+    --post: #1d4ed8; --post-bg: #eff6ff; --post-border: #93c5fd;
+    --green: #166534; --green-bg: #f0fdf4; --green-border: #bbf7d0;
+    --red: #991b1b; --red-bg: #fef2f2; --red-border: #fecaca;
+    --yellow: #92400e; --yellow-bg: #fffbeb; --yellow-border: #fde68a;
+    --blue: #1e40af; --blue-bg: #eff6ff; --blue-border: #bfdbfe;
+    --purple: #5b21b6; --purple-bg: #faf5ff; --purple-border: #ddd6fe;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-primary);
+    font-size: 14px; line-height: 1.6; padding: 32px 24px;
+  }
+  .doc-header { max-width: 980px; margin: 0 auto 36px; border-bottom: 2px solid var(--border); padding-bottom: 22px; }
+  .doc-header h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.4px; }
+  .doc-header p { font-size: 13px; color: var(--text-secondary); margin-top: 5px; }
+  .doc-meta { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; }
+  .doc-meta span { font-size: 12px; color: var(--text-muted); }
+  .doc-meta strong { color: var(--text-secondary); }
+  .toc { max-width: 980px; margin: 0 auto 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; }
+  .toc h2 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--text-muted); margin-bottom: 12px; }
+  .toc-list { display: flex; flex-direction: column; gap: 4px; }
+  .toc-item { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 8px; text-decoration: none; color: var(--text-secondary); font-size: 12.5px; font-weight: 500; transition: background .15s; }
+  .toc-item:hover { background: var(--surface-2); color: var(--text-primary); }
+  .toc-num { font-size: 11px; font-weight: 700; color: var(--text-muted); width: 20px; }
+  .toc-path { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); margin-left: auto; }
+  .verb { display: inline-flex; align-items: center; justify-content: center; padding: 2px 9px; border-radius: 6px; font-size: 11px; font-weight: 800; font-family: var(--font-mono); letter-spacing: .3px; border: 1.5px solid; white-space: nowrap; }
+  .verb-get { color: var(--get); background: var(--get-bg); border-color: var(--get-border); }
+  .verb-post { color: var(--post); background: var(--post-bg); border-color: var(--post-border); }
+  details.ep-details { max-width: 980px; margin: 0 auto 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  details.ep-details summary { cursor: pointer; list-style: none; user-select: none; padding: 16px 20px; background: var(--surface-2); display: flex; align-items: center; gap: 12px; transition: background .15s; }
+  details.ep-details summary::-webkit-details-marker { display: none; }
+  details.ep-details summary::after { content: " ▶"; margin-left: auto; font-size: 12px; color: var(--text-muted); }
+  details.ep-details[open] summary::after { content: " ▼"; }
+  details.ep-details summary:hover { background: var(--border); }
+  summary .ep-summary-title { font-weight: 700; font-size: 15px; }
+  summary .ep-summary-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .ep-body { padding: 0; }
+  .ep-section { padding: 14px 20px; border-bottom: 1px solid var(--border); }
+  .ep-section:last-child { border-bottom: none; }
+  .ep-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .ep-section-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-strong); }
+  .ep-route { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--bg); border-bottom: 1px solid var(--border); }
+  .ep-path { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  pre { background: #1e1e2e; color: #cdd6f4; border-radius: 8px; padding: 12px 14px; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; overflow-x: auto; margin-top: 6px; }
+  .hl-key { color: #89b4fa; }
+  .hl-str { color: #a6e3a1; }
+  .hl-num { color: #fab387; }
+  .hl-bool { color: #f38ba8; }
+  code.inline { font-family: var(--font-mono); font-size: 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; color: var(--text-primary); }
+  .param-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 6px; }
+  .param-table th { background: var(--surface-2); padding: 7px 10px; text-align: left; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--border); }
+  .param-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .param-table tr:last-child td { border-bottom: none; }
+  .param-table td:first-child { font-family: var(--font-mono); font-size: 12px; color: var(--blue); font-weight: 600; }
+  .param-table td:nth-child(2) { font-family: var(--font-mono); font-size: 11px; color: var(--purple); }
+  .param-table td:nth-child(3) { color: var(--text-secondary); }
+  .pill { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; border: 1px solid; white-space: nowrap; }
+  .pill-req { background: var(--red-bg); color: var(--red); border-color: var(--red-border); }
+  .pill-opt { background: var(--surface-2); color: var(--text-muted); border-color: var(--border); }
+  .pill-200 { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
+  .pill-201 { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
+  .pill-400 { background: var(--yellow-bg); color: var(--yellow); border-color: var(--yellow-border); }
+  .pill-403 { background: var(--red-bg); color: var(--red); border-color: var(--red-border); }
+  .pill-404 { background: var(--yellow-bg); color: var(--yellow); border-color: var(--yellow-border); }
+  .pill-422 { background: var(--yellow-bg); color: var(--yellow); border-color: var(--yellow-border); }
+  .pill-429 { background: var(--red-bg); color: var(--red); border-color: var(--red-border); }
+  .err-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 6px; }
+  .err-table th { background: var(--surface-2); padding: 7px 10px; text-align: left; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--border); }
+  .err-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .err-table tr:last-child td { border-bottom: none; }
+  .err-table td:first-child { font-weight: 700; width: 60px; }
+  .note { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 8px; font-size: 12.5px; line-height: 1.55; margin-top: 8px; }
+  .note-warn { background: var(--yellow-bg); border: 1px solid var(--yellow-border); color: var(--yellow); }
+  .note-info { background: var(--blue-bg); border: 1px solid var(--blue-border); color: var(--blue); }
+  .auth-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; }
+  .auth-public { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+  .auth-private { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+  .section-divider { max-width: 980px; margin: 8px auto 24px; display: flex; align-items: center; gap: 12px; }
+  .section-divider h2 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--text-muted); white-space: nowrap; }
+  .section-divider hr { flex: 1; border: none; border-top: 1px solid var(--border); }
+  ul.sec-list { margin: 6px 0 0 18px; font-size: 12.5px; color: var(--text-secondary); line-height: 1.65; }
+  ul.sec-list li { margin-bottom: 4px; }
+  a.doc-link { color: #1e40af; text-decoration: underline; }
+  @media (max-width:640px) { body { padding: 14px 10px; } }
+
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar {
+    position: sticky; top: 0; width: 300px; min-width: 300px; height: 100vh; overflow-y: auto;
+    background: #f7f9fc; border-right: 2px solid #dce3ec; padding: 20px 0; z-index: 100;
+    transition: transform 0.3s ease;
+  }
+  .sidebar-header { padding: 0 20px 16px 20px; border-bottom: 1px solid #dce3ec; margin-bottom: 12px; }
+  .sidebar-header h2 { margin: 0; font-size: 0.95em; color: #1a3c5e; border: none; padding: 0; }
+  .sidebar-header p { margin: 4px 0 0 0; font-size: 0.78em; color: #7f8c8d; }
+  .sidebar-back { display: block; font-size: 0.75em; color: #1a3c5e; margin-top: 8px; text-decoration: none; font-weight: 600; }
+  .sidebar-back:hover { text-decoration: underline; }
+  .nav-section { margin-bottom: 14px; }
+  .nav-section-title {
+    display: block; padding: 8px 20px; font-weight: 700; font-size: 0.82em;
+    text-decoration: none; color: #1a3c5e; background: #e8eef5;
+    border-left: 3px solid #1a3c5e; margin-bottom: 2px; cursor: pointer; user-select: none;
+  }
+  .nav-section-title:hover { background: #dce3ec; }
+  .nav-section-items { padding: 0; margin: 0; list-style: none; }
+  .nav-section-items li a {
+    display: block; padding: 4px 20px 4px 32px; font-size: 0.78em;
+    text-decoration: none; color: #555; line-height: 1.5; transition: background 0.15s;
+  }
+  .nav-section-items li a:hover { background: #e4eaf3; color: #1a3c5e; }
+  .content { flex: 1; padding: 20px 40px; max-width: 1060px; min-width: 0; }
+  .hamburger {
+    display: none; position: fixed; top: 12px; left: 12px; z-index: 200;
+    width: 44px; height: 44px; border: none; background: #1a3c5e; color: #fff;
+    border-radius: 8px; font-size: 22px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .hamburger:hover { background: #2c5282; }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 90; }
+  .overlay.show { display: block; }
+  @media (max-width: 900px) {
+    .hamburger { display: block; }
+    .sidebar { position: fixed; left: 0; top: 0; transform: translateX(-100%); width: 300px; }
+    .sidebar.open { transform: translateX(0); }
+    .content { padding: 60px 16px 20px 16px; }
+    .layout { flex-direction: column; }
+  }
+  html { scroll-behavior: smooth; }
+  h1, h2, h3, h4 { scroll-margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<button class="hamburger" id="hamburgerBtn">&#9776;</button>
+<div class="overlay" id="overlay"></div>
+
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h2>&#128218; Documentaci&oacute;n</h2>
+        <p>Frontend — API Reference</p>
+        <a class="sidebar-back" href="index.html">&larr; Volver al &iacute;ndice</a>
+    </div>
+
+    <div class="nav-section">
+        <a class="nav-section-title" href="#ep1">Widget P&uacute;blico</a>
+        <ul class="nav-section-items">
+            <li><a href="#ep1">GET /api/widget/{uuid}/config</a></li>
+            <li><a href="#ep2">POST /api/widget/{uuid}/consent</a></li>
+        </ul>
+    </div>
+    <div class="nav-section">
+        <a class="nav-section-title" href="#ep3">Panel (Angular)</a>
+        <ul class="nav-section-items">
+            <li><a href="#ep3">GET /api/panel/consent-purposes</a></li>
+        </ul>
+    </div>
+</nav>
+
+<main class="content" id="main-content">
+
+<div class="doc-header">
+  <h1>API Reference &mdash; Frontend M&oacute;dulo 2</h1>
+  <p>Tres endpoints cr&iacute;ticos para la integraci&oacute;n frontend del Trust Widget: configuraci&oacute;n del banner, registro de consentimiento y cat&aacute;logo de fines legales.</p>
+  <div class="doc-meta">
+    <span><strong>Base URL:</strong> <code style="font-family:var(--font-mono);font-size:12px">https://api.tudominio.com</code></span>
+    <span><strong>Formato:</strong> JSON &middot; UTF-8</span>
+    <span><strong>Widget:</strong> P&uacute;blico (sin auth) &middot; <strong>Panel:</strong> Sanctum</span>
+  </div>
+</div>
+
+<div class="toc">
+  <h2>Endpoints</h2>
+  <div class="toc-list">
+    <a href="#ep1" class="toc-item"><span class="toc-num">01</span><span class="verb verb-get">GET</span> Configuraci&oacute;n del widget<span class="toc-path">/api/widget/{company_public_uuid}/config</span></a>
+    <a href="#ep2" class="toc-item"><span class="toc-num">02</span><span class="verb verb-post">POST</span> Registrar consentimiento<span class="toc-path">/api/widget/{company_public_uuid}/consent</span></a>
+    <a href="#ep3" class="toc-item"><span class="toc-num">03</span><span class="verb verb-get">GET</span> Cat&aacute;logo de fines legales<span class="toc-path">/api/panel/consent-purposes</span></a>
+  </div>
+</div>
+
+<div class="section-divider"><h2>Widget P&uacute;blico</h2><hr></div>
+
+<details open class="ep-details" id="ep1">
+<summary>
+  <span class="verb verb-get">GET</span>
+  <div>
+    <div class="ep-summary-title">Configuraci&oacute;n del widget</div>
+    <div class="ep-summary-desc">/api/widget/{company_public_uuid}/config</div>
+  </div>
+</summary>
+<div class="ep-body">
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Prop&oacute;sito / Cu&aacute;ndo se usa</div>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;">
+      Es el punto de partida del flujo del widget. Se llama una sola vez al cargar la p&aacute;gina del sitio de la Pyme, inmediatamente despu&eacute;s de que el script widget.js se inicializa. Devuelve toda la configuraci&oacute;n necesaria para renderizar el banner de cookies: prop&oacute;sitos activos, colores, posici&oacute;n, textos legales y el hash de la pol&iacute;tica para vincular el consentimiento posterior.
+    </p>
+  </div>
+  <div class="ep-route">
+    <span class="verb verb-get">GET</span>
+    <span class="ep-path">/api/widget/{company_public_uuid}/config</span>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Headers requeridos</div>
+    <table class="param-table">
+      <thead><tr><th>Header</th><th>Valor</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>Accept</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Origin</td><td>string</td><td>Dominio del sitio cliente. Validado por DynamicCorsMiddleware. <span class="pill pill-req">Requerido</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Path parameters</div>
+    <table class="param-table">
+      <thead><tr><th>Par&aacute;metro</th><th>Tipo</th><th>Descripci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td>company_public_uuid</td><td>UUID v4</td><td>Identificador p&uacute;blico de la empresa. Se resuelve siempre por este campo, nunca por ID num&eacute;rico interno. <span class="pill pill-req">Requerido</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuesta exitosa <span class="pill pill-200">200 OK</span></div>
+    <div class="ep-section-title" style="font-size:10px;margin-top:10px;">Headers clave</div>
+    <table class="param-table">
+      <thead><tr><th>Header</th><th>Valor</th><th>Prop&oacute;sito</th></tr></thead>
+      <tbody>
+        <tr><td>Cache-Control</td><td><code class="inline">public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400</code></td><td>Cach&eacute; p&uacute;blica en CDN por 1h, stale por 24h</td></tr>
+        <tr><td>ETag</td><td><code class="inline">&quot;{public_uuid}-{policy_hash}&quot;</code></td><td>Invalidaci&oacute;n autom&aacute;tica si cambia la pol&iacute;tica</td></tr>
+        <tr><td>Vary</td><td><code class="inline">Accept-Encoding</code></td><td>Variaci&oacute;n por codificaci&oacute;n (gzip, br)</td></tr>
+      </tbody>
+    </table>
+    <pre>{
+  <span class="hl-key">&quot;policy_hash&quot;</span>: <span class="hl-str">&quot;a1b2c3d4e5f67890abcdef1234567890abcdef1234567890abcdef1234567890&quot;</span>,
+  <span class="hl-key">&quot;policy_version&quot;</span>: <span class="hl-num">3</span>,
+  <span class="hl-key">&quot;widget_config&quot;</span>: {
+    <span class="hl-key">&quot;position&quot;</span>: <span class="hl-str">&quot;bottom-left&quot;</span>,
+    <span class="hl-key">&quot;primary_color&quot;</span>: <span class="hl-str">&quot;#1a73e8&quot;</span>,
+    <span class="hl-key">&quot;show_reject_all&quot;</span>: <span class="hl-bool">true</span>,
+    <span class="hl-key">&quot;cookie_duration_days&quot;</span>: <span class="hl-num">365</span>,
+    <span class="hl-key">&quot;providers&quot;</span>: {
+      <span class="hl-key">&quot;analytics&quot;</span>: [<span class="hl-str">&quot;google_analytics&quot;</span>],
+      <span class="hl-key">&quot;marketing&quot;</span>: [<span class="hl-str">&quot;meta_pixel&quot;</span>, <span class="hl-str">&quot;google_ads&quot;</span>],
+      <span class="hl-key">&quot;personalization&quot;</span>: [<span class="hl-str">&quot;youtube&quot;</span>, <span class="hl-str">&quot;google_maps&quot;</span>]
+    }
+  },
+  <span class="hl-key">&quot;purposes&quot;</span>: {
+    <span class="hl-key">&quot;necessary_technical&quot;</span>: {
+      <span class="hl-key">&quot;label&quot;</span>: <span class="hl-str">&quot;Cookies t&eacute;cnicas y necesarias&quot;</span>,
+      <span class="hl-key">&quot;description&quot;</span>: <span class="hl-str">&quot;Indispensables para el funcionamiento b&aacute;sico del sitio...&quot;</span>,
+<span class="hl-key">&quot;required&quot;</span>: <span class="hl-bool">true</span>,
+      <span class="hl-key">&quot;default&quot;</span>: <span class="hl-bool">true</span>,
+      <span class="hl-key">&quot;legal_basis&quot;</span>: <span class="hl-str">&quot;legitimate_interest&quot;</span>,
+      <span class="hl-key">&quot;widget_action&quot;</span>: <span class="hl-bool">null</span>
+    },
+    <span class="hl-key">&quot;analytics_behavior&quot;</span>: {
+      <span class="hl-key">&quot;label&quot;</span>: <span class="hl-str">&quot;An&aacute;lisis de visitas y comportamiento&quot;</span>,
+      <span class="hl-key">&quot;description&quot;</span>: <span class="hl-str">&quot;Nos permiten entender c&oacute;mo navegas por el sitio...&quot;</span>,
+      <span class="hl-key">&quot;required&quot;</span>: <span class="hl-bool">false</span>,
+      <span class="hl-key">&quot;default&quot;</span>: <span class="hl-bool">false</span>,
+      <span class="hl-key">&quot;legal_basis&quot;</span>: <span class="hl-str">&quot;consent&quot;</span>,
+      <span class="hl-key">&quot;widget_action&quot;</span>: <span class="hl-str">&quot;load_analytics_scripts&quot;</span>
+    }
+  },
+  <span class="hl-key">&quot;legal_texts&quot;</span>: {
+    <span class="hl-key">&quot;banner_title&quot;</span>: <span class="hl-str">&quot;Este sitio usa cookies&quot;</span>,
+    <span class="hl-key">&quot;banner_body&quot;</span>: <span class="hl-str">&quot;Utilizamos cookies propias y de terceros...&quot;</span>,
+    <span class="hl-key">&quot;policy_url&quot;</span>: <span class="hl-str">&quot;https://cdn.tudominio.com/policies/a1b2c3...html&quot;</span>
+  }
+}</pre>
+    <div class="ep-section-title" style="font-size:10px;margin-top:10px;">Campos de la respuesta</div>
+    <table class="param-table">
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Descripci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td>policy_hash</td><td>string</td><td>SHA-256 hex de la pol&iacute;tica activa. V&iacute;nculo criptogr&aacute;fico para el consentimiento posterior.</td></tr>
+        <tr><td>policy_version</td><td>int</td><td>Versi&oacute;n de la pol&iacute;tica (company_version).</td></tr>
+        <tr><td>widget_config.position</td><td>string</td><td>Posici&oacute;n del banner: bottom-left, bottom-right, top-left, top-right.</td></tr>
+        <tr><td>widget_config.primary_color</td><td>string</td><td>Color primario hex. Default: #1a73e8.</td></tr>
+        <tr><td>widget_config.show_reject_all</td><td>bool</td><td>Mostrar bot&oacute;n Rechazar todas. Default: true.</td></tr>
+        <tr><td>widget_config.cookie_duration_days</td><td>int</td><td>D&iacute;as de duraci&oacute;n cookie preferencia. Default: 365.</td></tr>
+        <tr><td>widget_config.providers</td><td>object</td><td>Proveedores por categor&iacute;a: analytics, marketing, personalization. Array de strings.</td></tr>
+        <tr><td>purposes</td><td>object</td><td>slug =&gt; {label, description, required, default, legal_basis, widget_action}. required = !requires_consent.</td></tr>
+        <tr><td>purposes.{slug}.widget_action</td><td>string | null</td><td>Acci&oacute;n t&eacute;cnica que el widget debe ejecutar en el navegador cuando el usuario acepta este prop&oacute;sito. Valores posibles: <code class="inline">load_analytics_scripts</code>, <code class="inline">load_marketing_scripts</code>, <code class="inline">load_functional_scripts</code>, <code class="inline">consent_mode_v2_ads</code>, <code class="inline">null</code>.</td></tr>
+        <tr><td>legal_texts</td><td>object</td><td>banner_title, banner_body, policy_url.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuestas de error</div>
+    <table class="err-table">
+      <thead><tr><th>C&oacute;digo</th><th>Causa</th><th>Ejemplo de mensaje</th></tr></thead>
+      <tbody>
+        <tr><td>400</td><td>UUID inv&aacute;lido o no formato v4</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;El identificador proporcionado no es un UUID v4 v&aacute;lido.&quot;,&quot;data&quot;:null}</code></td></tr>
+        <tr><td>403</td><td>Origen CORS no permitido</td><td>Sin body (middleware corta antes del controlador)</td></tr>
+        <tr><td>404</td><td>Empresa no encontrada o sin cookie_policy publicada</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;Esta empresa no tiene una pol&iacute;tica de cookies publicada.&quot;,&quot;data&quot;:null}</code></td></tr>
+        <tr><td>429</td><td>Rate limit excedido (5 IP, 60 empresa, 10 visitor req/min)</td><td><code class="inline">{&quot;message&quot;:&quot;Too Many Attempts.&quot;}</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Notas de seguridad</div>
+    <ul class="sec-list">
+      <li>La respuesta nunca incluye IDs internos (id, company_id, user_id). Solo datos p&uacute;blicos.</li>
+      <li>No se env&iacute;a Set-Cookie para no romper el cach&eacute; de Cloudflare.</li>
+      <li>El widget debe usar el policy_hash recibido al construir el payload del consentimiento.</li>
+      <li>Si la respuesta es 404, el widget no debe renderizar el banner.</li>
+    </ul>
+  </div>
+</div>
+</details>
+
+<details class="ep-details" id="ep2">
+<summary>
+  <span class="verb verb-post">POST</span>
+  <div>
+    <div class="ep-summary-title">Registrar consentimiento</div>
+    <div class="ep-summary-desc">/api/widget/{company_public_uuid}/consent</div>
+  </div>
+</summary>
+<div class="ep-body">
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Prop&oacute;sito / Cu&aacute;ndo se usa</div>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;">
+      Se invoca cuando el visitante hace clic en Aceptar, Rechazar o Guardar preferencias. El widget env&iacute;a los fines aceptados como booleans + timestamp + policy_hash. El ledger consent_logs es inmutable. El endpoint es idempotente: reenv&iacute;os del mismo payload retornan 200.
+    </p>
+  </div>
+  <div class="ep-route">
+    <span class="verb verb-post">POST</span>
+    <span class="ep-path">/api/widget/{company_public_uuid}/consent</span>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Headers requeridos</div>
+    <table class="param-table">
+      <thead><tr><th>Header</th><th>Valor</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>Content-Type</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Accept</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Origin</td><td>string</td><td>Dominio del sitio. Validado por DynamicCorsMiddleware. <span class="pill pill-req">Requerido</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Path parameters</div>
+    <table class="param-table">
+      <thead><tr><th>Par&aacute;metro</th><th>Tipo</th><th>Descripci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td>company_public_uuid</td><td>UUID v4</td><td>Va en la URL para que el middleware CORS resuelva la empresa en preflight OPTIONS (sin body). <span class="pill pill-req">Requerido</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Body params</div>
+    <table class="param-table">
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Reglas de validaci&oacute;n</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>visitor_uuid</td><td>UUID v4</td><td>required, uuid</td><td>UUID an&oacute;nimo del visitante. Sin PII.</td></tr>
+        <tr><td>company_public_uuid</td><td>UUID v4</td><td>required, uuid, exists:companies,public_uuid</td><td>Mismo UUID de la URL. Validado en BD.</td></tr>
+        <tr><td>timestamp</td><td>string (ISO-8601)</td><td>required, date_format:Y-m-d\TH:i:s\Z</td><td>UTC estricto. Ventana: no &gt;5 min futuro, no &gt;1 h pasado.</td></tr>
+        <tr><td>purposes</td><td>object</td><td>required, array; slugs: sometimes, boolean</td><td>Mapa din&aacute;mico seg&uacute;n fines activos de /config. necessary_technical se fuerza a true en backend.</td></tr>
+      </tbody>
+    </table>
+    <div class="note note-info">El timestamp se valida contra ventana de &plusmn;5 min futuro / &minus;1 h pasado (StoreConsentRequest withValidator).</div>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Ejemplo de request</div>
+    <pre>{
+  <span class="hl-key">&quot;visitor_uuid&quot;</span>: <span class="hl-str">&quot;f47ac10b-58cc-4372-a567-0e02b2c3d479&quot;</span>,
+  <span class="hl-key">&quot;company_public_uuid&quot;</span>: <span class="hl-str">&quot;39ce42d3-f179-4290-8edf-2eaf01efb82b&quot;</span>,
+  <span class="hl-key">&quot;timestamp&quot;</span>: <span class="hl-str">&quot;2026-07-22T14:30:00Z&quot;</span>,
+  <span class="hl-key">&quot;purposes&quot;</span>: {
+    <span class="hl-key">&quot;necessary_technical&quot;</span>: <span class="hl-bool">true</span>,
+    <span class="hl-key">&quot;analytics_behavior&quot;</span>: <span class="hl-bool">true</span>,
+    <span class="hl-key">&quot;functional_third_party&quot;</span>: <span class="hl-bool">false</span>,
+    <span class="hl-key">&quot;marketing_direct&quot;</span>: <span class="hl-bool">false</span>
+  }
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuesta exitosa <span class="pill pill-201">201 Created</span></div>
+    <pre>{
+  <span class="hl-key">&quot;status&quot;</span>: <span class="hl-bool">true</span>,
+  <span class="hl-key">&quot;message&quot;</span>: <span class="hl-str">&quot;Consentimiento registrado correctamente.&quot;</span>,
+  <span class="hl-key">&quot;data&quot;</span>: {
+    <span class="hl-key">&quot;status&quot;</span>: <span class="hl-str">&quot;recorded&quot;</span>,
+    <span class="hl-key">&quot;proof_hash&quot;</span>: <span class="hl-str">&quot;a1b2c3d4e5f67890abcdef1234567890abcdef1234567890abcdef1234567890&quot;</span>
+  }
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Idempotencia <span class="pill pill-200">200 OK</span></div>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;margin-bottom:6px;">Mismo proof_hash = UNIQUE en BD = 200 con already_recorded. Comportamiento esperado para reenv&iacute;os.</p>
+    <pre>{
+  <span class="hl-key">&quot;status&quot;</span>: <span class="hl-bool">true</span>,
+  <span class="hl-key">&quot;message&quot;</span>: <span class="hl-str">&quot;Consentimiento ya registrado previamente.&quot;</span>,
+  <span class="hl-key">&quot;data&quot;</span>: {
+    <span class="hl-key">&quot;status&quot;</span>: <span class="hl-str">&quot;already_recorded&quot;</span>
+  }
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuestas de error</div>
+    <table class="err-table">
+      <thead><tr><th>C&oacute;digo</th><th>Causa</th><th>Ejemplo de mensaje</th></tr></thead>
+      <tbody>
+        <tr><td>403</td><td>workers_policy u origen CORS no permitido</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;No se pueden registrar consentimientos de pol&iacute;ticas laborales desde el widget.&quot;,&quot;data&quot;:null}</code></td></tr>
+        <tr><td>404</td><td>Empresa sin cookie_policy publicada</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;Esta empresa no tiene una pol&iacute;tica de cookies publicada.&quot;,&quot;data&quot;:null}</code></td></tr>
+        <tr><td>422</td><td>Validaci&oacute;n: timestamp fuera de ventana, slugs inv&aacute;lidos</td><td><code class="inline">&quot;El timestamp no puede estar m&aacute;s de 5 minutos en el futuro.&quot;</code></td></tr>
+        <tr><td>429</td><td>Rate limit excedido</td><td><code class="inline">{&quot;message&quot;:&quot;Too Many Attempts.&quot;}</code></td></tr>
+        <tr><td>500</td><td>Error interno BD (no confundir con duplicado)</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;Error al registrar el consentimiento.&quot;,&quot;data&quot;:null}</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Notas de seguridad</div>
+    <ul class="sec-list">
+      <li>proof_hash = SHA-256 del payload canonizado (ksort + JSON_UNESCAPED_SLASHES). Determinista.</li>
+      <li>200 + already_recorded no es error. El widget puede tratarlo como consentimiento exitoso.</li>
+      <li>necessary_technical siempre true en backend, incluso si el cliente env&iacute;a false.</li>
+      <li>Slugs no activos se ignoran silenciosamente.</li>
+      <li>No exponer proof_hash en URL ni en console.log en producci&oacute;n.</li>
+    </ul>
+  </div>
+</div>
+</details>
+
+<div class="section-divider"><h2>Panel (Angular)</h2><hr></div>
+
+<details class="ep-details" id="ep3">
+<summary>
+  <span class="verb verb-get">GET</span>
+  <div>
+    <div class="ep-summary-title">Cat&aacute;logo de fines legales</div>
+    <div class="ep-summary-desc">/api/panel/consent-purposes</div>
+  </div>
+</summary>
+<div class="ep-body">
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Prop&oacute;sito / Cu&aacute;ndo se usa</div>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;">
+      Se usa en el panel Angular cuando el usuario llena campos &quot;Otro&quot; con requires_purpose_selection: true en el wizard. Muestra un selector de checkboxes con los fines activos. La selecci&oacute;n se guarda en wizard_data[{field_key}_purposes] y el backend los resuelve con WizardPurposeResolverService (regla 3).
+    </p>
+  </div>
+  <div class="ep-route">
+    <span class="verb verb-get">GET</span>
+    <span class="ep-path">/api/panel/consent-purposes</span>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Headers requeridos</div>
+    <table class="param-table">
+      <thead><tr><th>Header</th><th>Valor</th><th>Notas</th></tr></thead>
+      <tbody>
+<tr><td>Accept</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Cookie</td><td>string</td><td>Session cookie enviada autom&aacute;ticamente por el navegador. Requiere <code class="inline">withCredentials: true</code> en el HttpClient. <span class="pill pill-req">Requerido</span></td></tr>
+      </tbody>
+    </table>
+    <div class="note note-info">
+      <strong>Autenticaci&oacute;n:</strong> Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con <code class="inline">GET /sanctum/csrf-cookie</code> antes de llamar a este endpoint. Incluir <code class="inline">withCredentials: true</code> en todas las llamadas HTTP del panel. No usar Bearer token &mdash; las cookies de sesi&oacute;n se env&iacute;an autom&aacute;ticamente.
+    </div>
+    <pre><span class="hl-key">// En app.config.ts o el interceptor HTTP:</span>
+provideHttpClient(withFetch(), withInterceptors([...])),
+<span class="hl-comment">// Y asegurarse de enviar credenciales (o configurarlo globalmente en el interceptor)</span></pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuesta exitosa <span class="pill pill-200">200 OK</span></div>
+    <pre>{
+  <span class="hl-key">&quot;status&quot;</span>: <span class="hl-bool">true</span>,
+  <span class="hl-key">&quot;message&quot;</span>: <span class="hl-str">&quot;Cat&aacute;logo de fines legales.&quot;</span>,
+  <span class="hl-key">&quot;data&quot;</span>: [
+    {
+      <span class="hl-key">&quot;id&quot;</span>: <span class="hl-num">1</span>,
+      <span class="hl-key">&quot;slug&quot;</span>: <span class="hl-str">&quot;necessary_technical&quot;</span>,
+      <span class="hl-key">&quot;category&quot;</span>: <span class="hl-str">&quot;gestion_general&quot;</span>,
+      <span class="hl-key">&quot;label&quot;</span>: <span class="hl-str">&quot;Cookies t&eacute;cnicas y necesarias&quot;</span>,
+      <span class="hl-key">&quot;description&quot;</span>: <span class="hl-str">&quot;Indispensables para el funcionamiento b&aacute;sico del sitio...&quot;</span>,
+      <span class="hl-key">&quot;requires_consent&quot;</span>: <span class="hl-bool">false</span>
+    },
+    {
+      <span class="hl-key">&quot;id&quot;</span>: <span class="hl-num">2</span>,
+      <span class="hl-key">&quot;slug&quot;</span>: <span class="hl-str">&quot;analytics_behavior&quot;</span>,
+      <span class="hl-key">&quot;category&quot;</span>: <span class="hl-str">&quot;analisis_comportamiento&quot;</span>,
+      <span class="hl-key">&quot;label&quot;</span>: <span class="hl-str">&quot;An&aacute;lisis de visitas y comportamiento&quot;</span>,
+      <span class="hl-key">&quot;description&quot;</span>: <span class="hl-str">&quot;Nos permiten entender c&oacute;mo navegas por el sitio...&quot;</span>,
+      <span class="hl-key">&quot;requires_consent&quot;</span>: <span class="hl-bool">true</span>
+    }
+  ]
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Campos de la respuesta</div>
+    <table class="param-table">
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Descripci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td>id</td><td>int</td><td>ID interno del fin. Referencia frontend (no enviar al widget).</td></tr>
+        <tr><td>slug</td><td>string</td><td>Identificador &uacute;nico. Ej: analytics_behavior, marketing_direct.</td></tr>
+        <tr><td>category</td><td>string</td><td>Categor&iacute;a UI: gestion_general, analisis_comportamiento, comercial_marketing, etc.</td></tr>
+        <tr><td>label</td><td>string</td><td>Nombre legible. Ej: An&aacute;lisis de visitas y comportamiento.</td></tr>
+        <tr><td>description</td><td>string</td><td>Texto explicativo.</td></tr>
+        <tr><td>requires_consent</td><td>bool</td><td>true = toggle editable. false = obligatorio, deshabilitado.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuestas de error</div>
+    <table class="err-table">
+      <thead><tr><th>C&oacute;digo</th><th>Causa</th><th>Ejemplo de mensaje</th></tr></thead>
+      <tbody>
+        <tr><td>401</td><td>No autenticado (falta Authorization o token inv&aacute;lido)</td><td><code class="inline">{&quot;message&quot;:&quot;Unauthenticated.&quot;}</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Notas de implementaci&oacute;n</div>
+    <ul class="sec-list">
+      <li>Solo se usa en el panel Angular, no en el widget p&uacute;blico.</li>
+      <li>Devuelve todos los fines activos del cat&aacute;logo global (13 slugs), no solo los que aplican a la empresa.</li>
+      <li>Para el widget, los fines activos se resuelven din&aacute;micamente con WizardPurposeResolverService (3 reglas).</li>
+      <li>M&aacute;s detalle en <a class="doc-link" href="frontend-guia-conceptual.html#artefacto-b">Artefacto B de la Gu&iacute;a Conceptual</a>.</li>
+    </ul>
+  </div>
+</div>
+</details>
+
+</main>
+</div>
+
+<script>
+(function() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('overlay');
+    var hamburger = document.getElementById('hamburgerBtn');
+    if (hamburger) { hamburger.addEventListener('click', function() { sidebar.classList.toggle('open'); overlay.classList.toggle('show'); }); }
+    if (overlay) { overlay.addEventListener('click', function() { sidebar.classList.remove('open'); overlay.classList.remove('show'); }); }
+    var links = document.querySelectorAll('.nav-section-items a');
+    links.forEach(function(link) { link.addEventListener('click', function() { if (window.innerWidth <= 900) { sidebar.classList.remove('open'); overlay.classList.remove('show'); } }); });
+})();
+</script>
+</body>
+</html>

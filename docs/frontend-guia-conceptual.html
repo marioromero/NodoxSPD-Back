@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía Conceptual Frontend — Módulo 2 — NodoxSPD</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: system-ui, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f5f7fa; }
+
+        .layout { display: flex; min-height: 100vh; }
+        .sidebar {
+            position: sticky; top: 0; width: 300px; min-width: 300px; height: 100vh; overflow-y: auto;
+            background: #f7f9fc; border-right: 2px solid #dce3ec; padding: 20px 0; z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        .sidebar-header { padding: 0 20px 16px 20px; border-bottom: 1px solid #dce3ec; margin-bottom: 12px; }
+        .sidebar-header h2 { margin: 0; font-size: 0.95em; color: #1a3c5e; border: none; padding: 0; }
+        .sidebar-header p { margin: 4px 0 0 0; font-size: 0.78em; color: #7f8c8d; }
+        .sidebar-back { display: block; font-size: 0.75em; color: #1a3c5e; margin-top: 8px; text-decoration: none; font-weight: 600; }
+        .sidebar-back:hover { text-decoration: underline; }
+
+        .nav-section { margin-bottom: 14px; }
+        .nav-section-title {
+            display: block; padding: 8px 20px; font-weight: 700; font-size: 0.82em;
+            text-decoration: none; color: #1a3c5e; background: #e8eef5;
+            border-left: 3px solid #1a3c5e; margin-bottom: 2px; cursor: pointer; user-select: none;
+        }
+        .nav-section-title:hover { background: #dce3ec; }
+        .nav-section-items { padding: 0; margin: 0; list-style: none; }
+        .nav-section-items li a {
+            display: block; padding: 4px 20px 4px 32px; font-size: 0.78em;
+            text-decoration: none; color: #555; line-height: 1.5; transition: background 0.15s;
+        }
+        .nav-section-items li a:hover { background: #e4eaf3; color: #1a3c5e; }
+        .nav-section-items li a.nav-h3 { padding-left: 46px; font-size: 0.74em; }
+        .nav-section-items.collapsed { display: none; }
+        .nav-section-title::after { content: ' \25BC'; font-size: 0.7em; margin-left: 4px; }
+        .nav-section-title.collapsed-group::after { content: ' \25BA'; }
+
+        .content { flex: 1; padding: 20px 40px; max-width: 960px; min-width: 0; }
+
+        .hamburger {
+            display: none; position: fixed; top: 12px; left: 12px; z-index: 200;
+            width: 44px; height: 44px; border: none; background: #1a3c5e; color: #fff;
+            border-radius: 8px; font-size: 22px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .hamburger:hover { background: #2c5282; }
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 90; }
+        .overlay.show { display: block; }
+
+        @media (max-width: 900px) {
+            .hamburger { display: block; }
+            .sidebar { position: fixed; left: 0; top: 0; transform: translateX(-100%); width: 300px; }
+            .sidebar.open { transform: translateX(0); }
+            .content { padding: 60px 16px 20px 16px; }
+            .layout { flex-direction: column; }
+        }
+
+        html { scroll-behavior: smooth; }
+        h1, h2, h3, h4 { scroll-margin-top: 20px; }
+
+        .doc-header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 3px solid #1a3c5e; }
+        .doc-header h1 { margin-top: 0; font-size: 1.8em; border: none; padding: 0; color: #1a3c5e; }
+        .doc-header p { font-size: 1.05em; color: #555; max-width: 780px; margin: 10px auto 0 auto; }
+
+        h1 { color: #1a3c5e; border-bottom: 3px solid #1a3c5e; padding-bottom: 12px; margin-top: 50px; font-size: 1.4em; }
+        h2 { color: #2c3e50; margin-top: 35px; border-bottom: 2px solid #3498db; padding-bottom: 6px; }
+        h3 { color: #16a085; margin-top: 25px; }
+
+        .card {
+            background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
+            padding: 20px 24px; margin: 20px 0; box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+        .card h3 { margin: 0 0 4px 0; color: #1a3c5e; font-size: 1.1em; border: none; padding: 0; }
+        .card .path { font-family: 'JetBrains Mono', monospace; font-size: 0.82em; color: #888; margin-bottom: 8px; }
+        .card p { margin: 0 0 10px 0; color: #555; font-size: 0.93em; }
+        .card p:last-child { margin-bottom: 0; }
+        .card .tag {
+            display: inline-block; font-size: 0.72em; font-weight: 600; padding: 2px 10px;
+            border-radius: 12px; margin-right: 4px; background: #e8eef5; color: #1a3c5e;
+        }
+        .card .tag.art-a { background: #e0f2fe; color: #0369a1; }
+        .card .tag.art-b { background: #fef3c7; color: #92400e; }
+
+        .code-block {
+            background: #1e293b; color: #e2e8f0; border-radius: 8px; padding: 14px 16px;
+            font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6;
+            overflow-x: auto; margin: 10px 0;
+        }
+        .code-block .comment { color: #94a3b8; }
+        .code-block .keyword { color: #c084fc; }
+        .code-block .string { color: #34d399; }
+        .code-block .function { color: #60a5fa; }
+
+        .nota { background: #e8f8f5; border-left: 4px solid #1abc9c; padding: 10px 14px; margin: 12px 0; font-size: 0.93em; }
+        .nota-warn { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px 14px; margin: 12px 0; font-size: 0.93em; }
+        .nota-danger { background: #fef2f2; border-left: 4px solid #ef4444; padding: 10px 14px; margin: 12px 0; font-size: 0.93em; }
+
+        .flow-diagram { background: #fff; border: 1px solid #dce3ec; border-radius: 10px; padding: 24px; margin: 20px 0; }
+        .flow-step { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+        .flow-step .num { width: 28px; height: 28px; border-radius: 50%; background: #1a3c5e; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+        .flow-step .desc { font-size: 13px; color: #555; }
+        .flow-arrow { text-align: center; color: #ccc; font-size: 14px; }
+
+        .artefact-box { background: #f0f4ff; border: 2px solid #93c5fd; border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+        .artefact-box h3 { color: #1e40af; border: none; margin-top: 0; padding: 0; }
+        .artefact-box .badge { display: inline-block; background: #1e40af; color: #fff; font-size: 0.7em; font-weight: 700; padding: 2px 10px; border-radius: 10px; margin-bottom: 8px; }
+
+        .resp-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+        .resp-table th { background: #f0f2f5; padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #777; text-transform: uppercase; border-bottom: 1px solid #ddd; }
+        .resp-table td { padding: 7px 12px; border-bottom: 1px solid #eee; vertical-align: top; }
+        .resp-table td code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #f5f5f5; padding: 1px 5px; border-radius: 3px; }
+        .resp-table tr:last-child td { border-bottom: none; }
+
+        .filter-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 12px 0; }
+        .filter-group { display: flex; flex-direction: column; gap: 3px; }
+        .filter-group label { font-size: 11px; font-weight: 600; color: #777; text-transform: uppercase; }
+        .filter-group select, .filter-group input { padding: 6px 10px; font-size: 13px; border: 1px solid #ccc; border-radius: 6px; background: #fff; }
+        .filter-group select:focus, .filter-group input:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 2px rgba(52,152,219,0.15); }
+        .btn-filter { padding: 6px 16px; background: #1a3c5e; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600; }
+        .btn-filter:hover { background: #2c5282; }
+
+        .badge-green { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 10px; background: #d1fae5; color: #065f46; }
+        .badge-blue { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 10px; background: #dbeafe; color: #1e40af; }
+        .badge-gray { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 10px; background: #f3f4f6; color: #4b5563; }
+
+        .chip-green { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; background: #d1fae5; color: #065f46; margin: 1px 2px; }
+        .chip-red { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; background: #fef2f2; color: #991b1b; margin: 1px 2px; text-decoration: line-through; }
+
+        .mono-hash { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #f5f5f5; padding: 2px 6px; border-radius: 4px; }
+        .copy-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 3px 10px; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer; color: #555; }
+        .copy-btn:hover { background: #f0f2f5; border-color: #999; }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: #999; }
+        .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+        .empty-state p { font-size: 14px; margin: 0; }
+    </style>
+</head>
+<body>
+
+<button class="hamburger" id="hamburgerBtn">&#9776;</button>
+<div class="overlay" id="overlay"></div>
+
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h2>&#128218; Documentación</h2>
+        <p>Frontend — Guía Conceptual</p>
+        <a class="sidebar-back" href="index.html">&larr; Volver al índice</a>
+    </div>
+
+    <div class="nav-section">
+        <a class="nav-section-title" href="#introduccion" data-toggle="introduccion-items">Introducción</a>
+        <ul class="nav-section-items" id="introduccion-items">
+            <li><a href="#introduccion">Visión general</a></li>
+            <li><a href="#flujo-global">Flujo global frontend-backend</a></li>
+        </ul>
+    </div>
+    <div class="nav-section">
+        <a class="nav-section-title" href="#artefacto-a" data-toggle="artefacto-a-items">Artefacto A</a>
+        <ul class="nav-section-items" id="artefacto-a-items">
+            <li><a href="#artefacto-a">Vanilla JS — Widget de Cookies</a></li>
+            <li><a href="#orden-instalacion" class="nav-h3">⚠️ Orden de instalación</a></li>
+            <li><a href="#widget-inicializacion" class="nav-h3">Inicialización</a></li>
+            <li><a href="#widget-visitor-uuid" class="nav-h3">Gestión del visitor_uuid</a></li>
+            <li><a href="#widget-config">Llamada a /config</a></li>
+            <li><a href="#widget-deteccion-previa" class="nav-h3">Detección de consentimiento previo</a></li>
+            <li><a href="#widget-render">Render del banner</a></li>
+            <li><a href="#widget-consent">Envío de consentimiento</a></li>
+            <li><a href="#widget-payload" class="nav-h3">Construcción del payload</a></li>
+            <li><a href="#mapeo-acciones" class="nav-h3">Tabla de mapeo de acciones</a></li>
+            <li><a href="#widget-degradacion" class="nav-h3">Degradación graceful</a></li>
+        </ul>
+    </div>
+    <div class="nav-section">
+        <a class="nav-section-title" href="#artefacto-b" data-toggle="artefacto-b-items">Artefacto B</a>
+        <ul class="nav-section-items" id="artefacto-b-items">
+            <li><a href="#artefacto-b">Angular — Patch de Propósitos</a></li>
+            <li><a href="#angular-origen">Origen del patch</a></li>
+            <li><a href="#angular-parche">Código del patch</a></li>
+        </ul>
+    </div>
+    <div class="nav-section">
+        <a class="nav-section-title" href="#artefacto-c" data-toggle="artefacto-c-items">Artefacto C</a>
+        <ul class="nav-section-items" id="artefacto-c-items">
+            <li><a href="#artefacto-c">Angular — Pantalla de Registro de Consentimientos</a></li>
+            <li><a href="#ledger-ruta">Ruta y endpoint</a></li>
+            <li><a href="#ledger-layout">Layout y encabezado</a></li>
+            <li><a href="#ledger-filtros">Barra de filtros</a></li>
+            <li><a href="#ledger-tabla">Tabla de datos</a></li>
+            <li><a href="#ledger-paginacion">Paginación y estado vacío</a></li>
+            <li><a href="#ledger-contrato">Contrato JSON de datos</a></li>
+        </ul>
+    </div>
+</nav>
+
+<main class="content" id="main-content">
+
+<div class="doc-header">
+    <h1>Guía Conceptual Frontend — Módulo 2</h1>
+    <p>Tres artefactos frontend para integrar el Trust Widget de Consentimientos: Vanilla JS (widget de cookies embebible), Angular (patch de selección de propósitos legales) y Angular (pantalla de auditoría de consentimientos).</p>
+</div>
+
+<!-- ──────────────────────────────────────────── -->
+<h1 id="introduccion">Introducción</h1>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="card">
+    <p>
+        El Módulo 2 expone tres endpoints públicos del widget (<code>/api/widget/{uuid}/config</code>, <code>/api/widget/consent</code>, <code>/api/panel/consent-purposes</code>) y un flujo Angular que complementa el wizard de generación de políticas con la selección manual de propósitos legales cuando el usuario escribe texto libre en campos "Otro".
+    </p>
+    <p>
+        Esta guía describe <strong>tres artefactos frontend independientes</strong>:
+    </p>
+    <ul>
+        <li><strong>Artefacto A</strong> — Widget de cookies en Vanilla JS que las Pymes embeden en sus sitios web. Renderiza un banner, obtiene la config desde el backend y envía el consentimiento del visitante.</li>
+        <li><strong>Artefacto B</strong> — Patch de selección de propósitos en Angular (panel interno de la Pyme). Se activa cuando un campo "Otro" del wizard tiene <code>requires_purpose_selection: true</code>.</li>
+        <li><strong>Artefacto C</strong> — Pantalla de Registro de Consentimientos en Angular (panel interno de la Pyme). Muestra el ledger inmutable con filtros, paginación y sellos legales.</li>
+    </ul>
+</div>
+
+<h2 id="flujo-global">Flujo global frontend-backend</h2>
+
+<div class="flow-diagram">
+    <div class="flow-step"><span class="num">1</span><span class="desc">El visitante carga el sitio de la Pyme. El widget JS se inicializa y llama a <code>GET /api/widget/{uuid}/config</code>.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">2</span><span class="desc">El servidor responde con <code>purposes</code>, <code>widget_config</code> (colores, posición), <code>policy_hash</code>.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">3</span><span class="desc">El widget renderiza el banner de cookies según la configuración visual recibida.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">4</span><span class="desc">El visitante acepta/rechaza/configura propósitos. El widget envía <code>POST /api/widget/consent</code> con los slugs aceptados.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">5</span><span class="desc">El backend registra en <code>consent_logs</code> (ledger inmutable), calcula el <code>proof_hash</code> y responde 201.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">6</span><span class="desc">(Angular) En el panel de políticas, el usuario llena campos "Otro". El template del wizard activa un selector de propósitos si <code>requires_purpose_selection = true</code>.</span></div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h1 id="artefacto-a">Artefacto A — Widget de Cookies (Vanilla JS)</h1>
+<!-- ════════════════════════════════════════════ -->
+
+<div class="artefact-box">
+    <span class="badge">Artefacto A</span>
+    <h3>Widget de Cookies — Vanilla JS</h3>
+    <p>Script embebible que las Pymes insertan en su sitio web. Sin dependencias externas (sin jQuery, sin React). Compatible con CSP estrictas.</p>
+</div>
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="orden-instalacion">⚠️ Orden de Instalaci&oacute;n Obligatorio (Cumplimiento Legal)</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="card">
+    <p>
+        El snippet de instalaci&oacute;n no es un solo script: son <strong>tres bloques</strong> que deben respetarse estrictamente en el orden indicado. Si la Pyme ya tiene Google Analytics u otro tracker en su <code>&lt;head&gt;</code>, debe moverlo obligatoriamente despu&eacute;s del Bloque 2. Si se ejecuta antes, la cookie se inyecta sin consentimiento y pierde toda validez legal bajo la Ley 21.719.
+    </p>
+
+    <div class="code-block">
+<span class="comment">&lt;!-- BLOQUE 1 (Obligatorio, s&iacute;ncrono): --&gt;</span>
+<span class="comment">&lt;!-- Debe ir ANTES de cualquier script de rastreo. --&gt;</span>
+<span class="comment">&lt;!-- Establece la denegaci&oacute;n por defecto desde el primer milisegundo. --&gt;</span>
+&lt;<span class="keyword">script</span>&gt;
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('<span class="keyword">consent</span>', '<span class="keyword">default</span>', {
+    analytics_storage:   '<span class="string">denied</span>',
+    ad_storage:          '<span class="string">denied</span>',
+    ad_user_data:        '<span class="string">denied</span>',
+    ad_personalization:  '<span class="string">denied</span>',
+    wait_for_update:     <span class="keyword">500</span>
+  });
+&lt;/<span class="keyword">script</span>&gt;
+
+<span class="comment">&lt;!-- BLOQUE 2: El Trust Widget (async, no bloquea el render) --&gt;</span>
+&lt;<span class="keyword">script</span> src=<span class="string">"https://cdn.tudominio.com/widget/v1/widget.js"</span>
+        data-company=<span class="string">"TU_PUBLIC_UUID_AQUI"</span> async&gt;&lt;/<span class="keyword">script</span>&gt;
+
+<span class="comment">&lt;!-- BLOQUE 3: Scripts de terceros (ej. Google Analytics) SIEMPRE despu&eacute;s del widget --&gt;</span>
+&lt;<span class="keyword">script</span> async src=<span class="string">"https://www.googletagmanager.com/gtag/js?id=G-XXXXXX"</span>&gt;&lt;/<span class="keyword">script</span>&gt;
+    </div>
+
+    <table class="resp-table">
+        <thead><tr><th>Bloque</th><th>Qu&eacute; hace</th><th>Advertencia legal</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><strong>1</strong> &mdash; Denegaci&oacute;n por defecto</td>
+                <td>Establece <code>gtag('consent', 'default', {...denied...})</code> para Google Consent Mode v2. Esto bloquea cualquier cookie de analytics, ads y personalizaci&oacute;n desde el primer milisegundo de carga, incluso si terceros scripts aparecen accidentalmente antes del widget.</td>
+                <td>Sin este bloque, el tracker de GA4 o Meta puede cargar y etiquetar al usuario antes de que el widget tenga oportunidad de denegar. <strong>Nulo de pleno derecho.</strong></td>
+            </tr>
+            <tr>
+                <td><strong>2</strong> &mdash; Trust Widget</td>
+                <td>Carga el widget de consentimiento (async). El widget obtiene la configuraci&oacute;n desde el backend y renderiza el banner. Cuando el visitante decide sus preferencias, el widget ejecuta <code>gtag('consent', 'update', ...)</code> seg&uacute;n la configuraci&oacute;n recibida.</td>
+                <td>Debe cargarse antes que cualquier script de terceros. Si se carga despu&eacute;s de GA4, las cookies de analytics ya se habr&aacute;n inyectado sin consentimiento.</td>
+            </tr>
+            <tr>
+                <td><strong>3</strong> &mdash; Scripts de terceros</td>
+                <td>Google Analytics, Meta Pixel, Hotjar, etc. Se cargan despu&eacute;s del widget para que &eacute;ste tenga tiempo de establecer el consentimiento default antes de que los trackers se ejecuten.</td>
+                <td>Si la Pyme tiene estos scripts en el <code>&lt;head&gt;</code> antes del Bloque 2, debe moverlos obligatoriamente despu&eacute;s. No hacerlo invalida el consentimiento legal.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="nota-danger">
+        <strong>Consecuencia legal:</strong> Si el Bloque 1 no est&aacute; presente o los scripts de terceros se cargan antes del Bloque 2, cualquier cookie inyectada antes del consentimiento constituye una infracci&oacute;n a la Ley 21.719 (Art. 14, 15 y 15 bis). El responsable del tratamiento (la Pyme) es quien asume la responsabilidad.
+    </div>
+</div>
+
+<h2 id="widget-inicializacion">Inicializaci&oacute;n</h2>
+
+<div class="card">
+    <p>El widget se instancia con un <code>data-widget-uuid</code> en un <code>&lt;script&gt;</code> tag embebido. No usa DOMContentLoaded si se carga con <code>defer</code> o al final del body.</p>
+    <div class="code-block">
+<span class="comment">&lt;!-- Código que la Pyme pega en su sitio web --&gt;</span>
+&lt;<span class="keyword">script</span> src=<span class="string">"https://cdn.nodoxspd.com/widget.js"</span>
+        data-widget-uuid=<span class="string">"a1b2c3d4-e5f6-7890-abcd-ef1234567890"</span>
+        data-position=<span class="string">"bottom-left"</span>
+        data-primary-color=<span class="string">"#1a73e8"</span>
+        defer&gt;&lt;/<span class="keyword">script</span>&gt;
+    </div>
+    <p>El script construye la URL de configuración dinámicamente y llama al endpoint público.</p>
+</div>
+
+<h2 id="widget-visitor-uuid">Gestión del visitor_uuid</h2>
+
+<div class="card">
+    <p>El <code>visitor_uuid</code> identifica el navegador del visitante de forma persistente entre visitas. El widget debe gestionarlo as&iacute;:</p>
+
+    <div class="code-block">
+<span class="keyword">function</span> getOrCreateVisitorUuid() {
+  <span class="keyword">const</span> KEY = <span class="string">'nodox_visitor_uuid'</span>;
+  <span class="keyword">let</span> uuid = localStorage.getItem(KEY);
+  <span class="keyword">if</span> (!uuid) {
+    uuid = crypto.randomUUID(); <span class="comment">// Nativo en todos los browsers modernos</span>
+    localStorage.setItem(KEY, uuid);
+  }
+  <span class="keyword">return</span> uuid;
+}
+    </div>
+
+    <div class="nota-danger">
+        <strong>Nunca generar un UUID nuevo en cada visita.</strong> El mismo UUID debe enviarse en todas las llamadas <code>POST /consent</code> del mismo navegador para que el ledger mantenga coherencia hist&oacute;rica por visitante. Si se regenera el UUID en cada visita, el ledger no puede vincular consentimientos del mismo usuario a trav&eacute;s del tiempo.
+    </div>
+</div>
+
+<h2 id="widget-config">Llamada a <code>/config</code></h2>
+
+<div class="card">
+    <p>El widget invoca el endpoint de configuración para obtener los propósitos activos y la personalización visual de la Pyme.</p>
+    <div class="code-block">
+<span class="comment">// widget.js — obtener configuración</span>
+<span class="keyword">const</span> uuid = <span class="keyword">document</span>.currentScript
+    .getAttribute(<span class="string">'data-widget-uuid'</span>);
+
+<span class="keyword">const</span> res = <span class="keyword">await</span> fetch(
+    <span class="string">`https://api.nodoxspd.com/api/widget/<span class="function">${uuid}</span>/config`</span>,
+    {
+        headers: { <span class="string">'Accept'</span>: <span class="string">'application/json'</span> },
+        signal: AbortSignal.timeout(<span class="keyword">5000</span>),
+    }
+);
+
+<span class="keyword">if</span> (!res.ok) {
+    <span class="comment">// 404 = no active policy → no mostrar banner (la Pyme no configuró)</span>
+    <span class="keyword">return</span>;
+}
+
+<span class="keyword">const</span> config = <span class="keyword">await</span> res.json();
+<span class="keyword">const</span> { purposes, widget_config, policy_hash } = config.data;
+    </div>
+    <div class="nota-warn">
+        <strong>Timeout:</strong> Usar <code>AbortSignal.timeout(5000)</code>. Si el CDN (Cloudflare) responde desde cache edge, la latencia será &lt;100ms. El widget no debe bloquear la carga del sitio.
+    </div>
+</div>
+
+<h3 id="widget-deteccion-previa">Detecci&oacute;n de consentimiento previo y pol&iacute;tica actualizada</h3>
+
+<div class="card">
+    <p>Antes de renderizar el banner, el widget debe verificar si el visitante ya consinti&oacute; esta versi&oacute;n de la pol&iacute;tica. Si lo hizo y la pol&iacute;tica no cambi&oacute;, no se muestra el banner pero se ejecutan las <code>widget_action</code> de los prop&oacute;sitos previamente aceptados (rehydrataci&oacute;n).</p>
+
+    <div class="code-block">
+<span class="comment">// widget.js — detecci&oacute;n de consentimiento previo</span>
+<span class="keyword">const</span> uuid = getOrCreateVisitorUuid();
+<span class="keyword">const</span> CONSENT_KEY = <span class="string">`nodox_consent_<span class="function">${uuid}</span>`</span>;
+<span class="keyword">const</span> stored = <span class="keyword">JSON</span>.parse(localStorage.getItem(CONSENT_KEY) || <span class="string">'null'</span>);
+
+<span class="keyword">if</span> (stored &amp;&amp; stored.policy_hash === config.policy_hash) {
+  <span class="comment">// Usuario ya consinti&oacute; esta versi&oacute;n de pol&iacute;tica → no mostrar banner</span>
+  <span class="comment">// Pero s&iacute; ejecutar las widget_actions de los prop&oacute;sitos previamente aceptados</span>
+  rehydrateConsent(stored.purposes, config.purposes);
+  <span class="keyword">return</span>;
+}
+
+<span class="comment">// Si stored existe pero el policy_hash difiere → pol&iacute;tica actualizada</span>
+<span class="comment">// Mostrar banner de nuevo aunque el usuario haya consentido antes</span>
+<span class="comment">// El consentimiento anterior sigue v&aacute;lido para el ledger pero necesita renovarse</span>
+    </div>
+
+    <p>La funci&oacute;n <code>rehydrateConsent</code> debe ejecutar las <code>widget_action</code> correspondientes a los prop&oacute;sitos que el usuario acept&oacute; previamente, para que los scripts de terceros se carguen sin volver a preguntar:</p>
+
+    <div class="code-block">
+<span class="keyword">function</span> rehydrateConsent(storedPurposes, configPurposes) {
+  <span class="keyword">for</span> (<span class="keyword">const</span> [slug, accepted] <span class="keyword">of</span> Object.entries(storedPurposes)) {
+    <span class="keyword">if</span> (!accepted) <span class="keyword">continue</span>;
+
+    <span class="keyword">const</span> purposeConfig = configPurposes?.[slug];
+    <span class="keyword">const</span> action = purposeConfig?.widget_action;
+    <span class="keyword">if</span> (!action) <span class="keyword">continue</span>;
+
+    executeWidgetAction(action, slug);
+  }
+}
+    </div>
+
+    <div class="nota">
+        <strong>Rehydrataci&oacute;n sin banner:</strong> Cuando el <code>policy_hash</code> coincide y hay consentimiento previo, el usuario no vuelve a ver el banner. Los scripts de terceros se cargan inmediatamente bas&aacute;ndose en sus preferencias guardadas. Esto es cr&iacute;tico para UX: un usuario que ya consinti&oacute; no debe ser interrumpido.
+    </div>
+    <div class="nota-warn">
+        <strong>Pol&iacute;tica actualizada:</strong> Si el <code>policy_hash</code> cambi&oacute;, el banner se muestra de nuevo. El consentimiento anterior permanece en el ledger pero la nueva versi&oacute;n requiere consentimiento fresco. El widget debe actualizar el <code>CONSENT_KEY</code> con el nuevo hash al registrar el nuevo consentimiento.
+    </div>
+</div>
+
+<h2 id="widget-render">Render del banner</h2>
+
+<div class="card">
+    <p>Con la configuración recibida, el widget inserta un contenedor <code>&lt;div id="nodox-consent-banner"&gt;</code> al final del body, estilizado con los colores y posición configurados.</p>
+    <div class="code-block">
+<span class="comment">// widget.js — renderizar banner</span>
+<span class="keyword">const</span> position = widget_config.position || <span class="string">'bottom-left'</span>;
+<span class="keyword">const</span> primaryColor = widget_config.primary_color || <span class="string">'#1a73e8'</span>;
+<span class="keyword">const</span> showRejectAll = widget_config.show_reject_all !== <span class="keyword">false</span>;
+
+<span class="keyword">const</span> banner = <span class="keyword">document</span>.createElement(<span class="string">'div'</span>);
+banner.id = <span class="string">'nodox-consent-banner'</span>;
+banner.style.cssText = <span class="string">`
+    position: fixed;
+    ${position.includes('bottom') ? 'bottom: 20px' : 'top: 20px'};
+    ${position.includes('left') ? 'left: 20px' : 'right: 20px'};
+    z-index: 999999;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    padding: 20px;
+    max-width: 400px;
+    font-family: system-ui, sans-serif;
+    font-size: 14px;
+`</span>;
+
+<span class="comment">// Listar propósitos con toggle</span>
+<span class="keyword">const</span> togglesHtml = purposes.map(p =&gt; <span class="string">`
+    &lt;label style="display:flex;align-items:center;gap:8px;margin:6px 0;"&gt;
+        &lt;input type="checkbox" value="<span class="function">${p.slug}</span>"
+               ${p.slug === 'necessary_technical' ? 'checked disabled' : ''}&gt;
+        &lt;strong&gt;<span class="function">${p.label}</span>&lt;/strong&gt;
+    &lt;/label&gt;
+`</span>).join(<span class="string">''</span>);
+
+banner.innerHTML = <span class="string">`
+    &lt;div style="margin-bottom:12px;font-weight:700;color:<span class="function">${primaryColor}</span>;"&gt;
+        Este sitio usa cookies
+    &lt;/div&gt;
+    &lt;div style="margin-bottom:12px;font-size:13px;color:#555;"&gt;
+        Seleccione qué cookies autoriza.
+    &lt;/div&gt;
+    <span class="function">${togglesHtml}</span>
+    &lt;div style="display:flex;gap:8px;margin-top:14px;"&gt;
+        &lt;button id="nodox-accept-all" style="..."&gt;Aceptar todas&lt;/button&gt;
+        ${showRejectAll ? '&lt;button id="nodox-reject-all" style="..."&gt;Rechazar&lt;/button&gt;' : ''}
+    &lt;/div&gt;
+`</span>;
+
+<span class="keyword">document</span>.body.appendChild(banner);
+    </div>
+</div>
+
+<h2 id="widget-consent">Envío de consentimiento</h2>
+
+<div class="card">
+    <p>Cuando el visitante hace clic en "Aceptar", "Rechazar" o "Guardar preferencias", el widget recolecta los slugs seleccionados y los envía al backend.</p>
+    <div class="code-block">
+<span class="comment">// widget.js — enviar consentimiento</span>
+<span class="keyword">async function</span> sendConsent(acceptedSlugs, policyHash) {
+    <span class="keyword">const</span> payload = {
+        purposes: acceptedSlugs,
+        policy_hash: policyHash,
+        visitor_uuid: getVisitorUuid(),     <span class="comment">// cookie/localStorage del visitante</span>
+        timestamp: new Date().toISOString(),
+        user_agent: navigator.userAgent,
+        screen_resolution: `${screen.width}x${screen.height}`,
+    };
+
+    <span class="keyword">const</span> res = <span class="keyword">await</span> fetch(
+        <span class="string">`https://api.nodoxspd.com/api/widget/<span class="function">${companyUuid}</span>/consent`</span>,
+        {
+            method: <span class="string">'POST'</span>,
+            headers: {
+                <span class="string">'Content-Type'</span>: <span class="string">'application/json'</span>,
+                <span class="string">'Accept'</span>: <span class="string">'application/json'</span>,
+            },
+            body: <span class="keyword">JSON</span>.stringify(payload),
+        }
+    );
+
+    <span class="keyword">if</span> (res.ok) {
+        <span class="comment">// Guardar proof_hash localmente para futura auditoría</span>
+        <span class="keyword">const</span> { data } = <span class="keyword">await</span> res.json();
+        localStorage.setItem(
+            <span class="string">'nodox_consent_proof'</span>,
+            <span class="keyword">JSON</span>.stringify({
+                proof_hash: data.hash,
+                timestamp: data.timestamp,
+                policy_hash: policyHash,
+            })
+        );
+        banner.remove(); <span class="comment">// Ocultar banner tras consentir</span>
+    }
+}
+    </div>
+    <div class="nota">
+        <strong>Visitor UUID:</strong> El widget genera un UUID anónimo en el navegador (localStorage o cookie) para tracking de sesión. No contiene PII. Se envía como <code>visitor_uuid</code> para identity stitching posterior.
+    </div>
+
+    <h3 id="widget-payload">Construcci&oacute;n del payload seg&uacute;n acci&oacute;n del usuario</h3>
+
+    <p>El widget ofrece tres acciones de UI que construyen el objeto <code>purposes</code> de forma distinta antes de enviarlo al backend:</p>
+
+    <div class="code-block">
+<span class="comment">// "Aceptar todo" — todos los prop&oacute;sitos que requieren consentimiento → true</span>
+<span class="keyword">function</span> buildAcceptAllPayload(purposes) {
+  <span class="keyword">return</span> Object.fromEntries(
+    Object.entries(purposes).map(([slug, def]) =&gt; [slug, <span class="keyword">true</span>])
+  );
+  <span class="comment">// El backend fuerza necessary_technical: true independientemente</span>
+}
+
+<span class="comment">// "Rechazar todo" — solo los required quedan true, el resto false</span>
+<span class="keyword">function</span> buildRejectAllPayload(purposes) {
+  <span class="keyword">return</span> Object.fromEntries(
+    Object.entries(purposes).map(([slug, def]) =&gt; [slug, def.required ? <span class="keyword">true</span> : <span class="keyword">false</span>])
+  );
+}
+
+<span class="comment">// "Guardar preferencias" — estado actual de cada toggle en la UI</span>
+<span class="keyword">function</span> buildCustomPayload(purposes, toggleStates) {
+  <span class="keyword">return</span> Object.fromEntries(
+    Object.entries(purposes).map(([slug, def]) =&gt; [
+      slug,
+      def.required ? <span class="keyword">true</span> : (toggleStates[slug] ?? def.default)
+    ])
+  );
+}
+    </div>
+
+    <div class="nota">
+        <strong>necessary_technical:</strong> El backend siempre fuerza <code>necessary_technical: true</code> independientemente del payload enviado. Los propsitos con <code>required: true</code> no son negociables.
+    </div>
+</div>
+
+<!-- ──────────────────────────────────────────── -->
+<h2 id="mapeo-acciones">Tabla de Mapeo de Acciones (widget_action)</h2>
+<!-- ──────────────────────────────────────────── -->
+
+<div class="card">
+    <p>
+        Cada fin legal en la respuesta de <code>/config</code> incluye un campo <code>widget_action</code> que indica qu&eacute; debe hacer el navegador cuando el visitante otorga su consentimiento para ese fin. El desarrollador de <code>widget.js</code> debe implementar cada acci&oacute;n seg&uacute;n esta tabla:
+    </p>
+
+    <table class="resp-table">
+        <thead><tr><th>widget_action</th><th>Cu&aacute;ndo se activa</th><th>Implementaci&oacute;n en widget.js</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><code>load_analytics_scripts</code></td>
+                <td>El visitante acepta <code>analytics_behavior</code> o <code>analytics_preferences</code></td>
+                <td>Inyectar din&aacute;micamente (createElement + appendChild) el script de GA4, Hotjar o Mixpanel seg&uacute;n los <code>providers.analytics</code> indicados en la configuraci&oacute;n del widget.</td>
+            </tr>
+            <tr>
+                <td><code>load_marketing_scripts</code></td>
+                <td>El visitante acepta <code>marketing_direct</code></td>
+                <td>Inyectar Meta Pixel (<code>fbq('consent','grant')</code>), TikTok Pixel, LinkedIn Insight Tag, etc. seg&uacute;n los <code>providers.marketing</code>.</td>
+            </tr>
+            <tr>
+                <td><code>load_functional_scripts</code></td>
+                <td>El visitante acepta <code>functional_third_party</code> o <code>analytics_preferences</code></td>
+                <td>Inyectar scripts de soporte (Intercom, Zendesk, WhatsApp API) o reemplazar placeholders de iframes bloqueados (YouTube, Google Maps, Vimeo) con el contenido real.</td>
+            </tr>
+            <tr>
+                <td><code>consent_mode_v2_ads</code></td>
+                <td>El visitante acepta <code>marketing_profiling</code></td>
+                <td>Ejecutar la actualizaci&oacute;n de Google Consent Mode v2: <code>gtag('consent', 'update', { ad_storage: 'granted', ad_user_data: 'granted', ad_personalization: 'granted' });</code></td>
+            </tr>
+            <tr>
+                <td><code>null</code></td>
+                <td>Fines sin acci&oacute;n en navegador (ej: <code>necessary_technical</code>, <code>international_transfer</code>, <code>legal_compliance</code>)</td>
+                <td><strong>Sin acci&oacute;n en el navegador.</strong> Es puramente un registro legal en el ledger. El widget no debe inyectar scripts ni modificar el DOM por este fin.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Mapeo de widget_action a implementaci&oacute;n</h3>
+
+    <p>Detalle de cada acci&oacute;n con el c&oacute;digo correspondiente:</p>
+
+    <table class="resp-table">
+        <thead><tr><th>widget_action</th><th>Implementaci&oacute;n en widget.js</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><code>load_analytics_scripts</code></td>
+                <td>Inyectar din&aacute;micamente los scripts declarados en <code>widget_config.providers.analytics</code>. Por cada provider: crear <code>&lt;script&gt;</code> tag con la URL del SDK correspondiente y agregarlo al <code>&lt;head&gt;</code>.</td>
+            </tr>
+            <tr>
+                <td><code>load_marketing_scripts</code></td>
+                <td>Inyectar scripts de <code>widget_config.providers.marketing</code>. Para Meta Pixel: inicializar <code>fbq</code> y llamar <code>fbq('consent', 'grant')</code> antes de <code>fbq('track', 'PageView')</code>.</td>
+            </tr>
+            <tr>
+                <td><code>load_functional_scripts</code></td>
+                <td>Inyectar scripts de <code>widget_config.providers.personalization</code>. Para iframes de YouTube o Maps: reemplazar placeholders <code>&lt;div data-embed-src="..."&gt;</code> por el <code>&lt;iframe&gt;</code> real.</td>
+            </tr>
+            <tr>
+                <td><code>consent_mode_v2_ads</code></td>
+                <td>Llamar <code>gtag('consent', 'update', {ad_storage: 'granted', ad_user_data: 'granted', ad_personalization: 'granted'})</code>.</td>
+            </tr>
+            <tr>
+                <td><code>null</code></td>
+                <td>Sin acci&oacute;n en el navegador. Solo registro legal en el ledger.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="code-block">
+<span class="keyword">function</span> executeWidgetAction(action, slug, config) {
+  <span class="keyword">switch</span> (action) {
+    <span class="keyword">case</span> <span class="string">'load_analytics_scripts'</span>:
+      config.providers.analytics.forEach(p =&gt; injectScript(p));
+      <span class="keyword">break</span>;
+    <span class="keyword">case</span> <span class="string">'load_marketing_scripts'</span>:
+      config.providers.marketing.forEach(p =&gt; injectScript(p));
+      <span class="comment">// Meta Pixel espec&iacute;fico:</span>
+      <span class="keyword">if</span> (config.providers.marketing.includes(<span class="string">'meta_pixel'</span>)) {
+        fbq(<span class="string">'consent'</span>, <span class="string">'grant'</span>);
+      }
+      <span class="keyword">break</span>;
+    <span class="keyword">case</span> <span class="string">'load_functional_scripts'</span>:
+      config.providers.personalization.forEach(p =&gt; injectScript(p));
+      replaceEmbedPlaceholders();
+      <span class="keyword">break</span>;
+    <span class="keyword">case</span> <span class="string">'consent_mode_v2_ads'</span>:
+      gtag(<span class="string">'consent'</span>, <span class="string">'update'</span>, {
+        ad_storage: <span class="string">'granted'</span>,
+        ad_user_data: <span class="string">'granted'</span>,
+        ad_personalization: <span class="string">'granted'</span>
+      });
+      <span class="keyword">break</span>;
+    <span class="keyword">case</span> <span class="keyword">null</span>:
+    <span class="keyword">default</span>:
+      <span class="comment">// Sin acci&oacute;n en el navegador</span>
+      <span class="keyword">break</span>;
+  }
+}
+
+<span class="keyword">function</span> injectScript(provider) {
+  <span class="keyword">const</span> s = document.createElement(<span class="string">'script'</span>);
+  s.src = provider.url;
+  s.async = <span class="keyword">true</span>;
+  document.head.appendChild(s);
+}
+    </div>
+
+    <div class="nota-danger">
+        <strong>Orden de ejecuci&oacute;n obligatorio:</strong>
+        <ul>
+            <li><code>consent_mode_v2_ads</code> debe ejecutarse <strong>s&iacute;ncronamente ANTES</strong> del <code>POST /consent</code>. Esto actualiza Google Consent Mode v2 inmediatamente para que el signal llegue a Google antes de cualquier evento.</li>
+            <li>La inyecci&oacute;n de scripts de terceros (<code>load_analytics_scripts</code>, <code>load_marketing_scripts</code>, <code>load_functional_scripts</code>) debe ejecutarse <strong>DESPU&Eacute;S</strong> de recibir el HTTP 201 del <code>POST /consent</code> para garantizar que el registro exista en el ledger antes de activar el tracking.</li>
+        </ul>
+    </div>
+
+    <div class="nota">
+        <strong>Rehydrataci&oacute;n:</strong> En el flujo de <code>rehydrateConsent()</code> (consentimiento previo sin banner), todas las acciones se ejecutan inmediatamente sin POST porque el consentimiento ya est&aacute; en el ledger. No hay necesidad de re-registrar.
+    </div>
+</div>
+
+<h2 id="widget-degradacion">Degradaci&oacute;n graceful (obligatoria)</h2>
+
+<div class="card">
+    <p>El widget nunca debe romper el sitio de la Pyme. Implementar estos tres casos:</p>
+
+    <h3>Caso 1: GET /config falla (red, timeout, 404)</h3>
+    <div class="code-block">
+<span class="keyword">try</span> {
+  <span class="keyword">const</span> config = <span class="keyword">await</span> fetchConfig(uuid);
+  renderBanner(config);
+} <span class="keyword">catch</span> (e) {
+  <span class="comment">// Silencioso. No mostrar banner. No lanzar error.</span>
+  <span class="comment">// Si hay consentimiento previo en localStorage, rehydratarlo.</span>
+  <span class="keyword">const</span> stored = getStoredConsent(uuid);
+  <span class="keyword">if</span> (stored) rehydrateConsent(stored.purposes, <span class="keyword">null</span>);
+  <span class="keyword">return</span>;
+}
+    </div>
+
+    <h3>Caso 2: POST /consent falla (red, 500)</h3>
+    <div class="code-block">
+<span class="comment">// No mostrar error al usuario. El banner ya cerr&oacute;.</span>
+<span class="comment">// El consentimiento se guarda en localStorage de todas formas.</span>
+<span class="comment">// En la pr&oacute;xima visita, si el localStorage tiene prop&oacute;sitos pero no proof_hash,</span>
+<span class="comment">// el widget debe reintentar el POST silenciosamente.</span>
+    </div>
+
+    <h3>Caso 3: localStorage no disponible (modo inc&oacute;gnito estricto, Safari ITP)</h3>
+    <div class="code-block">
+<span class="comment">// Usar sessionStorage como fallback.</span>
+<span class="comment">// Si tampoco est&aacute; disponible, operar en memoria sin persistencia.</span>
+<span class="comment">// En ese caso mostrar el banner en cada visita.</span>
+
+<span class="keyword">function</span> getStorage() {
+  <span class="keyword">try</span> { <span class="keyword">return</span> localStorage; } <span class="keyword">catch</span> { }
+  <span class="keyword">try</span> { <span class="keyword">return</span> sessionStorage; } <span class="keyword">catch</span> { }
+  <span class="keyword">return</span> <span class="keyword">null</span>; <span class="comment">// In-memory fallback</span>
+}
+    </div>
+
+    <div class="nota-danger">
+        <strong>Regla de oro:</strong> Ning&uacute;n error del widget debe propagarse al sitio de la Pyme. El banner de cookies es un overlay: si falla, el sitio sigue funcionando. Nunca usar <code>throw</code> sin <code>catch</code> en el flujo principal del widget.
+    </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════ -->
+<h1 id="artefacto-b">Artefacto B — Angular (Patch de Selección de Propósitos)</h1>
+<!-- ════════════════════════════════════════════ -->
+
+<div class="artefact-box">
+    <span class="badge">Artefacto B</span>
+    <h3>Angular — Patch de Propósitos</h3>
+    <p>Módulo Angular dentro del panel de administración de la Pyme. Extiende el componente del wizard para mostrar un selector de propósitos legales cuando un campo "Otro/especificar" tiene <code>requires_purpose_selection: true</code>.</p>
+</div>
+
+<h2 id="angular-origen">Origen del patch</h2>
+
+<div class="card">
+    <p>El <code>LegalTemplateSeeder</code> define 7 campos con <code>requires_purpose_selection: true</code>. Cuando el usuario escribe texto libre en estos campos, debe también seleccionar manualmente los propósitos legales que aplican a ese texto, ya que el backend no puede inferirlos automáticamente.</p>
+
+    <div class="note">
+        <strong>Campos afectados:</strong> Típicamente input type="text" con show_if = "otros" en un multiselect. Ej: <code>step_2_analytics_other_provider</code>, <code>step_3_marketing_other_provider</code>, <code>step_4_functionality_other_provider</code>, <code>step_3_sharing_hr_software_names</code>, etc.
+    </div>
+
+    <p>El endpoint <code>GET /api/panel/consent-purposes</code> devuelve el catálogo completo de propósitos (9 slugs) ordenados por <code>display_order</code>. El frontend usa esta lista para mostrar checkboxes.</p>
+
+    <div class="code-block">
+<span class="comment">// Angular — servicio que obtiene el catálogo de propósitos</span>
+<span class="comment">// GET /api/panel/consent-purposes</span>
+
+<span class="comment">// Respuesta esperada:</span>
+{
+  <span class="string">"status"</span>: <span class="string">"success"</span>,
+  <span class="string">"message"</span>: <span class="string">"Catálogo de propósitos de consentimiento"</span>,
+  <span class="string">"data"</span>: [
+    {
+      <span class="string">"slug"</span>: <span class="string">"analytics_behavior"</span>,
+      <span class="string">"label"</span>: <span class="string">"Analítica de comportamiento"</span>,
+      <span class="string">"description"</span>: <span class="string">"... utilizado para medir el comportamiento del usuario..."</span>,
+      <span class="string">"required"</span>: <span class="keyword">false</span>,
+      <span class="string">"default"</span>: <span class="keyword">true</span>,
+      <span class="string">"legal_basis"</span>: <span class="string">"Consentimiento (Art. 15)"</span>,
+      <span class="string">"display_order"</span>: <span class="keyword">2</span>
+    }
+    <span class="comment">// ... 8 más</span>
+  ]
+}
+    </div>
+</div>
+
+<h2 id="angular-parche">Código del patch Angular</h2>
+
+<div class="card">
+    <p>El componente del wizard debe modificarse para detectar campos con <code>requires_purpose_selection: true</code> en el <code>wizard_schema</code> y mostrar un selector de propósitos debajo del input text.</p>
+
+    <div class="code-block">
+<span class="comment">// Angular — extracto del componente wizard (template)</span>
+<span class="comment">// Asumiendo que el wizard_schema se recibe como parte de la política</span>
+
+&lt;<span class="keyword">ng-container</span> *ngFor=<span class="string">"let field of step.fields"</span>&gt;
+
+  <span class="comment">&lt;!-- Campo normal por tipo --&gt;</span>
+  &lt;<span class="keyword">app-dynamic-field</span>
+    [field]=<span class="string">"field"</span>
+    [formControlName]=<span class="string">"field.key"</span>&gt;
+  &lt;/<span class="keyword">app-dynamic-field</span>&gt;
+
+  <span class="comment">&lt;!-- 
+    Patch: si el campo es tipo 'text' y tiene requires_purpose_selection,
+    mostrar un sub-formulario de checkboxes con el catálogo de propósitos.
+    El valor se guarda en wizard_data[{field.key}_purposes] como array de slugs.
+  --&gt;</span>
+  &lt;<span class="keyword">div</span> *ngIf=<span class="string">"field.requires_purpose_selection"</span>
+       class=<span class="string">"purpose-selector"</span>&gt;
+
+    &lt;<span class="keyword">label</span> class=<span class="string">"purpose-label"</span>&gt;
+      Seleccione los propósitos legales que aplican:
+    &lt;/<span class="keyword">label</span>&gt;
+
+    &lt;<span class="keyword">div</span> *ngFor=<span class="string">"let purpose of purposes$ | async"</span> class=<span class="string">"purpose-check"</span>&gt;
+      &lt;<span class="keyword">label</span>&gt;
+        &lt;<span class="keyword">input</span> type=<span class="string">"checkbox"</span>
+               [value]=<span class="string">"purpose.slug"</span>
+               [checked]=<span class="string">"purpose.default &amp;&amp; !wizardData[field.key+'_purposes']"</span>
+               (change)=<span class="string">"togglePurpose(field.key, purpose.slug, $event)"</span>&gt;
+        {{ purpose.label }}
+        &lt;<span class="keyword">span</span> class=<span class="string">"purpose-basis"</span>&gt;({{ purpose.legal_basis }})&lt;/<span class="keyword">span</span>&gt;
+      &lt;/<span class="keyword">label</span>&gt;
+    &lt;/<span class="keyword">div</span>&gt;
+
+    <span class="comment">&lt;!-- Tooltip informativo --&gt;</span>
+    &lt;<span class="keyword">div</span> class=<span class="string">"purpose-help"</span>&gt;
+      Estos propósitos se agregarán a la política cuando se publique.
+      Los propósitos marcados con "default" están pre-seleccionados.
+    &lt;/<span class="keyword">div</span>&gt;
+  &lt;/<span class="keyword">div</span>&gt;
+
+&lt;/<span class="keyword">ng-container</span>&gt;
+    </div>
+
+    <div class="code-block">
+<span class="comment">// Angular — lógica del componente</span>
+
+<span class="keyword">import</span> { Component, OnInit } <span class="keyword">from</span> <span class="string">'@angular/core'</span>;
+<span class="keyword">import</span> { HttpClient } <span class="keyword">from</span> <span class="string">'@angular/common/http'</span>;
+<span class="keyword">import</span> { Observable } <span class="keyword">from</span> <span class="string">'rxjs'</span>;
+
+<span class="keyword">interface</span> ConsentPurpose {
+  slug: string;
+  label: string;
+  description: string;
+  required: boolean;
+  default: boolean;
+  legal_basis: string;
+  display_order: number;
+}
+
+@Component({
+  selector: <span class="string">'app-wizard-editor'</span>,
+  templateUrl: <span class="string">'./wizard-editor.component.html'</span>,
+})
+<span class="keyword">export class</span> WizardEditorComponent implements OnInit {
+  purposes$: Observable&lt;ConsentPurpose[]&gt;;
+
+  constructor(<span class="keyword">private</span> http: HttpClient) {}
+
+  ngOnInit(): <span class="keyword">void</span> {
+    <span class="keyword">this</span>.purposes$ = <span class="keyword">this</span>.http.get&lt;{
+      status: string;
+      data: ConsentPurpose[];
+    }&gt;(<span class="string">'/api/panel/consent-purposes'</span>).pipe(
+      map(res =&gt; res.data)
+    );
+  }
+
+  <span class="comment">// Almacena la selección en wizard_data con key = "{fieldKey}_purposes"</span>
+  togglePurpose(fieldKey: string, slug: string, event: Event): <span class="keyword">void</span> {
+    <span class="keyword">const</span> checked = (event.target <span class="keyword">as</span> HTMLInputElement).checked;
+    <span class="keyword">const</span> key = <span class="string">`<span class="function">${fieldKey}</span>_purposes`</span>;
+
+    <span class="keyword">if</span> (!<span class="keyword">this</span>.wizardData[key]) {
+      <span class="keyword">this</span>.wizardData[key] = [];
+    }
+
+    <span class="keyword">if</span> (checked) {
+      <span class="keyword">this</span>.wizardData[key].push(slug);
+    } <span class="keyword">else</span> {
+      <span class="keyword">const</span> idx = <span class="keyword">this</span>.wizardData[key].indexOf(slug);
+      <span class="keyword">if</span> (idx &gt; -1) <span class="keyword">this</span>.wizardData[key].splice(idx, 1);
+    }
+  }
+}
+    </div>
+
+    <div class="nota-warn">
+        <strong>Precaución:</strong> El backend valida en <code>WizardPurposeResolverService</code> (regla 3) que solo los slugs existentes en <code>consent_purposes</code> son aceptados. Si el frontend envía un slug inválido o mal escrito, se ignora silenciosamente (no causa error 422).
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<h1 id="artefacto-c">Artefacto C &mdash; Angular: Pantalla de Registro de Consentimientos (Ledger)</h1>
+<!-- ════════════════════════════════════════════ -->
+
+<div class="artefact-box">
+    <span class="badge">Artefacto C</span>
+    <h3>Angular &mdash; Pantalla de Auditor&iacute;a de Consentimientos</h3>
+    <p>Componente Angular dentro del panel de administraci&oacute;n de la Pyme. Muestra el ledger inmutable de consentimientos con filtros, paginaci&oacute;n y sellos legales.</p>
+</div>
+
+<h2 id="ledger-ruta">Ruta Angular y endpoint</h2>
+
+<div class="card">
+    <h3>Ruta del componente</h3>
+    <div class="path"><code>/panel/consentimientos</code></div>
+    <p>Ruta protegida del panel de administraci&oacute;n. Solo accesible por usuarios con rol <code>company_admin</code> autenticados v&iacute;a Sanctum.</p>
+
+    <h3>Endpoint a consumir</h3>
+    <div class="code-block">
+<span class="comment">// GET /api/panel/consent-logs</span>
+<span class="comment">// Autenticaci&oacute;n: Sanctum (Bearer token)</span>
+<span class="comment">// Scope: company_id del usuario autenticado</span>
+
+<span class="comment">// Query params:</span>
+<span class="comment">//   page            (int, opcional)      — N&uacute;mero de p&aacute;gina, default 1</span>
+<span class="comment">//   capture_method  (string, opcional)  — Filtro: live_widget | live_portal | bulk_import</span>
+<span class="comment">//   policy_hash     (string, opcional)  — Filtro por hash de pol&iacute;tica</span>
+<span class="comment">//   from            (date, opcional)    — Fecha inicio (Y-m-d), inclusiva</span>
+<span class="comment">//   to              (date, opcional)    — Fecha fin (Y-m-d), inclusiva (cierra a 23:59:59)</span>
+    </div>
+
+    <div class="nota">
+        <strong>Endpoint de pol&iacute;ticas para el filtro:</strong> <code>GET /api/company/policies?status=published</code> bajo middleware <code>role:company_admin</code> + prefix <code>company</code>. Retorna el listado de pol&iacute;ticas publicadas. El combo de selecci&oacute;n debe mostrar <code>document_type + &quot;v&quot; + company_version</code> (ej: <code>&quot;cookie_policy v2&quot;</code>) y usar <code>integrity_hash</code> como valor del filtro <code>policy_hash</code>.
+    </div>
+</div>
+
+<h2 id="ledger-layout">Layout y encabezado</h2>
+
+<div class="card">
+    <h3>Encabezado de la vista</h3>
+    <p>La pantalla se compone de:</p>
+    <ul>
+        <li><strong>T&iacute;tulo:</strong> &ldquo;Registro de Consentimientos&rdquo; en <code>&lt;h1&gt;</code>.</li>
+        <li><strong>Badge din&aacute;mico:</strong> Contador total de registros leyendo <code>pagination.total</code> de la respuesta. Ej: &ldquo;72 registros&rdquo;. Debe actualizarse al aplicar filtros o cambiar de p&aacute;gina.</li>
+    </ul>
+
+    <div class="code-block">
+<span class="comment">&lt;!-- Angular — template del encabezado --&gt;</span>
+&lt;<span class="keyword">div</span> class=<span class="string">"ledger-header"</span>&gt;
+  &lt;<span class="keyword">h1</span>&gt;Registro de Consentimientos&lt;/<span class="keyword">h1</span>&gt;
+  &lt;<span class="keyword">span</span> class=<span class="string">"badge-blue"</span>&gt;{{ pagination.total }} registros&lt;/<span class="keyword">span</span>&gt;
+&lt;/<span class="keyword">div</span>&gt;
+    </div>
+</div>
+
+<h2 id="ledger-filtros">Barra de filtros</h2>
+
+<div class="card">
+    <p>Cuatro controles en l&iacute;nea que disparan la recarga de la tabla al hacer clic en &ldquo;Aplicar filtros&rdquo;. El estado de los filtros debe reflejarse en los query params de la URL para permitir navegaci&oacute;n hacia atr&aacute;s.</p>
+
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label>M&eacute;todo de captura</label>
+            <select>
+                <option value="">Todos</option>
+                <option value="live_widget">live_widget</option>
+                <option value="live_portal">live_portal</option>
+                <option value="bulk_import">bulk_import</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Pol&iacute;tica</label>
+            <select>
+                <option value="">Todas</option>
+                <option value="hash1">cookie_policy v2</option>
+                <option value="hash2">privacy_policy v1</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Desde</label>
+            <input type="date">
+        </div>
+        <div class="filter-group">
+            <label>Hasta</label>
+            <input type="date">
+        </div>
+        <div class="filter-group">
+            <button class="btn-filter">Aplicar filtros</button>
+        </div>
+    </div>
+
+    <div class="code-block">
+<span class="comment">// Angular — servicio de consumo</span>
+<span class="comment">// GET /api/panel/consent-logs?capture_method=live_widget&amp;policy_hash=abc&amp;from=2026-01-01&amp;to=2026-07-22&amp;page=1</span>
+
+fetchConsentLogs(filters: { ... }): Observable&lt;ConsentLogResponse&gt; {
+  <span class="keyword">const</span> params = <span class="keyword">new</span> HttpParams({ fromObject: {
+    page: filters.page ?? 1,
+    ...(filters.capture_method &amp;&amp; { capture_method: filters.capture_method }),
+    ...(filters.policy_hash &amp;&amp; { policy_hash: filters.policy_hash }),
+    ...(filters.from &amp;&amp; { from: filters.from }),
+    ...(filters.to &amp;&amp; { to: filters.to }),
+  }});
+  <span class="keyword">return</span> <span class="keyword">this</span>.http.get&lt;ConsentLogResponse&gt;(<span class="string">'/api/panel/consent-logs'</span>, { params });
+}
+    </div>
+
+    <div class="nota-warn">
+        <strong>Selector de pol&iacute;tica:</strong> La lista de opciones se obtiene de <code>GET /api/company/policies?status=published</code>. Cada opci&oacute;n usa <code>integrity_hash</code> como <code>value</code> y <code>document_type + &quot; v&quot; + company_version</code> como etiqueta. El dropdown debe mostrar &ldquo;Todas&rdquo; como opci&oacute;n por defecto (value vac&iacute;o).
+    </div>
+</div>
+
+<h2 id="ledger-tabla">Tabla de datos</h2>
+
+<div class="card">
+    <p>Tabla HTML responsiva con las siguientes columnas. Cada fila corresponde a un elemento del array <code>data</code> en la respuesta.</p>
+
+    <table class="resp-table">
+        <thead><tr><th>Columna</th><th>Fuente</th><th>Regla de UI</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><strong>Identificador</strong></td>
+                <td><code>identifier</code> o <code>visitor_uuid</code></td>
+                <td>
+                    Si <code>identifier</code> no es nulo, mostrar el valor completo.<br>
+                    Si es nulo (actualmente siempre ocurre), mostrar los primeros 8 caracteres de <code>visitor_uuid</code> seguido de &ldquo;...&rdquo; con un tooltip que diga &ldquo;Visitante an&oacute;nimo&rdquo;.<br>
+                    <span class="tag art-a">Identity Stitching pendiente</span> El backend fuerza <code>identifier = null</code> hasta que se implemente la tabla <code>person_visitor_uuids</code>. El frontend debe dejar la l&oacute;gica de UI preparada para cuando llegue el valor real.
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Fecha</strong></td>
+                <td><code>consent_occurred_at</code></td>
+                <td>Formato <code>DD/MM/YYYY HH:mm</code> en zona horaria local del navegador. Usar <code>toLocaleDateString('es-CL', ...)</code>.</td>
+            </tr>
+            <tr>
+                <td><strong>Canal</strong></td>
+                <td><code>capture_method</code></td>
+                <td>
+                    Badge de color seg&uacute;n el valor:
+                    <span class="badge-green">live_widget</span> (verde),
+                    <span class="badge-blue">live_portal</span> (azul),
+                    <span class="badge-gray">bulk_import</span> (gris).
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Prop&oacute;sitos</strong></td>
+                <td><code>purposes</code> (objeto)</td>
+                <td>
+                    Iterar las keys del objeto. Si el valor es <code>true</code>, renderizar un chip verde con el nombre del slug.
+                    Si es <code>false</code>, chip rojo tachado.
+                    Orden de iteraci&oacute;n: alfab&eacute;tico por slug.
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Sello Legal</strong></td>
+                <td><code>proof_hash</code></td>
+                <td>
+                    Mostrar los primeros 12 caracteres en fuente monoespaciada (<code>mono-hash</code>).
+                    Bot&oacute;n con &iacute;cono de copiar (📋) que copie el hash completo al portapapeles via <code>navigator.clipboard.writeText()</code>.
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="code-block">
+<span class="comment">&lt;!-- Angular — tabla --&gt;</span>
+&lt;<span class="keyword">table</span> class=<span class="string">"resp-table"</span>&gt;
+  &lt;<span class="keyword">thead</span>&gt;
+    &lt;<span class="keyword">tr</span>&gt;
+      &lt;<span class="keyword">th</span>&gt;Identificador&lt;/<span class="keyword">th</span>&gt;
+      &lt;<span class="keyword">th</span>&gt;Fecha&lt;/<span class="keyword">th</span>&gt;
+      &lt;<span class="keyword">th</span>&gt;Canal&lt;/<span class="keyword">th</span>&gt;
+      &lt;<span class="keyword">th</span>&gt;Prop&oacute;sitos&lt;/<span class="keyword">th</span>&gt;
+      &lt;<span class="keyword">th</span>&gt;Sello Legal&lt;/<span class="keyword">th</span>&gt;
+    &lt;/<span class="keyword">tr</span>&gt;
+  &lt;/<span class="keyword">thead</span>&gt;
+  &lt;<span class="keyword">tbody</span>&gt;
+    &lt;<span class="keyword">tr</span> *ngFor=<span class="string">"let log of consentLogs"</span>&gt;
+      &lt;<span class="keyword">td</span>&gt;
+        &lt;<span class="keyword">span</span> *ngIf=<span class="string">"log.identifier; else anonymous"</span>&gt;{{ log.identifier }}&lt;/<span class="keyword">span</span>&gt;
+        &lt;<span class="keyword">ng-template</span> #anonymous&gt;
+          &lt;<span class="keyword">span</span> [title]=<span class="string">"'Visitante an&oacute;nimo'"</span>&gt;{{ log.visitor_uuid | slice:0:8 }}...&lt;/<span class="keyword">span</span>&gt;
+        &lt;/<span class="keyword">ng-template</span>&gt;
+      &lt;/<span class="keyword">td</span>&gt;
+      &lt;<span class="keyword">td</span>&gt;{{ log.consent_occurred_at | date:'dd/MM/yyyy HH:mm' }}&lt;/<span class="keyword">td</span>&gt;
+      &lt;<span class="keyword">td</span>&gt;
+        &lt;<span class="keyword">span</span> [ngClass]=<span class="string">"getBadgeClass(log.capture_method)"</span>&gt;{{ log.capture_method }}&lt;/<span class="keyword">span</span>&gt;
+      &lt;/<span class="keyword">td</span>&gt;
+      &lt;<span class="keyword">td</span>&gt;
+        &lt;<span class="keyword">span</span> *ngFor=<span class="string">"let p of log.purposes | keyvalue"</span>
+              [ngClass]=<span class="string">"p.value ? 'chip-green' : 'chip-red'"</span>&gt;
+          {{ p.key }}
+        &lt;/<span class="keyword">span</span>&gt;
+      &lt;/<span class="keyword">td</span>&gt;
+      &lt;<span class="keyword">td</span>&gt;
+        &lt;<span class="keyword">span</span> class=<span class="string">"mono-hash"</span>&gt;{{ log.proof_hash | slice:0:12 }}&lt;/<span class="keyword">span</span>&gt;
+        &lt;<span class="keyword">button</span> class=<span class="string">"copy-btn"</span> (click)=<span class="string">"copyToClipboard(log.proof_hash)"</span>&gt;
+          📋 Copiar
+        &lt;/<span class="keyword">button</span>&gt;
+      &lt;/<span class="keyword">td</span>&gt;
+    &lt;/<span class="keyword">tr</span>&gt;
+  &lt;/<span class="keyword">tbody</span>&gt;
+&lt;/<span class="keyword">table</span>&gt;
+    </div>
+
+    <div class="code-block">
+<span class="comment">// Angular — l&oacute;gica del componente</span>
+
+getBadgeClass(method: string): string {
+  <span class="keyword">const</span> map: Record&lt;string, string&gt; = {
+    live_widget: <span class="string">'badge-green'</span>,
+    live_portal: <span class="string">'badge-blue'</span>,
+    bulk_import: <span class="string">'badge-gray'</span>,
+  };
+  <span class="keyword">return</span> map[method] ?? <span class="string">'badge-gray'</span>;
+}
+
+<span class="keyword">async</span> copyToClipboard(hash: string): Promise&lt;<span class="keyword">void</span>&gt; {
+  <span class="keyword">try</span> {
+    <span class="keyword">await</span> navigator.clipboard.writeText(hash);
+    <span class="comment">// Opcional: mostrar feedback visual (toast)</span>
+  } <span class="keyword">catch</span> {
+    <span class="keyword">const</span> ta = document.createElement(<span class="string">'textarea'</span>);
+    ta.value = hash;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand(<span class="string">'copy'</span>);
+    document.body.removeChild(ta);
+  }
+}
+    </div>
+</div>
+
+<h2 id="ledger-paginacion">Paginaci&oacute;n y estado vac&iacute;o</h2>
+
+<div class="card">
+    <h3>Paginaci&oacute;n</h3>
+    <p>El backend retorna 25 registros por p&aacute;gina. La paginaci&oacute;n se renderiza usando los campos de <code>pagination</code>:</p>
+
+    <table class="resp-table">
+        <thead><tr><th>Campo</th><th>Uso en UI</th></tr></thead>
+        <tbody>
+            <tr><td><code>pagination.current_page</code></td><td>P&aacute;gina activa actual</td></tr>
+            <tr><td><code>pagination.last_page</code></td><td>&Uacute;ltima p&aacute;gina disponible</td></tr>
+            <tr><td><code>pagination.total</code></td><td>Total de registros (se muestra en el badge del encabezado)</td></tr>
+            <tr><td><code>pagination.per_page</code></td><td>Registros por p&aacute;gina (25)</td></tr>
+        </tbody>
+    </table>
+
+    <div class="code-block">
+<span class="comment">&lt;!-- Angular — paginaci&oacute;n --&gt;</span>
+&lt;<span class="keyword">div</span> class=<span class="string">"pagination"</span> *ngIf=<span class="string">"pagination.last_page &gt; 1"</span>&gt;
+  &lt;<span class="keyword">button</span> [disabled]=<span class="string">"pagination.current_page === 1"</span>
+          (click)=<span class="string">"goToPage(pagination.current_page - 1)"</span>&gt;
+    &amp;laquo; Anterior
+  &lt;/<span class="keyword">button</span>&gt;
+
+  &lt;<span class="keyword">span</span> *ngFor=<span class="string">"let p of getPageRange()"</span>
+        [class.active]=<span class="string">"p === pagination.current_page"</span>
+        (click)=<span class="string">"goToPage(p)"</span>&gt;{{ p }}&lt;/<span class="keyword">span</span>&gt;
+
+  &lt;<span class="keyword">button</span> [disabled]=<span class="string">"pagination.current_page === pagination.last_page"</span>
+          (click)=<span class="string">"goToPage(pagination.current_page + 1)"</span>&gt;
+    Siguiente &amp;raquo;
+  &lt;/<span class="keyword">button</span>&gt;
+&lt;/<span class="keyword">div</span>&gt;
+    </div>
+
+    <h3>Estado vac&iacute;o</h3>
+    <p>Cuando el array <code>data</code> viene vac&iacute;o (despu&eacute;s de aplicar filtros o cuando a&uacute;n no hay registros), mostrar:</p>
+
+    <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p>A&uacute;n no hay consentimientos registrados. Instala el Trust Widget en tu sitio para comenzar a capturar.</p>
+    </div>
+
+    <div class="code-block">
+<span class="comment">&lt;!-- Angular — estado vac&iacute;o --&gt;</span>
+&lt;<span class="keyword">ng-container</span> *ngIf=<span class="string">"consentLogs.length === 0"</span>&gt;
+  &lt;<span class="keyword">div</span> class=<span class="string">"empty-state"</span>&gt;
+    &lt;<span class="keyword">div</span> class=<span class="string">"empty-icon"</span>&gt;&amp;#128203;&lt;/<span class="keyword">div</span>&gt;
+    &lt;<span class="keyword">p</span>&gt;A&uacute;n no hay consentimientos registrados. Instala el Trust Widget en tu sitio para comenzar a capturar.&lt;/<span class="keyword">p</span>&gt;
+  &lt;/<span class="keyword">div</span>&gt;
+&lt;/<span class="keyword">ng-container</span>&gt;
+
+<span class="comment">&lt;!-- Tabla solo cuando hay datos --&gt;</span>
+&lt;<span class="keyword">ng-container</span> *ngIf=<span class="string">"consentLogs.length &gt; 0"</span>&gt;
+  <span class="comment">&lt;!-- ... tabla ... --&gt;</span>
+&lt;/<span class="keyword">ng-container</span>&gt;
+    </div>
+</div>
+
+<h2 id="ledger-contrato">Contrato JSON de datos</h2>
+
+<div class="card">
+    <p>Ejemplo de respuesta real del endpoint <code>GET /api/panel/consent-logs</code>:</p>
+
+    <div class="code-block">
+{
+  <span class="string">"status"</span>: <span class="keyword">true</span>,
+  <span class="string">"message"</span>: <span class="string">"Registros de consentimiento."</span>,
+  <span class="string">"data"</span>: {
+    <span class="string">"data"</span>: [
+      {
+        <span class="string">"id"</span>: <span class="keyword">42</span>,
+        <span class="string">"visitor_uuid"</span>: <span class="string">"f1a2b3c4-d5e6-7890-abcd-ef1234567890"</span>,
+        <span class="string">"identifier"</span>: <span class="keyword">null</span>,
+        <span class="string">"purposes"</span>: {
+          <span class="string">"analytics_behavior"</span>: <span class="keyword">true</span>,
+          <span class="string">"analytics_preferences"</span>: <span class="keyword">true</span>,
+          <span class="string">">functional_third_party"</span>: <span class="keyword">false</span>,
+          <span class="string">"legal_compliance"</span>: <span class="keyword">true</span>,
+          <span class="string">"marketing_direct"</span>: <span class="keyword">true</span>,
+          <span class="string">"marketing_profiling"</span>: <span class="keyword">false</span>,
+          <span class="string">"necessary_technical"</span>: <span class="keyword">true</span>,
+          <span class="string">"international_transfer"</span>: <span class="keyword">true</span>
+        },
+        <span class="string">"policy_hash"</span>: <span class="string">"a1b2c3d4e5f6..."</span>,
+        <span class="string">"proof_hash"</span>: <span class="string">"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"</span>,
+        <span class="string">"capture_method"</span>: <span class="string">"live_widget"</span>,
+        <span class="string">"consent_occurred_at"</span>: <span class="string">"2026-07-22T14:30:00+00:00"</span>,
+        <span class="string">"recorded_at"</span>: <span class="string">"2026-07-22T14:30:05+00:00"</span>
+      }
+    ],
+    <span class="string">"pagination"</span>: {
+      <span class="string">"current_page"</span>: <span class="keyword">1</span>,
+      <span class="string">"last_page"</span>: <span class="keyword">3</span>,
+      <span class="string">"per_page"</span>: <span class="keyword">25</span>,
+      <span class="string">"total"</span>: <span class="keyword">72</span>,
+      <span class="string">"from"</span>: <span class="keyword">1</span>,
+      <span class="string">"to"</span>: <span class="keyword">25</span>
+    }
+  }
+}
+    </div>
+
+    <div class="nota">
+        <strong>Tipos de datos:</strong> <code>purposes</code> es un objeto <code>{ &quot;slug&quot;: boolean }</code>. <code>identifier</code> es <code>null</code> hoy (Identity Stitching pendiente). <code>consent_occurred_at</code> y <code>recorded_at</code> vienen en ISO 8601 (UTC). <code>policy_hash</code> es el integrity_hash de la pol&iacute;tica vigente al momento del consentimiento. <code>proof_hash</code> es SHA-256 del payload can&oacute;nico.
+    </div>
+</div>
+
+</main>
+</div>
+
+<script>
+(function() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('overlay');
+    var hamburger = document.getElementById('hamburgerBtn');
+    if (hamburger) { hamburger.addEventListener('click', function() { sidebar.classList.toggle('open'); overlay.classList.toggle('show'); }); }
+    if (overlay) { overlay.addEventListener('click', function() { sidebar.classList.remove('open'); overlay.classList.remove('show'); }); }
+    var titles = document.querySelectorAll('.nav-section-title');
+    titles.forEach(function(title) {
+        title.addEventListener('click', function(e) {
+            e.preventDefault();
+            var items = document.getElementById(this.getAttribute('data-toggle'));
+            if (items) { items.classList.toggle('collapsed'); this.classList.toggle('collapsed-group'); }
+        });
+    });
+    var links = document.querySelectorAll('.nav-section-items a');
+    links.forEach(function(link) { link.addEventListener('click', function() { if (window.innerWidth <= 900) { sidebar.classList.remove('open'); overlay.classList.remove('show'); } }); });
+})();
+</script>
+</body>
+</html>
