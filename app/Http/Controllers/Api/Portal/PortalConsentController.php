@@ -3,9 +3,16 @@
 namespace App\Http\Controllers\Api\Portal;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Portal\ConfirmPortalConsentRequest;
+use App\Models\ConsentLog;
+use App\Models\ConsentPurpose;
 use App\Models\PendingConsent;
+use App\Services\Consent\ProofHashService;
 use App\Services\Consent\WizardPurposeResolverService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Controlador público del Portal Cautivo.
@@ -103,6 +110,153 @@ class PortalConsentController extends Controller
         ];
 
         return response()->json($response, 200);
+    }
+
+    /**
+     * Procesa la firma del destinatario: crea el registro inmutable en
+     * consent_logs y marca el token como confirmado.
+     *
+     * Flujo:
+     * 1. Valida el token (mismas reglas que show: 404/410/409).
+     * 2. Resuelve los propósitos activos via WizardPurposeResolverService.
+     * 3. Fuerza required=true en fines legalmente obligatorios (requires_consent=false).
+     * 4. Construye el proof_hash via ProofHashService (canonización + SHA-256).
+     * 5. Inserta el ConsentLog inmutable (capture_method=live_portal).
+     * 6. Marca el PendingConsent como confirmed + confirmed_at.
+     * 7. Retorna 201 con proof_hash como recibo para el frontend.
+     */
+    public function confirm(
+        ConfirmPortalConsentRequest $request,
+        string $token,
+        WizardPurposeResolverService $purposeResolver,
+        ProofHashService $hashService,
+    ): JsonResponse {
+        $pendingConsent = PendingConsent::with(['company', 'companyPolicy'])
+            ->where('token', $token)
+            ->first();
+
+        if (! $pendingConsent) {
+            return response()->json([
+                'status' => false,
+                'message' => 'El enlace no es válido o no existe.',
+                'data' => null,
+            ], 404);
+        }
+
+        if ($pendingConsent->status === 'confirmed') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Este documento ya fue firmado previamente.',
+                'data' => null,
+            ], 409);
+        }
+
+        if ($pendingConsent->expires_at < now()) {
+            if ($pendingConsent->status === 'pending') {
+                $pendingConsent->update(['status' => 'expired']);
+            }
+
+            return response()->json([
+                'status' => false,
+                'message' => 'El enlace ha expirado. Solicita uno nuevo.',
+                'data' => null,
+            ], 410);
+        }
+
+        $policy = $pendingConsent->companyPolicy;
+        $policy->load('template');
+
+        $activePurposes = $purposeResolver->resolve($policy);
+
+        $purposesSanitized = $this->enforceRequiredPurposes(
+            $request->input('purposes', []),
+            $activePurposes,
+        );
+
+        $email = $pendingConsent->decrypted_pii['email'] ?? null;
+        $timestamp = now()->toIso8601String();
+
+        $payload = $hashService->buildPayload(
+            $email ?? $request->validated('visitor_uuid'),
+            $policy->integrity_hash,
+            $purposesSanitized,
+            $timestamp,
+        );
+
+        $proofHash = $hashService->compute($payload);
+
+        try {
+            ConsentLog::create([
+                'visitor_uuid' => $request->validated('visitor_uuid'),
+                'identifier' => $email,
+                'company_id' => $pendingConsent->company_id,
+                'company_policy_id' => $policy->id,
+                'purposes' => $purposesSanitized,
+                'policy_hash' => $policy->integrity_hash,
+                'proof_hash' => $proofHash,
+                'consent_occurred_at' => now(),
+                'capture_method' => 'live_portal',
+                'ip_hash' => hash('sha256', $request->ip()),
+                'user_agent' => substr($request->userAgent(), 0, 500),
+            ]);
+        } catch (QueryException $e) {
+            Log::warning('PortalConsent: error al insertar consent_log', [
+                'proof_hash' => $proofHash,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Error al registrar el consentimiento.',
+                'data' => null,
+            ], 500);
+        }
+
+        $pendingConsent->update([
+            'status' => 'confirmed',
+            'confirmed_at' => now(),
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Documento firmado correctamente.',
+            'data' => [
+                'status' => 'confirmed',
+                'proof_hash' => $proofHash,
+            ],
+        ], 201);
+    }
+
+    /**
+     * Normaliza y enforcementa los purposes del request contra los fines activos.
+     *
+     * Reglas (espejo del WidgetConsentController):
+     * - Fines con requires_consent=false → forzados a true (legalmente obligatorios).
+     * - Demás fines activos → valor booleano del request, default false.
+     * - Slugs del request no activos → ignorados silenciosamente.
+     *
+     * @param  array<string, mixed>  $requestPurposes  Purposes crudos del request.
+     * @param  Collection<int, ConsentPurpose>  $activePurposes
+     * @return array<string, bool> Purposes saneados.
+     */
+    private function enforceRequiredPurposes(array $requestPurposes, $activePurposes): array
+    {
+        $normalized = [];
+
+        foreach ($activePurposes as $purpose) {
+            if (! $purpose->requires_consent) {
+                $normalized[$purpose->slug] = true;
+
+                continue;
+            }
+
+            $normalized[$purpose->slug] = filter_var(
+                $requestPurposes[$purpose->slug] ?? false,
+                FILTER_VALIDATE_BOOLEAN,
+            );
+        }
+
+        return $normalized;
     }
 
     /**

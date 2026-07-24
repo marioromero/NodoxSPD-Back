@@ -46,6 +46,11 @@ Route::middleware(['cors.dynamic', 'throttle:widget'])
 Route::middleware(['throttle:60,1'])
     ->get('/portal/consent/{token}', [PortalConsentController::class, 'show']);
 
+// Portal Cautivo: recepción de la firma del destinatario (POST).
+// Valida token, enforcement de fines obligatorios, crea ConsentLog, consume token.
+Route::middleware(['throttle:60,1'])
+    ->match(['post', 'options'], '/portal/consent/{token}/confirm', [PortalConsentController::class, 'confirm']);
+
 // 2. Rutas Protegidas (Cualquier usuario autenticado)
 Route::middleware('auth:sanctum')->group(function () {
 
