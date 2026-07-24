@@ -19,8 +19,9 @@ use Illuminate\Http\Request;
  * - El scope es siempre por empresa (company_id del usuario autenticado).
  * - No se expone el ID interno de la empresa ni datos sensibles del visitante
  *   más allá del visitor_uuid (que ya es un identificador seudonimizado).
- * - El campo identifier se retorna forzado a null hasta que se implemente
- *   Identity Stitching (tabla person_visitor_uuids).
+ * - El campo identifier expone el email del destinatario cuando la captura
+ *   fue via Portal Cautivo (live_portal). Para live_widget es null hasta que
+ *   se implemente Identity Stitching (tabla person_visitor_uuids).
  */
 class ConsentLogController extends Controller
 {
@@ -32,10 +33,11 @@ class ConsentLogController extends Controller
      * Filtros disponibles via query params:
      * - capture_method: filtra por método de captura (live_widget, live_portal, bulk_import).
      * - policy_hash: filtra por el hash inmutable de la política.
+     * - search: busca por email en la columna identifier (LIKE %search%).
      * - from / to: rango de fechas sobre consent_occurred_at (formato Y-m-d).
      *
      * Orden: consent_occurred_at DESC (más recientes primero).
-     * Paginación: 25 registros por página.
+     * Paginación: 15 registros por página.
      */
     public function index(Request $request): JsonResponse
     {
@@ -52,6 +54,10 @@ class ConsentLogController extends Controller
             $query->where('policy_hash', $request->input('policy_hash'));
         }
 
+        if ($request->filled('search')) {
+            $query->where('identifier', 'like', '%'.$request->input('search').'%');
+        }
+
         if ($request->filled('from')) {
             $query->where('consent_occurred_at', '>=', $request->input('from').' 00:00:00');
         }
@@ -60,12 +66,12 @@ class ConsentLogController extends Controller
             $query->where('consent_occurred_at', '<=', $request->input('to').' 23:59:59');
         }
 
-        $logs = $query->paginate(25);
+        $logs = $query->paginate(15);
 
         $transformed = $logs->getCollection()->map(fn (ConsentLog $log): array => [
             'id' => $log->id,
             'visitor_uuid' => $log->visitor_uuid,
-            'identifier' => null,
+            'identifier' => $log->identifier,
             'purposes' => $log->purposes,
             'policy_hash' => $log->policy_hash,
             'proof_hash' => $log->proof_hash,
