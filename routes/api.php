@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Panel\CompanyDomainController;
+use App\Http\Controllers\Api\Panel\CompanyWidgetConfigController;
 use App\Http\Controllers\Api\Panel\ConsentLogController;
 use App\Http\Controllers\Api\Panel\ConsentPurposeController;
 use App\Http\Controllers\Api\Widget\WidgetConfigController;
@@ -53,6 +54,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Panel: configuración de dominios autorizados para CORS dinámico del Trust Widget
     Route::patch('/panel/companies/domains', [CompanyDomainController::class, 'update']);
+
+    // Panel: personalización visual del Trust Widget (color, logo, textos del banner)
+    Route::patch('/panel/companies/widget-config', [CompanyWidgetConfigController::class, 'update']);
 
     // 3. Módulo de Empresa (Solo Admins de Empresa)
     Route::middleware('role:company_admin')->prefix('company')->group(function () {
