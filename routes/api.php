@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Panel\CompanyDomainController;
 use App\Http\Controllers\Api\Panel\CompanyWidgetConfigController;
 use App\Http\Controllers\Api\Panel\ConsentLogController;
 use App\Http\Controllers\Api\Panel\ConsentPurposeController;
+use App\Http\Controllers\Api\Panel\PendingConsentController;
 use App\Http\Controllers\Api\Portal\PortalConsentController;
 use App\Http\Controllers\Api\Widget\WidgetConfigController;
 use App\Http\Controllers\Api\Widget\WidgetConsentController;
@@ -69,6 +70,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Panel: personalización visual del Trust Widget (color, logo, textos del banner)
     Route::patch('/panel/companies/widget-config', [CompanyWidgetConfigController::class, 'update']);
+
+    // Panel: envío de enlaces de firma del Portal Cautivo por correo
+    Route::post('/panel/pending-consents', [PendingConsentController::class, 'store']);
 
     // 3. Módulo de Empresa (Solo Admins de Empresa)
     Route::middleware('role:company_admin')->prefix('company')->group(function () {
