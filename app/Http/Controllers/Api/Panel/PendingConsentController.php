@@ -9,6 +9,7 @@ use App\Models\CompanyPolicy;
 use App\Models\PendingConsent;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * Controlador del panel de administración para gestionar enlaces de firma.
@@ -26,6 +27,55 @@ use Illuminate\Http\JsonResponse;
 class PendingConsentController extends Controller
 {
     use ApiResponse;
+
+    /**
+     * Lista los enlaces de firma enviados por la empresa, con filtros y paginación.
+     *
+     * Filtros disponibles via query params:
+     * - status: filtra por estado (pending, confirmed, expired).
+     *
+     * Orden: created_at DESC (más recientes primero).
+     * Paginación: 15 registros por página.
+     * Eager loading: companyPolicy para evitar N+1 y obtener el nombre del documento.
+     *
+     * El email del destinatario se descifra en memoria via el accesor decrypted_pii.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $companyId = $request->user()->company->id;
+
+        $query = PendingConsent::with('companyPolicy')
+            ->where('company_id', $companyId)
+            ->latest('created_at');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        $pendingConsents = $query->paginate(15);
+
+        $transformed = $pendingConsents->getCollection()->map(fn (PendingConsent $item): array => [
+            'id' => $item->id,
+            'email' => $item->decrypted_pii['email'] ?? null,
+            'policy_name' => $this->formatPolicyName($item->companyPolicy->document_type ?? ''),
+            'status' => $item->status,
+            'created_at' => $item->created_at->toIso8601String(),
+            'expires_at' => $item->expires_at->toIso8601String(),
+            'confirmed_at' => $item->confirmed_at?->toIso8601String(),
+        ]);
+
+        return $this->success('Enlaces de firma enviados.', [
+            'data' => $transformed,
+            'pagination' => [
+                'current_page' => $pendingConsents->currentPage(),
+                'last_page' => $pendingConsents->lastPage(),
+                'per_page' => $pendingConsents->perPage(),
+                'total' => $pendingConsents->total(),
+                'from' => $pendingConsents->firstItem(),
+                'to' => $pendingConsents->lastItem(),
+            ],
+        ]);
+    }
 
     /**
      * Crea un PendingConsent y despacha el envío del correo transaccional.
@@ -79,5 +129,21 @@ class PendingConsentController extends Controller
             ],
             201,
         );
+    }
+
+    /**
+     * Convierte el document_type técnico a un nombre legible para el frontend.
+     *
+     * @param  string  $documentType  Tipo técnico (ej: cookie_policy, workers_policy).
+     * @return string Nombre legible (ej: "Política de Cookies").
+     */
+    private function formatPolicyName(string $documentType): string
+    {
+        return match ($documentType) {
+            'cookie_policy' => 'Política de Cookies',
+            'privacy_policy' => 'Política de Privacidad',
+            'workers_policy' => 'Política de Trabajadores',
+            default => 'Documento sin nombre',
+        };
     }
 }
