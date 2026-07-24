@@ -51,15 +51,17 @@ class SendConsentLinkJob implements ShouldQueue
             return;
         }
 
-        $magicUrl = config('app.frontend_url').'/portal/consent/'.$this->pendingConsent->token;
+        $consentUrl = config('app.frontend_url').'/portal/consent/'.$this->pendingConsent->token;
 
-        $businessName = $this->pendingConsent->company->business_name;
+        $companyName = $this->pendingConsent->company->business_name;
 
-        $policyName = $this->formatPolicyName(
+        $policyType = $this->formatPolicyName(
             $this->pendingConsent->companyPolicy->document_type ?? 'documento',
         );
 
-        Mail::to($email)->send(new ConsentLinkMail($businessName, $policyName, $magicUrl));
+        $expiresAt = ConsentLinkMail::formatExpiresAt($this->pendingConsent->expires_at);
+
+        Mail::to($email)->send(new ConsentLinkMail($companyName, $policyType, $consentUrl, $expiresAt));
     }
 
     /**
