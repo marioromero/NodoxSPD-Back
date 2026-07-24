@@ -72,7 +72,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/panel/companies/widget-config', [CompanyWidgetConfigController::class, 'update']);
 
     // Panel: envío y monitoreo de enlaces de firma del Portal Cautivo por correo
-    Route::post('/panel/pending-consents', [PendingConsentController::class, 'store']);
+    Route::post('/panel/pending-consents', [PendingConsentController::class, 'store'])
+        ->middleware('throttle:10,1');
     Route::get('/panel/pending-consents', [PendingConsentController::class, 'index']);
 
     // 3. Módulo de Empresa (Solo Admins de Empresa)
