@@ -12,7 +12,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pending_consents', function (Blueprint $table) {
+        $driver = DB::connection()->getDriverName();
+
+        Schema::create('pending_consents', function (Blueprint $table) use ($driver) {
             // Llave primaria y relaciones
             $table->bigIncrements('id');
             $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
@@ -34,17 +36,27 @@ return new class extends Migration
             // Columna generada (stored): solo tiene valor cuando status='pending'.
             // Permite un índice único parcial: solo un consentimiento pendiente activo
             // por combinación pii_hash + company_policy_id (evita duplicados pendientes).
-            $table->string('pending_uniqueness_key', 200)->storedAs("IF(status = 'pending', CONCAT(pii_hash, ':', company_policy_id), NULL)")->nullable();
+            $expression = $driver === 'sqlite'
+                ? "CASE WHEN status = 'pending' THEN pii_hash || ':' || company_policy_id ELSE NULL END"
+                : "IF(status = 'pending', CONCAT(pii_hash, ':', company_policy_id), NULL)";
+
+            $table->string('pending_uniqueness_key', 200)->storedAs($expression)->nullable();
             $table->timestamps();
 
             // Índices compuestos para limpieza de expirados y reporting por empresa
             $table->index(['expires_at', 'status']);
             $table->index(['company_id', 'status']);
+
+            // SQLite: el unique se declara inline porque no soporta ALTER TABLE ADD UNIQUE KEY
+            if ($driver === 'sqlite') {
+                $table->unique('pending_uniqueness_key', 'uq_pending_active');
+            }
         });
 
-        // Índice único sobre la columna generada: MySQL permite múltiples NULLs
-        // en un UNIQUE, por lo que solo se enforcea unicidad cuando status='pending'.
-        DB::statement('ALTER TABLE pending_consents ADD UNIQUE KEY uq_pending_active (pending_uniqueness_key)');
+        // MySQL/MariaDB: el unique se agrega via ALTER TABLE para nombrar el índice
+        if ($driver !== 'sqlite') {
+            DB::statement('ALTER TABLE pending_consents ADD UNIQUE KEY uq_pending_active (pending_uniqueness_key)');
+        }
     }
 
     /**

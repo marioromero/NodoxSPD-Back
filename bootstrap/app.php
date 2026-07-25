@@ -18,29 +18,31 @@ use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-/**
- * Parsea un mensaje de error 1062 de MariaDB/MySQL extrayendo el campo
- * duplicado y devolviendo un mensaje legible.
- */
-function parseDuplicateError(string $errorMessage): string
-{
-    // "Duplicate entry 'VALOR' for key 'tabla_campo_unique'"
-    if (preg_match("/Duplicate entry '(.+)' for key '(.+)'/", $errorMessage, $m)) {
-        $value = $m[1];
-        $key = $m[2];
+if (! function_exists('parseDuplicateError')) {
+    /**
+     * Parsea un mensaje de error 1062 de MariaDB/MySQL extrayendo el campo
+     * duplicado y devolviendo un mensaje legible.
+     */
+    function parseDuplicateError(string $errorMessage): string
+    {
+        // "Duplicate entry 'VALOR' for key 'tabla_campo_unique'"
+        if (preg_match("/Duplicate entry '(.+)' for key '(.+)'/", $errorMessage, $m)) {
+            $value = $m[1];
+            $key = $m[2];
 
-        $fieldMap = [
-            'companies_tax_id_unique' => 'RUT',
-            'companies_business_name_unique' => 'Razón social',
-            'users_email_unique' => 'Correo electrónico',
-        ];
+            $fieldMap = [
+                'companies_tax_id_unique' => 'RUT',
+                'companies_business_name_unique' => 'Razón social',
+                'users_email_unique' => 'Correo electrónico',
+            ];
 
-        $field = $fieldMap[$key] ?? "el campo «{$key}»";
+            $field = $fieldMap[$key] ?? "el campo «{$key}»";
 
-        return "El valor «{$value}» ya está registrado en el sistema para {$field}.";
+            return "El valor «{$value}» ya está registrado en el sistema para {$field}.";
+        }
+
+        return 'El recurso ya existe (valor duplicado).';
     }
-
-    return 'El recurso ya existe (valor duplicado).';
 }
 
 return Application::configure(basePath: dirname(__DIR__))

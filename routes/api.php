@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Panel\ConsentLogController;
 use App\Http\Controllers\Api\Panel\ConsentPurposeController;
 use App\Http\Controllers\Api\Panel\PendingConsentController;
 use App\Http\Controllers\Api\Portal\PortalConsentController;
+use App\Http\Controllers\Api\Widget\IdentityStitchController;
 use App\Http\Controllers\Api\Widget\WidgetConfigController;
 use App\Http\Controllers\Api\Widget\WidgetConsentController;
 use App\Http\Controllers\Auth\AuthController;
@@ -40,6 +41,12 @@ Route::middleware(['cors.dynamic', 'throttle:widget'])
 // Se registra OPTIONS explicitamente para que DynamicCorsMiddleware intercepte el preflight.
 Route::middleware(['cors.dynamic', 'throttle:widget'])
     ->match(['post', 'options'], '/widget/{company_public_uuid}/consent', [WidgetConsentController::class, 'store']);
+
+// Widget público: Identity Stitching para vincular visitor_uuid anónimo con
+// usuario autenticado de la Pyme. Autenticación via HMAC-SHA256 con
+// integration_secret de la empresa (no requiere sesión Sanctum).
+Route::middleware(['cors.dynamic', 'throttle:widget'])
+    ->match(['post', 'options'], '/widget/{company_public_uuid}/identity-sync', [IdentityStitchController::class, 'sync']);
 
 // Portal Cautivo: endpoint público que alimenta la interfaz de firma cuando el
 // destinatario hace clic en el enlace mágico de su correo. Sin autenticación.
