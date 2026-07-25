@@ -1,820 +1,1786 @@
 API Reference Frontend — Módulo 2 — NodoxSPD
 
-API Reference — Frontend Módulo 2
+
+
+&#9776;
+
+
+
+
+
+
+&#128218; Documentación
+Frontend — API Reference
+
+
+&larr; Volver al índice
+
+
+
+
+Widget Público
+
+- GET /api/widget/{uuid}/config
+
+- POST /api/widget/{uuid}/consent
+
+
+
+
+
+Panel — Gestión de Envíos
+
+- GET /api/panel/pending-consents
+
+- POST /api/panel/pending-consents
+
+
+
+
+
+Panel — Bóveda de Auditoría
+
+- GET /api/panel/consent-logs
+
+
+
+
+
+Panel — Configuración
+
+- GET /api/panel/consent-purposes
+
+- PATCH /api/panel/companies/domains
+
+- PATCH /api/panel/companies/widget-config
+
+
+
+
+
+Portal Cautivo
+
+- GET /api/portal/consent/{token}
+
+- POST /api/portal/consent/{token}/confirm
+
+
+
+
+
+
+
+
+
+API Reference &mdash; Frontend Módulo 2
 Diez endpoints para la integración frontend del Trust Widget: configuración del banner, registro de consentimiento, catálogo de fines legales, generación de enlaces de firma, listado de consents pendientes, bóveda de auditoría, gestión de dominios CORS, personalización visual y Portal Cautivo (consulta + firma).
 
+
 Base URL: https://api.tudominio.com
-Formato: JSON · UTF-8
-Widget: Público (sin auth) · Panel: Sanctum
+Formato: JSON &middot; UTF-8
+Widget: Público (sin auth) &middot; Panel: Sanctum
+
 
 Endpoints
 
-01 GET Configuración del widget /api/widget/{company_public_uuid}/config
-02 POST Registrar consentimiento /api/widget/{company_public_uuid}/consent
-03 GET Listar consents pendientes /api/panel/pending-consents
-04 POST Generar enlace de firma /api/panel/pending-consents
-05 GET Bóveda de auditoría /api/panel/consent-logs
-06 GET Catálogo de fines legales /api/panel/consent-purposes
-07 PATCH Dominios autorizados CORS /api/panel/companies/domains
-08 PATCH Personalizar widget visual /api/panel/companies/widget-config
-09 GET Portal Cautivo — datos de firma /api/portal/consent/{token}
-10 POST Portal Cautivo — confirmar firma /api/portal/consent/{token}/confirm
+01GET Configuración del widget/api/widget/{company_public_uuid}/config
+02POST Registrar consentimiento/api/widget/{company_public_uuid}/consent
+03GET Listar consents pendientes/api/panel/pending-consents
+04POST Generar enlace de firma/api/panel/pending-consents
+05GET Bóveda de auditoría/api/panel/consent-logs
+06GET Catálogo de fines legales/api/panel/consent-purposes
+07PATCH Dominios autorizados CORS/api/panel/companies/domains
+08PATCH Personalizar widget visual/api/panel/companies/widget-config
+09GET Portal Cautivo — datos de firma/api/portal/consent/{token}
+10POST Portal Cautivo — confirmar firma/api/portal/consent/{token}/confirm
+
+
+
+
 
 Widget Público
 
 GET
+
 Configuración del widget
+
 /api/widget/{company_public_uuid}/config
 
+
+
+
 Propósito / Cuándo se usa
+
+
 Es el punto de partida del flujo del widget. Se llama una sola vez al cargar la página del sitio de la Pyme, inmediatamente después de que el script widget.js se inicializa. Devuelve toda la configuración necesaria para renderizar el banner de cookies: propósitos activos, colores, posición, textos legales y el hash de la política para vincular el consentimiento posterior.
 
-GET /api/widget/{company_public_uuid}/config
+
+
+
+
+GET
+/api/widget/{company_public_uuid}/config
+
+
 
 Headers requeridos
-Header Valor Notas
-Accept string application/json Requerido
-Origin string Dominio del sitio cliente. Validado por DynamicCorsMiddleware. Requerido
+
+
+Header	Valor	Notas
+
+
+Accept	string	application/json Requerido
+
+Origin	string	Dominio del sitio cliente. Validado por DynamicCorsMiddleware. Requerido
+
+
+
+
+
 
 Path parameters
-Parámetro Tipo Descripción
-company_public_uuid UUID v4 Identificador público de la empresa. Se resuelve siempre por este campo, nunca por ID numérico interno. Requerido
+
+
+Parámetro	Tipo	Descripción
+
+
+company_public_uuid	UUID v4	Identificador público de la empresa. Se resuelve siempre por este campo, nunca por ID numérico interno. Requerido
+
+
+
+
+
 
 Respuesta exitosa 200 OK
 
 Headers clave
-Header Valor Propósito
-Cache-Control public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400 Caché pública en CDN por 1h, stale por 24h
-ETag "{public_uuid}-{policy_hash}" Invalidación automática si cambia la política
-Vary Accept-Encoding Variación por codificación (gzip, br)
+
+
+Header	Valor	Propósito
+
+
+Cache-Control	public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400	Caché pública en CDN por 1h, stale por 24h
+
+ETag	"{public_uuid}-{policy_hash}"	Invalidación automática si cambia la política
+
+Vary	Accept-Encoding	Variación por codificación (gzip, br)
+
+
 
 {
-  "policy_hash": "a1b2c3d4e5f67890abcdef1234567890abcdef1234567890abcdef1234567890",
-  "policy_version": 3,
-  "widget_config": {
-    "position": "bottom-left",
-    "primary_color": "#1a73e8",
-    "show_reject_all": true,
-    "cookie_duration_days": 365,
-    "providers": {
-      "analytics": ["google_analytics"],
-      "marketing": ["meta_pixel", "google_ads"],
-      "personalization": ["youtube", "google_maps"]
-    }
-  },
-  "purposes": {
-    "necessary_technical": {
-      "label": "Cookies técnicas y necesarias",
-      "description": "Indispensables para el funcionamiento básico del sitio...",
-      "required": true,
-      "default": true,
-      "legal_basis": "legitimate_interest",
-      "widget_action": null
-    },
-    "analytics_behavior": {
-      "label": "Análisis de visitas y comportamiento",
-      "description": "Nos permiten entender cómo navegas por el sitio...",
-      "required": false,
-      "default": false,
-      "legal_basis": "consent",
-      "widget_action": "load_analytics_scripts"
-    }
-  },
-  "legal_texts": {
-    "banner_title": "Este sitio usa cookies",
-    "banner_body": "Utilizamos cookies propias y de terceros...",
-    "policy_url": "https://cdn.tudominio.com/policies/a1b2c3...html"
-  }
+"policy_hash": "a1b2c3d4e5f67890abcdef1234567890abcdef1234567890abcdef1234567890",
+"policy_version": 3,
+"widget_config": {
+"position": "bottom-left",
+"primary_color": "#1a73e8",
+"show_reject_all": true,
+"cookie_duration_days": 365,
+"providers": {
+"analytics": ["google_analytics"],
+"marketing": ["meta_pixel", "google_ads"],
+"personalization": ["youtube", "google_maps"]
 }
-
+},
+"purposes": {
+"necessary_technical": {
+"label": "Cookies técnicas y necesarias",
+"description": "Indispensables para el funcionamiento básico del sitio...",
+"required": true,
+"default": true,
+"legal_basis": "legitimate_interest",
+"widget_action": null
+},
+"analytics_behavior": {
+"label": "Análisis de visitas y comportamiento",
+"description": "Nos permiten entender cómo navegas por el sitio...",
+"required": false,
+"default": false,
+"legal_basis": "consent",
+"widget_action": "load_analytics_scripts"
+}
+},
+"legal_texts": {
+"banner_title": "Este sitio usa cookies",
+"banner_body": "Utilizamos cookies propias y de terceros...",
+"policy_url": "https://cdn.tudominio.com/policies/a1b2c3...html"
+}
+}
 Campos de la respuesta
-Campo Tipo Descripción
-policy_hash string SHA-256 hex de la política activa. Vínculo criptográfico para el consentimiento posterior.
-policy_version int Versión de la política (company_version).
-widget_config.position string Posición del banner: bottom-left, bottom-right, top-left, top-right.
-widget_config.primary_color string Color primario hex. Default: #1a73e8.
-widget_config.show_reject_all bool Mostrar botón Rechazar todas. Default: true.
-widget_config.cookie_duration_days int Días de duración cookie preferencia. Default: 365.
-widget_config.providers object Proveedores por categoría: analytics, marketing, personalization. Array de strings.
-purposes object slug => {label, description, required, default, legal_basis, widget_action}. required = !requires_consent.
-purposes.{slug}.widget_action string | null Acción técnica que el widget debe ejecutar en el navegador cuando el usuario acepta este propósito. Valores posibles: load_analytics_scripts, load_marketing_scripts, load_functional_scripts, consent_mode_v2_ads, null.
-legal_texts object banner_title, banner_body, policy_url.
+
+
+Campo	Tipo	Descripción
+
+
+policy_hash	string	SHA-256 hex de la política activa. Vínculo criptográfico para el consentimiento posterior.
+
+policy_version	int	Versión de la política (company_version).
+
+widget_config.position	string	Posición del banner: bottom-left, bottom-right, top-left, top-right.
+
+widget_config.primary_color	string	Color primario hex. Default: #1a73e8.
+
+widget_config.show_reject_all	bool	Mostrar botón Rechazar todas. Default: true.
+
+widget_config.cookie_duration_days	int	Días de duración cookie preferencia. Default: 365.
+
+widget_config.providers	object	Proveedores por categoría: analytics, marketing, personalization. Array de strings.
+
+purposes	object	slug => {label, description, required, default, legal_basis, widget_action}. required = !requires_consent.
+
+purposes.{slug}.widget_action	string | null	Acción técnica que el widget debe ejecutar en el navegador cuando el usuario acepta este propósito. Valores posibles: load_analytics_scripts, load_marketing_scripts, load_functional_scripts, consent_mode_v2_ads, null.
+
+legal_texts	object	banner_title, banner_body, policy_url.
+
+
+
+
+
 
 Respuestas de error
-Código Causa Ejemplo de mensaje
-400 UUID inválido o no formato v4 {"status":false,"message":"El identificador proporcionado no es un UUID v4 válido.","data":null}
-403 Origen CORS no permitido Sin body (middleware corta antes del controlador)
-404 Empresa no encontrada o sin cookie_policy publicada {"status":false,"message":"Esta empresa no tiene una política de cookies publicada.","data":null}
-429 Rate limit excedido (5 IP, 60 empresa, 10 visitor req/min) {"message":"Too Many Attempts."}
+
+
+Código	Causa	Ejemplo de mensaje
+
+
+400	UUID inválido o no formato v4	{"status":false,"message":"El identificador proporcionado no es un UUID v4 válido.","data":null}
+
+403	Origen CORS no permitido	Sin body (middleware corta antes del controlador)
+
+404	Empresa no encontrada o sin cookie_policy publicada	{"status":false,"message":"Esta empresa no tiene una política de cookies publicada.","data":null}
+
+429	Rate limit excedido (5 IP, 60 empresa, 10 visitor req/min)	{"message":"Too Many Attempts."}
+
+
+
+
+
 
 Notas de seguridad
+
+
 - La respuesta nunca incluye IDs internos (id, company_id, user_id). Solo datos públicos.
+
 - No se envía Set-Cookie para no romper el caché de Cloudflare.
+
 - El widget debe usar el policy_hash recibido al construir el payload del consentimiento.
+
 - Si la respuesta es 404, el widget no debe renderizar el banner.
 
+
+
+
+
+
 POST
+
 Registrar consentimiento
+
 /api/widget/{company_public_uuid}/consent
 
+
+
+
 Propósito / Cuándo se usa
+
+
 Se invoca cuando el visitante hace clic en Aceptar, Rechazar o Guardar preferencias. El widget envía los fines aceptados como booleans + timestamp + policy_hash. El ledger consent_logs es inmutable. El endpoint es idempotente: reenvíos del mismo payload retornan 200.
 
-POST /api/widget/{company_public_uuid}/consent
+
+
+
+
+POST
+/api/widget/{company_public_uuid}/consent
+
+
 
 Headers requeridos
-Header Valor Notas
-Content-Type string application/json Requerido
-Accept string application/json Requerido
-Origin string Dominio del sitio. Validado por DynamicCorsMiddleware. Requerido
+
+
+Header	Valor	Notas
+
+
+Content-Type	string	application/json Requerido
+
+Accept	string	application/json Requerido
+
+Origin	string	Dominio del sitio. Validado por DynamicCorsMiddleware. Requerido
+
+
+
+
+
 
 Path parameters
-Parámetro Tipo Descripción
-company_public_uuid UUID v4 Va en la URL para que el middleware CORS resuelva la empresa en preflight OPTIONS (sin body). Requerido
+
+
+Parámetro	Tipo	Descripción
+
+
+company_public_uuid	UUID v4	Va en la URL para que el middleware CORS resuelva la empresa en preflight OPTIONS (sin body). Requerido
+
+
+
+
+
 
 Body params
-Campo Tipo Reglas de validación Notas
-visitor_uuid UUID v4 required, uuid UUID anónimo del visitante. Sin PII.
-company_public_uuid UUID v4 required, uuid, exists:companies,public_uuid Mismo UUID de la URL. Validado en BD.
-timestamp string (ISO-8601) required, date_format:Y-m-d\TH:i:s\Z UTC estricto. Ventana: no >5 min futuro, no >1 h pasado.
-purposes object required, array; slugs: sometimes, boolean Mapa dinámico según fines activos de /config. necessary_technical se fuerza a true en backend.
 
-El timestamp se valida contra ventana de ±5 min futuro / -1 h pasado (StoreConsentRequest withValidator).
+
+Campo	Tipo	Reglas de validación	Notas
+
+
+visitor_uuid	UUID v4	required, uuid	UUID anónimo del visitante. Sin PII.
+
+company_public_uuid	UUID v4	required, uuid, exists:companies,public_uuid	Mismo UUID de la URL. Validado en BD.
+
+timestamp	string (ISO-8601)	required, date_format:Y-m-d\TH:i:s\Z	UTC estricto. Ventana: no >5 min futuro, no >1 h pasado.
+
+purposes	object	required, array; slugs: sometimes, boolean	Mapa dinámico según fines activos de /config. necessary_technical se fuerza a true en backend.
+
+
+
+El timestamp se valida contra ventana de &plusmn;5 min futuro / &minus;1 h pasado (StoreConsentRequest withValidator).
+
+
+
 
 Ejemplo de request
+
 {
-  "visitor_uuid": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-  "company_public_uuid": "39ce42d3-f179-4290-8edf-2eaf01efb82b",
-  "timestamp": "2026-07-22T14:30:00Z",
-  "purposes": {
-    "necessary_technical": true,
-    "analytics_behavior": true,
-    "functional_third_party": false,
-    "marketing_direct": false
-  }
+"visitor_uuid": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+"company_public_uuid": "39ce42d3-f179-4290-8edf-2eaf01efb82b",
+"timestamp": "2026-07-22T14:30:00Z",
+"purposes": {
+"necessary_technical": true,
+"analytics_behavior": true,
+"functional_third_party": false,
+"marketing_direct": false
 }
+}
+
+
 
 Respuesta exitosa 201 Created
+
 {
-  "status": true,
-  "message": "Consentimiento registrado correctamente.",
-  "data": {
-    "status": "recorded",
-    "proof_hash": "a1b2c3d4e5f67890abcdef1234567890abcdef1234567890abcdef1234567890"
-  }
+"status": true,
+"message": "Consentimiento registrado correctamente.",
+"data": {
+"status": "recorded",
+"proof_hash": "a1b2c3d4e5f67890abcdef1234567890abcdef1234567890abcdef1234567890"
 }
+}
+
+
 
 Idempotencia 200 OK
+
 Mismo proof_hash = UNIQUE en BD = 200 con already_recorded. Comportamiento esperado para reenvíos.
+
 {
-  "status": true,
-  "message": "Consentimiento ya registrado previamente.",
-  "data": {
-    "status": "already_recorded"
-  }
+"status": true,
+"message": "Consentimiento ya registrado previamente.",
+"data": {
+"status": "already_recorded"
+}
 }
 
+
+
 Respuestas de error
-Código Causa Ejemplo de mensaje
-403 workers_policy u origen CORS no permitido {"status":false,"message":"No se pueden registrar consentimientos de políticas laborales desde el widget.","data":null}
-404 Empresa sin cookie_policy publicada {"status":false,"message":"Esta empresa no tiene una política de cookies publicada.","data":null}
-422 Validación: timestamp fuera de ventana, slugs inválidos "El timestamp no puede estar más de 5 minutos en el futuro."
-429 Rate limit excedido {"message":"Too Many Attempts."}
-500 Error interno BD (no confundir con duplicado) {"status":false,"message":"Error al registrar el consentimiento.","data":null}
+
+
+Código	Causa	Ejemplo de mensaje
+
+
+403	workers_policy u origen CORS no permitido	{"status":false,"message":"No se pueden registrar consentimientos de políticas laborales desde el widget.","data":null}
+
+404	Empresa sin cookie_policy publicada	{"status":false,"message":"Esta empresa no tiene una política de cookies publicada.","data":null}
+
+422	Validación: timestamp fuera de ventana, slugs inválidos	"El timestamp no puede estar más de 5 minutos en el futuro."
+
+429	Rate limit excedido	{"message":"Too Many Attempts."}
+
+500	Error interno BD (no confundir con duplicado)	{"status":false,"message":"Error al registrar el consentimiento.","data":null}
+
+
+
+
+
 
 Notas de seguridad
+
+
 - proof_hash = SHA-256 del payload canonizado (ksort + JSON_UNESCAPED_SLASHES). Determinista.
+
 - 200 + already_recorded no es error. El widget puede tratarlo como consentimiento exitoso.
+
 - necessary_technical siempre true en backend, incluso si el cliente envía false.
+
 - Slugs no activos se ignoran silenciosamente.
+
 - No exponer proof_hash en URL ni en console.log en producción.
+
+
+
+
+
 
 Panel — Gestión de Envíos
 
+
+
+
 GET
+
 Listar consents pendientes
+
 /api/panel/pending-consents
 
+
+
+
+
+
 Propósito / Cuándo se usa
+
+
 Lista los envíos de firma pendientes de la empresa autenticada, ordenados por created_at descendente. Se usa en el panel Angular en la vista "Gestión de Envíos" para mostrar una tabla con todos los PendingConsent registrados, su estado actual y acciones disponibles (re-enviar, ver detalle). El email se descifra en memoria vía un accessor del modelo.
 
-GET /api/panel/pending-consents
 
-Headers requeridos
-Header Valor Notas
-Content-Type string application/json Requerido
-Accept string application/json Requerido
-Cookie string Session cookie enviada automáticamente por el navegador. Requiere withCredentials: true en el HttpClient. Requerido
 
-Autenticación: Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con GET /sanctum/csrf-cookie antes de llamar a este endpoint. Incluir withCredentials: true en todas las llamadas HTTP del panel. No usar Bearer token — las cookies de sesión se envían automáticamente.
 
-// En app.config.ts o el interceptor HTTP:
-provideHttpClient(withFetch(), withInterceptors([...])),
-// Y asegurarse de enviar credenciales (o configurarlo globalmente en el interceptor)
 
-Query params
-Parámetro Tipo Default Notas
-status string|null todos Filtrar por estado: pending, completed, expired. Si se omite, devuelve todos.
-per_page int 20 Resultados por página. Máximo 100.
-page int 1 Número de página.
 
-Respuesta exitosa 200 OK
-{
-  "status": true,
-  "message": "Listado de consents pendientes.",
-  "data": [
-    {
-      "id": 42,
-      "email": "trabajador@empresa.cl",
-      "company_policy_id": 20,
-      "status": "pending",
-      "token": "a1b2c3d4...",
-      "expires_at": "2026-07-31T04:02:00+00:00",
-      "created_at": "2026-07-24T04:02:00+00:00"
-    }
-  ],
-  "meta": {
-    "current_page": 1,
-    "last_page": 5,
-    "per_page": 20,
-    "total": 96
-  }
-}
-
-Campos de la respuesta
-Campo Tipo Descripción
-id int ID del registro PendingConsent.
-email string Email del destinatario en texto plano. El backend lo descifra en memoria vía accessor (Crypt::decryptString()).
-company_policy_id int ID de la política asociada.
-status string pending | completed | expired.
-token string Token criptográfico (64 chars hex). Útil para trackeo.
-expires_at datetime Fecha de expiración del enlace (7 días desde creación).
-created_at datetime Fecha de creación.
-
-Respuestas de error
-Código Causa Ejemplo de mensaje
-401 No autenticado (token inválido o ausente) {"status":false,"message":"Unauthenticated.","data":null}
-422 Parámetro status inválido {"message":"El campo status seleccionado no es válido."}
-
-Notas de implementación
-- El email viaja en texto plano en la respuesta. El backend lo descifra con Crypt::decryptString() en el accessor del modelo.
-- Ordenación fija: created_at DESC. No se aceptan parámetros de ordenamiento.
-- Resultados paginados (20 por defecto, máx. 100).
-- Scoped al tenant: solo devuelve registros de la empresa del usuario autenticado.
-- Más detalle en Característica C de la Guía Conceptual.
-
-UI — Tabla de envíos
-Columna Datos Comportamiento
-Email item.email Texto plano. Largo máximo visible 30 chars + tooltip.
-Política item.company_policy_id Resolver nombre desde catálogo (caché local).
-Estado item.status Badge de color: pending completed expired
-Enviado item.created_at | date:'short' Formato fecha local.
-Expira item.expires_at | date:'short' Resaltar en rojo si faltan < 24h. Mostrar tiempo restante calculado desde item.expires_at. Resaltar en amarillo registros con menos de 12h restantes.
-Acciones Botones "Re-enviar" (solo si pending), "Ver detalle".
-Estado vacío: Mostrar "No hay envíos pendientes" con ilustración simple y botón "Nuevo envío" que abre el wizard de firma (ep4).
-
-Ejemplo de código (servicio Angular)
-Ejemplo ilustrativo, no vinculante a una versión específica de Angular.
-// Servicio de gestión de envíos
-getPendingConsents(params?: {
-  status?: 'pending' | 'completed' | 'expired';
-  page?: number;
-  perPage?: number;
-}): Observable<PaginatedResponse<PendingConsent>> {
-  return this.http.get<PaginatedResponse<PendingConsent>>(
-    `${environment.apiUrl}/panel/pending-consents`,
-    { params }
-  );
-}
-
-POST
-Generar enlace de firma
+GET
 /api/panel/pending-consents
 
-Propósito / Cuándo se usa
-Crea un registro PendingConsent con el email del destinatario cifrado (AES-256-CBC mediante Crypt::encryptString()) y despacha un Job en cola que envía el correo transaccional con la URL mágica del Portal Cautivo. El enlace expira en 7 días. Se usa desde el panel Angular cuando el admin quiere enviar un documento a un trabajador o lead para su firma digital.
 
-POST /api/panel/pending-consents
 
 Headers requeridos
-Header Valor Notas
-Content-Type string application/json Requerido
-Accept string application/json Requerido
-Cookie string Session cookie enviada automáticamente por el navegador. Requiere withCredentials: true en el HttpClient. Requerido
+
+
+Header	Valor	Notas
+
+
+Content-Type	string	application/json Requerido
+
+Accept	string	application/json Requerido
+
+Cookie	string	Session cookie enviada automáticamente por el navegador. Requiere withCredentials: true en el HttpClient. Requerido
+
+
+
 
 Autenticación: Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con GET /sanctum/csrf-cookie antes de llamar a este endpoint. Incluir withCredentials: true en todas las llamadas HTTP del panel. No usar Bearer token — las cookies de sesión se envían automáticamente.
+
 
 // En app.config.ts o el interceptor HTTP:
 provideHttpClient(withFetch(), withInterceptors([...])),
 // Y asegurarse de enviar credenciales (o configurarlo globalmente en el interceptor)
 
-Body params
-Campo Tipo Reglas de validación Notas
-email string required, email, max:255 Email del destinatario (trabajador o lead). Se cifra automáticamente en el mutador del modelo vía Crypt::encryptString(). Nunca en texto plano. Requerido
-company_policy_id integer required, integer, exists:company_policies,id ID autoincremental de la política a firmar. Debe obtenerse del listado de políticas publicadas (GET /company/policies?status=published). Requerido
 
-Validaciones de seguridad
-Regla Qué valida Respuesta si falla
-Pertenencia La política (company_policy_id) debe pertenecer a la empresa del usuario autenticado. 403
-Estado de política La política debe estar published. No se aceptan borradores (draft) ni archivadas (archived). 403
-Unicidad parcial Índice pending_uniqueness_key previene duplicados activos para el mismo pii_hash + company_policy_id. 422 / 409 (constraint violation)
 
-Ejemplo de request
+Query params
+
+
+Parámetro	Tipo	Default	Notas
+
+
+status	string|null	todos	Filtrar por estado: pending, completed, expired. Si se omite, devuelve todos.
+
+per_page	int	20	Resultados por página. Máximo 100.
+
+page	int	1	Número de página.
+
+
+
+
+
+
+Respuesta exitosa 200 OK
+
 {
-  "email": "trabajador@empresa.cl",
-  "company_policy_id": 20
+"status": true,
+"message": "Listado de consents pendientes.",
+"data": [
+{
+"id": 42,
+"email": "trabajador@empresa.cl",
+"company_policy_id": 20,
+"status": "pending",
+"token": "a1b2c3d4...",
+"expires_at": "2026-07-31T04:02:00+00:00",
+"created_at": "2026-07-24T04:02:00+00:00"
+}
+],
+"meta": {
+"current_page": 1,
+"last_page": 5,
+"per_page": 20,
+"total": 96
+}
 }
 
-201 Created — Enlace creado
-{
-  "status": true,
-  "message": "Enlace de firma enviado correctamente.",
-  "data": {
-    "id": 2,
-    "status": "pending",
-    "expires_at": "2026-07-31T04:02:00+00:00"
-  }
-}
 
-200 OK — Ya existía un envío pendiente
-Si ya existe un PendingConsent activo para el mismo email + company_policy_id, el endpoint retorna 200 con el registro existente en lugar de 201. No se crea un duplicado ni se reenvía el correo.
-{
-  "status": true,
-  "message": "Ya existe un enlace de firma vigente para este destinatario.",
-  "data": {
-    "id": 2,
-    "status": "pending",
-    "expires_at": "2026-07-31T04:02:00+00:00"
-  }
-}
+
+Campos de la respuesta
+
+
+Campo	Tipo	Descripción
+
+
+id	int	ID del registro PendingConsent.
+
+email	string	Email del destinatario en texto plano. El backend lo descifra en memoria vía accessor (Crypt::decryptString()).
+
+company_policy_id	int	ID de la política asociada.
+
+status	string	pending | completed | expired.
+
+token	string	Token criptográfico (64 chars hex). Útil para trackeo.
+
+expires_at	datetime	Fecha de expiración del enlace (7 días desde creación).
+
+created_at	datetime	Fecha de creación.
+
+
+
+
+
 
 Respuestas de error
-Código Causa Ejemplo de mensaje
-401 No autenticado (falta cookie de sesión) {"status":false,"message":"Unauthenticated.","data":null}
-403 Política no pertenece a la empresa o no está publicada {"status":false,"message":"La política especificada no está disponible para firma.","data":null}
-404 company_policy_id no encontrado {"status":false,"message":"La política especificada no existe.","data":null}
-422 Validación: email inválido, policy_id faltante Errores de validación estándar de Laravel
-429 Rate limit excedido {"message":"Too Many Attempts."}
-500 Error interno (constraint violation, Job dispatch falló) {"status":false,"message":"Error al generar el enlace de firma.","data":null}
 
-Flujo interno
-1 Frontend envía POST /panel/pending-consents con email + company_policy_id.
-↓
-2 Backend valida email y company_policy_id. Resuelve empresa del usuario autenticado.
-↓
-3 Verifica que la política pertenezca a la empresa y esté published. Si no: 403.
-↓
-4 Genera token criptográfico (64 chars hex). Crea PendingConsent: el mutador cifra el email automáticamente.
-↓
-5 Despacha SendConsentLinkJob a la cola (queue: database). Retorna 201 con id, status, expires_at.
-↓
-6 [Background — Queue Worker] SendConsentLinkJob descifra el email en memoria, construye URL mágica y despacha ConsentLinkMail.
 
-El 201 confirma que el registro se creó y el Job se encoló, no que el correo ya llegó. El envío es asincrónico vía la cola de base de datos. Posibles demoras de segundos a minutos según la carga del worker.
+Código	Causa	Ejemplo de mensaje
 
-Ejemplo de código (servicio Angular)
-Ejemplo ilustrativo, no vinculante a una versión específica de Angular.
-sendPortalLink(email: string, companyPolicyId: number): Observable<PortalLinkResponse> {
-  return this.http.post<PortalLinkResponse>(
-    `${environment.apiUrl}/panel/pending-consents`,
-    { email, company_policy_id: companyPolicyId }
-  );
-}
+
+401	No autenticado (token inválido o ausente)	{"status":false,"message":"Unauthenticated.","data":null}
+
+422	Parámetro status inválido	{"message":"El campo status seleccionado no es válido."}
+
+
+
+
+
 
 Notas de implementación
-- El company_policy_id debe obtenerse del listado de políticas publicadas (GET /company/policies?status=published). Solo políticas publicadas son elegibles.
-- No se expone el token ni el PII en la respuesta. Solo id, status y expires_at.
-- El frontend debe implementar feedback visual de loading durante el POST (deshabilitar botón, spinner).
-- Tras éxito (201), mostrar mensaje de confirmación. Opcional: listar enlaces pendientes enviados si se implementa un GET index futuro.
-- Si el email ya tiene un pending activo para esa política, el insert falla por constraint violation (índice único). Manejarlo como 409 en el frontend.
+
+
+- El email viaja en texto plano en la respuesta. El backend lo descifra con Crypt::decryptString() en el accessor del modelo.
+
+- Ordenación fija: created_at DESC. No se aceptan parámetros de ordenamiento.
+
+- Resultados paginados (20 por defecto, máx. 100).
+
+- Scoped al tenant: solo devuelve registros de la empresa del usuario autenticado.
+
+- Más detalle en Característica C de la Guía Conceptual.
+
+
+
+
+
+UI — Tabla de envíos
+
+
+Columna	Datos	Comportamiento
+
+
+Email	item.email	Texto plano. Largo máximo visible 30 chars + tooltip.
+
+Política	item.company_policy_id	Resolver nombre desde catálogo (caché local).
+
+Estado	item.status	Badge de color: pending completed expired
+
+Enviado	item.created_at | date:'short'	Formato fecha local.
+
+Expira	item.expires_at | date:'short'	Resaltar en rojo si faltan < 24h. Mostrar tiempo restante calculado desde item.expires_at. Resaltar en amarillo registros con menos de 12h restantes.
+
+Acciones	Botones	"Re-enviar" (solo si pending), "Ver detalle".
+
+
+
+Estado vacío: Mostrar "No hay envíos pendientes" con ilustración simple y botón "Nuevo envío" que abre el wizard de firma (ep4).
+
+
+
+
+
+Ejemplo de código (servicio Angular)
+
+Ejemplo ilustrativo, no vinculante a una versión específica de Angular.
+
+// Servicio de gestión de envíos
+getPendingConsents(params?: {
+status?: 'pending' | 'completed' | 'expired';
+page?: number;
+perPage?: number;
+}): Observable<PaginatedResponse<PendingConsent>> {
+return this.http.get&ltPaginatedResponse&ltPendingConsent>>(
+`${environment.apiUrl}/panel/pending-consents`,
+{ params }
+);
+}
+
+
+
+
+
+
+
+
+POST
+
+Generar enlace de firma
+
+/api/panel/pending-consents
+
+
+
+
+
+
+Propósito / Cuándo se usa
+
+
+Crea un registro PendingConsent con el email del destinatario cifrado (AES-256-CBC mediante Crypt::encryptString()) y despacha un Job en cola que envía el correo transaccional con la URL mágica del Portal Cautivo. El enlace expira en 7 días. Se usa desde el panel Angular cuando el admin quiere enviar un documento a un trabajador o lead para su firma digital.
+
+
+
+
+
+
+POST
+/api/panel/pending-consents
+
+
+
+Headers requeridos
+
+
+Header	Valor	Notas
+
+
+Content-Type	string	application/json Requerido
+
+Accept	string	application/json Requerido
+
+Cookie	string	Session cookie enviada automáticamente por el navegador. Requiere withCredentials: true en el HttpClient. Requerido
+
+
+
+
+Autenticación: Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con GET /sanctum/csrf-cookie antes de llamar a este endpoint. Incluir withCredentials: true en todas las llamadas HTTP del panel. No usar Bearer token — las cookies de sesión se envían automáticamente.
+
+
+// En app.config.ts o el interceptor HTTP:
+provideHttpClient(withFetch(), withInterceptors([...])),
+// Y asegurarse de enviar credenciales (o configurarlo globalmente en el interceptor)
+
+
+
+Body params
+
+
+Campo	Tipo	Reglas de validación	Notas
+
+
+emails	array	required, array, min:1, max:50	Array de emails de destinatarios. Cada email se cifra automáticamente en el mutador del modelo vía Crypt::encryptString(). Máximo 50 por request. Requerido
+
+emails.*	string	email, max:255	Email individual válido.
+
+company_policy_id	integer	required, integer, exists:company_policies,id	ID autoincremental de la política a firmar. Debe obtenerse del listado de políticas publicadas (GET /api/company/policies?status=published). Requerido
+
+
+
+
+
+
+Validaciones de seguridad
+
+
+Regla	Qué valida	Respuesta si falla
+
+
+Pertenencia	La política (company_policy_id) debe pertenecer a la empresa del usuario autenticado.	403
+
+Estado de política	La política debe estar published. No se aceptan borradores (draft) ni archivadas (archived).	403
+
+Unicidad parcial	Índice pending_uniqueness_key previene duplicados activos para el mismo pii_hash + company_policy_id. Los duplicados se omiten silenciosamente y se reportan en skipped_count.	Las inserciones duplicadas se omiten (no fallan).
+
+
+
+
+
+
+Ejemplo de request
+
+{
+"emails": [
+"trabajador1@empresa.cl",
+"trabajador2@empresa.cl"
+],
+"company_policy_id": 20
+}
+
+
+
+201 Created &mdash; Envíos creados (parcial o total)
+
+Cuando al menos un email del array se procesa exitosamente, se retorna 201 con el conteo de enviados y omitidos.
+
+
+{
+"status": true,
+"message": "Proceso completado. 2 enlaces enviados, 1 omitidos (ya estaban pendientes).",
+"data": {
+"sent_count": 2,
+"skipped_count": 1
+}
+}
+
+
+
+200 OK &mdash; Todos los emails ya estaban pendientes
+
+Cuando todos los emails del array ya tenían un PendingConsent activo, no se crea ninguno nuevo. El frontend debe mostrar el mensaje tal como llega del backend.
+
+
+{
+"status": true,
+"message": "Proceso completado. 0 enlaces enviados, 3 omitidos (ya estaban pendientes).",
+"data": {
+"sent_count": 0,
+"skipped_count": 3
+}
+}
+
+
+
+Respuestas de error
+
+
+Código	Causa	Ejemplo de mensaje
+
+
+401	No autenticado (falta cookie de sesión)	{"status":false,"message":"Unauthenticated.","data":null}
+
+403	Política no pertenece a la empresa o no está publicada	{"status":false,"message":"La política especificada no está disponible para firma.","data":null}
+
+422	Validación: emails vacío, excede 50 o algún email inválido	Errores de validación estándar de Laravel
+
+429	Más de 10 requests POST por minuto (throttle)	{"message":"Too Many Attempts."}
+
+
+
+
+
+
+Flujo interno
+
+
+1Frontend envía POST /panel/pending-consents con array emails + company_policy_id.
+
+&darr;
+
+2Backend valida emails y company_policy_id. Resuelve empresa del usuario autenticado.
+
+&darr;
+
+3Verifica que la política pertenezca a la empresa y esté published. Si no: 403.
+
+&darr;
+
+4Itera cada email. Si no existe un pending activo: genera token, cifra email, crea PendingConsent y despacha SendConsentLinkJob. Si ya existe: incrementa skipped_count.
+
+&darr;
+
+5Retorna 200 (si todos omitidos) o 201 (si al menos 1 enviado) con sent_count y skipped_count.
+
+&darr;
+
+6[Background — Queue Workers] Cada SendConsentLinkJob descifra el email en memoria, construye URL mágica y despacha ConsentLinkMail.
+
+
+
+El 201 confirma que al menos un registro se creó y su Job se encoló, no que los correos ya llegaron. El envío es asincrónico vía la cola de base de datos.
+
+
+
+
+Ejemplo de código (servicio Angular)
+
+El input de correo en el modal de "Nuevo Envío" debe permitir múltiples correos (separados por coma o usando un componente de chips/tags). El frontend transforma ese input en un array de strings antes de enviarlo.
+
+sendPortalLinks(emails: string[], companyPolicyId: number): Observable<BulkSendResponse> {
+return this.http.post<BulkSendResponse>(
+`${environment.apiUrl}/panel/pending-consents`,
+{ emails, company_policy_id: companyPolicyId }
+);
+}
+
+// Manejo de respuesta
+this.sendPortalLinks(emails, policyId).subscribe({
+next: (res) => {
+const msg = res.data.sent_count > 0
+? `${res.data.sent_count} enlaces enviados`
+: &grave;Todos los correos ya estaban pendientes&grave;;
+if (res.data.skipped_count > 0) {
+msg += &grave;, ${res.data.skipped_count} omitidos&grave;;
+}
+this.showToast(msg);
+},
+error: (err) => this.showToast(err.error?.message || &grave;Error al enviar&grave;)
+});
+
+
+
+Notas de implementación
+
+
+- Throttle: máximo 10 requests POST por minuto por usuario.
+
+- El company_policy_id debe obtenerse del listado de políticas publicadas (GET /api/company/policies?status=published). Solo políticas publicadas son elegibles.
+
+- Mostrar mensaje de confirmación con sent_count y skipped_count tras la respuesta (ej: "2 enlaces enviados, 1 ya estaba pendiente").
+
+- Los emails duplicados dentro del mismo array no se procesan dos veces.
+
 - Más detalle en Característica F de la Guía Conceptual.
+
+
+
+
+
+
+
 
 Panel — Bóveda de Auditoría
 
+
+
+
 GET
+
 Bóveda de auditoría
+
 /api/panel/consent-logs
 
+
+
+
+
+
 Propósito / Cuándo se usa
+
+
 Registro inmutable de toda acción de consentimiento realizada por trabajadores y leads: firma (aceptar/rechazar), expiración automática, revocación. Cada registro incluye un proof hash (SHA-256 de 64 caracteres hex) que encadena cada entrada con su predecesora (previous_hash), formando una cadena de integridad tipo blockchain. Se usa en el panel Angular en la vista "Bóveda de Auditoría" para consulta, exportación y verificación forense.
+
+
+
 
 Inmutabilidad: Los registros en consent_logs no pueden ser modificados ni eliminados, ni por el frontend ni por el backend. Solo lectura (GET). Cualquier intento de DELETE/PUT/PATCH devuelve 405 Method Not Allowed.
 
-GET /api/panel/consent-logs
+
+
+
+
+GET
+/api/panel/consent-logs
+
+
 
 Headers requeridos
-Header Valor Notas
-Content-Type string application/json Requerido
-Accept string application/json Requerido
-Cookie string Session cookie enviada automáticamente por el navegador. Requiere withCredentials: true en el HttpClient. Requerido
+
+
+Header	Valor	Notas
+
+
+Content-Type	string	application/json Requerido
+
+Accept	string	application/json Requerido
+
+Cookie	string	Session cookie enviada automáticamente por el navegador. Requiere withCredentials: true en el HttpClient. Requerido
+
+
+
 
 Autenticación: Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con GET /sanctum/csrf-cookie antes de llamar a este endpoint. Incluir withCredentials: true en todas las llamadas HTTP del panel. No usar Bearer token — las cookies de sesión se envían automáticamente.
+
 
 // En app.config.ts o el interceptor HTTP:
 provideHttpClient(withFetch(), withInterceptors([...])),
 // Y asegurarse de enviar credenciales (o configurarlo globalmente en el interceptor)
 
+
+
 Query params
-Parámetro Tipo Default Notas
-date_from date|null ninguno Filtro por fecha inicial (incluyente). Formato: Y-m-d.
-date_to date|null ninguno Filtro por fecha final (incluyente). Formato: Y-m-d.
-email string|null ninguno Filtro por email del titular (búsqueda parcial, case-insensitive).
-status string|null todos Filtrar por estado: accepted, rejected, expired, revoked.
-per_page int 20 Resultados por página. Máximo 100.
-page int 1 Número de página.
+
+
+Parámetro	Tipo	Default	Notas
+
+
+date_from	date|null	ninguno	Filtro por fecha inicial (incluyente). Formato: Y-m-d.
+
+date_to	date|null	ninguno	Filtro por fecha final (incluyente). Formato: Y-m-d.
+
+email	string|null	ninguno	Filtro por email del titular (búsqueda parcial, case-insensitive).
+
+status	string|null	todos	Filtrar por estado: accepted, rejected, expired, revoked.
+
+search	string|null	ninguno	Búsqueda global en email del titular (parcial, case-insensitive). Busca tanto en identifier (email real) como en el email cifrado almacenado.
+
+per_page	int	15	Resultados por página. Máximo 100.
+
+page	int	1	Número de página.
+
+
+
+
+
 
 Respuesta exitosa 200 OK
+
 {
-  "status": true,
-  "message": "Bóveda de auditoría.",
-  "data": [
-    {
-      "id": 1,
-      "email": "trabajador@empresa.cl",
-      "action": "consent_given",
-      "status": "accepted",
-      "proof_hash": "abc123...",
-      "previous_hash": "def456...",
-      "metadata": {
-        "ip_address": "192.168.1.1",
-        "user_agent": "Mozilla/5.0..."
-      },
-      "created_at": "2026-07-24T04:02:00+00:00"
-    }
-  ],
-  "meta": {
-    "current_page": 1,
-    "last_page": 10,
-    "per_page": 20,
-    "total": 195
-  }
+"status": true,
+"message": "Bóveda de auditoría.",
+"data": [
+{
+"id": 1,
+"identifier": "trabajador@empresa.cl",
+"source": "live_portal",
+"action": "consent_given",
+"status": "accepted",
+"proof_hash": "abc123...",
+"previous_hash": "def456...",
+"metadata": {
+"ip_address": "192.168.1.1",
+"user_agent": "Mozilla/5.0..."
+},
+"created_at": "2026-07-24T04:02:00+00:00"
+}
+],
+"meta": {
+"current_page": 1,
+"last_page": 10,
+"per_page": 15,
+"total": 195
+}
 }
 
+
+
 Campos de la respuesta
-Campo Tipo Descripción
-id int ID del registro de auditoría.
-email string Email del titular en texto plano (descifrado en memoria).
-action string Acción realizada: consent_given, consent_rejected, consent_expired, consent_revoked.
-status string Estado resultante: accepted, rejected, expired, revoked.
-proof_hash string SHA-256 hash del registro (64 caracteres hex). Identificador único de integridad.
-previous_hash string|null SHA-256 del registro anterior en la cadena. null para el primer registro.
-metadata object Metadatos contextuales: IP, user-agent, etc.
-created_at datetime Timestamp de la acción.
+
+
+Campo	Tipo	Descripción
+
+
+id	int	ID del registro de auditoría.
+
+identifier	string|null	Email del titular en texto plano. null cuando source = "live_widget" (el Widget no expone identificadores). Para source = "live_portal" contiene el email real del destinatario.
+
+source	string	Origen del consentimiento: live_widget (desde Widget en sitio público, sin identificador expuesto) o live_portal (desde Portal Cautivo del panel, con email real).
+
+action	string	Acción realizada: consent_given, consent_rejected, consent_expired, consent_revoked.
+
+status	string	Estado resultante: accepted, rejected, expired, revoked.
+
+proof_hash	string	SHA-256 hash del registro (64 caracteres hex). Identificador único de integridad.
+
+previous_hash	string|null	SHA-256 del registro anterior en la cadena. null para el primer registro.
+
+metadata	object	Metadatos contextuales: IP, user-agent, etc.
+
+created_at	datetime	Timestamp de la acción.
+
+
+
+
+
 
 Respuestas de error
-Código Causa Ejemplo de mensaje
-401 No autenticado (token inválido o ausente) {"status":false,"message":"Unauthenticated.","data":null}
-422 Parámetro de filtro inválido {"message":"El campo date_from no es una fecha válida."}
+
+
+Código	Causa	Ejemplo de mensaje
+
+
+401	No autenticado (falta cookie de sesión)	{"status":false,"message":"Unauthenticated.","data":null}
+
+422	Parámetro de filtro inválido	{"message":"El campo date_from no es una fecha válida."}
+
+
+
+
+
 
 Notas de implementación
+
+
 - Inmutabilidad: consent_logs es solo lectura. No expone DELETE, PUT ni PATCH. El frontend no debe ofrecer acciones de edición/eliminación.
+
 - El proof hash se genera en el backend con hash('sha256', ...) sobre los campos del registro concatenados.
+
 - La cadena de integridad se verifica comparando previous_hash de cada registro con el proof_hash del registro anterior.
-- Paginación estándar (20 por defecto, máx. 100). Orden fijo: created_at DESC.
+
+- Paginación estándar (15 por defecto, máx. 100). Orden fijo: created_at DESC.
+
 - Scoped al tenant: solo devuelve registros de la empresa del usuario autenticado.
+
 - Más detalle en Característica G de la Guía Conceptual.
 
+
+
+
+
 UI — Tabla de auditoría
-Columna Datos Comportamiento
-Email item.email Texto plano.
-Acción item.action Badge de color: consent_given consent_rejected consent_expired consent_revoked
-Estado item.status Badge secundario.
-Proof Hash item.proof_hash Mostrar truncado (abc123...def) + botón copiar. Tooltip con hash completo.
-Fecha item.created_at | date:'medium' Formato fecha local con hora.
+
+
+Columna	Datos	Comportamiento
+
+
+Identificador	item.identifier	Texto plano si source = "live_portal". No disponible si source = "live_widget".
+
+Origen	item.source	Badge: live_portal live_widget
+
+Acción	item.action	Badge de color: consent_given consent_rejected consent_expired consent_revoked
+
+Estado	item.status	Badge secundario.
+
+Proof Hash	item.proof_hash	Mostrar truncado (abc123...def) + botón copiar. Tooltip con hash completo.
+
+Fecha	item.created_at | date:'medium'	Formato fecha local con hora.
+
+
+
 Filtros: Input de fecha desde/hasta, campo de búsqueda por email, selector de estado. Los filtros se aplican vía query params y actualizan la tabla vía nueva petición HTTP (no filtro en cliente).
+
+
 Estado vacío: Mostrar "No se encontraron registros de auditoría" con ilustración simple. Si hay filtros activos, mostrar botón "Limpiar filtros".
+
+
+
+
+
+
+
 
 Panel — Configuración
 
+
+
+
 GET
+
 Catálogo de fines legales
+
 /api/panel/consent-purposes
 
+
+
+
+
+
 Propósito / Cuándo se usa
+
+
 Se usa en el panel Angular cuando el usuario llena campos "Otro" con requires_purpose_selection: true en el wizard. Muestra un selector de checkboxes con los fines activos. La selección se guarda en wizard_data[{field_key}_purposes] y el backend los resuelve con WizardPurposeResolverService (regla 3).
 
-GET /api/panel/consent-purposes
+
+
+
+
+
+GET
+/api/panel/consent-purposes
+
+
 
 Headers requeridos
-Header Valor Notas
-Accept string application/json Requerido
-Cookie string Session cookie enviada automáticamente por el navegador. Requiere withCredentials: true en el HttpClient. Requerido
+
+
+Header	Valor	Notas
+
+
+Accept	string	application/json Requerido
+
+Cookie	string	Session cookie enviada automáticamente por el navegador. Requiere withCredentials: true en el HttpClient. Requerido
+
+
+
 
 Autenticación: Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con GET /sanctum/csrf-cookie antes de llamar a este endpoint. Incluir withCredentials: true en todas las llamadas HTTP del panel. No usar Bearer token — las cookies de sesión se envían automáticamente.
+
 
 // En app.config.ts o el interceptor HTTP:
 provideHttpClient(withFetch(), withInterceptors([...])),
 // Y asegurarse de enviar credenciales (o configurarlo globalmente en el interceptor)
 
+
+
 Respuesta exitosa 200 OK
+
 {
-  "status": true,
-  "message": "Catálogo de fines legales.",
-  "data": [
-    {
-      "id": 1,
-      "slug": "necessary_technical",
-      "category": "gestion_general",
-      "label": "Cookies técnicas y necesarias",
-      "description": "Indispensables para el funcionamiento básico del sitio...",
-      "requires_consent": false
-    },
-    {
-      "id": 2,
-      "slug": "analytics_behavior",
-      "category": "analisis_comportamiento",
-      "label": "Análisis de visitas y comportamiento",
-      "description": "Nos permiten entender cómo navegas por el sitio...",
-      "requires_consent": true
-    }
-  ]
+"status": true,
+"message": "Catálogo de fines legales.",
+"data": [
+{
+"id": 1,
+"slug": "necessary_technical",
+"category": "gestion_general",
+"label": "Cookies técnicas y necesarias",
+"description": "Indispensables para el funcionamiento básico del sitio...",
+"requires_consent": false
+},
+{
+"id": 2,
+"slug": "analytics_behavior",
+"category": "analisis_comportamiento",
+"label": "Análisis de visitas y comportamiento",
+"description": "Nos permiten entender cómo navegas por el sitio...",
+"requires_consent": true
 }
+]
+}
+
+
 
 Campos de la respuesta
-Campo Tipo Descripción
-id int ID interno del fin. Referencia frontend (no enviar al widget).
-slug string Identificador único. Ej: analytics_behavior, marketing_direct.
-category string Categoría UI: gestion_general, analisis_comportamiento, comercial_marketing, etc.
-label string Nombre legible. Ej: Análisis de visitas y comportamiento.
-description string Texto explicativo.
-requires_consent bool true = toggle editable. false = obligatorio, deshabilitado.
+
+
+Campo	Tipo	Descripción
+
+
+id	int	ID interno del fin. Referencia frontend (no enviar al widget).
+
+slug	string	Identificador único. Ej: analytics_behavior, marketing_direct.
+
+category	string	Categoría UI: gestion_general, analisis_comportamiento, comercial_marketing, etc.
+
+label	string	Nombre legible. Ej: Análisis de visitas y comportamiento.
+
+description	string	Texto explicativo.
+
+requires_consent	bool	true = toggle editable. false = obligatorio, deshabilitado.
+
+
+
+
+
 
 Respuestas de error
-Código Causa Ejemplo de mensaje
-401 No autenticado (falta Authorization o token inválido) {"message":"Unauthenticated."}
+
+
+Código	Causa	Ejemplo de mensaje
+
+
+401	No autenticado (falta Authorization o token inválido)	{"message":"Unauthenticated."}
+
+
+
+
+
 
 Notas de implementación
+
+
 - Solo se usa en el panel Angular, no en el widget público.
+
 - Devuelve todos los fines activos del catálogo global (13 slugs), no solo los que aplican a la empresa.
+
 - Para el widget, los fines activos se resuelven dinámicamente con WizardPurposeResolverService (3 reglas).
+
 - Más detalle en Característica B de la Guía Conceptual.
 
+
+
+
+
+
+
+
+
+
 PATCH
+
 Dominios autorizados CORS
+
 /api/panel/companies/domains
 
+
+
+
+
+
 Propósito / Cuándo se usa
+
+
 Actualiza la lista blanca de dominios donde la Pyme tiene embebido el Trust Widget. El middleware cors.dynamic valida el header Origin de cada request del widget contra esta lista. Sin esta configuración, el widget no puede comunicarse con el backend desde el sitio de la Pyme (CORS denegado).
 
-PATCH /api/panel/companies/domains
 
-Headers requeridos
-Header Valor Notas
-Content-Type string application/json Requerido
-Accept string application/json Requerido
-Cookie string Session cookie (Sanctum SPA). Requiere withCredentials: true. Requerido
 
-Body params
-Campo Tipo Reglas de validación Notas
-domains array present, array, max:10 Array de dominios FQDN. Enviar [] para limpiar. Requerido
-domains.* string regex FQDN válido Sin http://, sin rutas, sin IPs. Ej: mitienda.cl.
 
-Ejemplo de request
-{
-  "domains": [
-    "mitienda.cl",
-    "checkout.mitienda.cl"
-  ]
-}
 
-Respuesta exitosa 200 OK
-{
-  "status": true,
-  "message": "Dominios actualizados correctamente.",
-  "data": {
-    "allowed_domains": [
-      "mitienda.cl",
-      "checkout.mitienda.cl"
-    ]
-  }
-}
-
-Respuestas de error
-Código Causa Ejemplo de mensaje
-401 No autenticado (falta cookie de sesión) {"message":"Unauthenticated."}
-422 Validación: dominio inválido, más de 10 dominios {"message":"El campo domains.0 no es un dominio válido."}
-
-Notas de implementación
-- Los dominios se cachean en el middleware cors.dynamic por 12h. El cambio se refleja con el próximo miss de caché.
-- Máximo 10 dominios por empresa. Para limpiar la lista, enviar {"domains": []}.
-- Validación FQDN: no acepta protocolos (http://), rutas (/path) ni direcciones IP.
-- Más detalle en Característica D de la Guía Conceptual.
 
 PATCH
-Personalizar widget visual
-/api/panel/companies/widget-config
+/api/panel/companies/domains
 
-Propósito / Cuándo se usa
-Actualiza la configuración visual del Trust Widget de la Pyme: color primario, logo, textos del banner y etiquetas de botones. Usa deep merge recursivo (array_replace_recursive) para preservar llaves anidadas existentes (ej: legal_texts.policy_url) que no se envíen en el request.
 
-PATCH /api/panel/companies/widget-config
 
 Headers requeridos
-Header Valor Notas
-Content-Type string application/json Requerido
-Accept string application/json Requerido
-Cookie string Session cookie (Sanctum SPA). Requiere withCredentials: true. Requerido
 
-Body params (todos opcionales)
-Campo Tipo Reglas de validación Notas
-primary_color string|null regex: ^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$ Color hex. Ej: #1a73e8.
-logo_url string|null url, max:2048 URL del logo de la Pyme en el banner.
-legal_texts object|null array Textos legales del banner (anidado).
-legal_texts.banner_title string|null string, max:255 Título del banner de cookies.
-legal_texts.banner_body string|null string, max:1000 Cuerpo del texto del banner.
-button_accept_text string|null string, max:50 Texto del botón "Aceptar".
-button_reject_text string|null string, max:50 Texto del botón "Rechazar".
+
+Header	Valor	Notas
+
+
+Content-Type	string	application/json Requerido
+
+Accept	string	application/json Requerido
+
+Cookie	string	Session cookie (Sanctum SPA). Requiere withCredentials: true. Requerido
+
+
+
+
+
+
+Body params
+
+
+Campo	Tipo	Reglas de validación	Notas
+
+
+domains	array	present, array, max:10	Array de dominios FQDN. Enviar [] para limpiar. Requerido
+
+domains.*	string	regex FQDN válido	Sin http://, sin rutas, sin IPs. Ej: mitienda.cl.
+
+
+
+
+
 
 Ejemplo de request
+
 {
-  "primary_color": "#2ecc71",
-  "logo_url": "https://cdn.mitienda.cl/logo.png",
-  "legal_texts": {
-    "banner_title": "Valoramos tu privacidad",
-    "banner_body": "Usamos cookies para mejorar tu experiencia..."
-  },
-  "button_accept_text": "Aceptar todas",
-  "button_reject_text": "Solo necesarias"
+"domains": [
+"mitienda.cl",
+"checkout.mitienda.cl"
+]
 }
+
+
 
 Respuesta exitosa 200 OK
-Devuelve el objeto completo de widget_config después del merge, incluyendo llaves preexistentes que no se enviaron.
+
 {
-  "status": true,
-  "message": "Configuración del widget actualizada.",
-  "data": {
-    "position": "bottom-left",
-    "primary_color": "#2ecc71",
-    "logo_url": "https://cdn.mitienda.cl/logo.png",
-    "show_reject_all": true,
-    "legal_texts": {
-      "banner_title": "Valoramos tu privacidad",
-      "banner_body": "Usamos cookies para mejorar tu experiencia...",
-      "policy_url": "https://cdn.tudominio.com/policies/abc123.html"
-    },
-    "button_accept_text": "Aceptar todas",
-    "button_reject_text": "Solo necesarias"
-  }
+"status": true,
+"message": "Dominios actualizados correctamente.",
+"data": {
+"allowed_domains": [
+"mitienda.cl",
+"checkout.mitienda.cl"
+]
+}
 }
 
+
+
 Respuestas de error
-Código Causa Ejemplo de mensaje
-401 No autenticado (falta cookie de sesión) {"message":"Unauthenticated."}
-422 Validación: color inválido, URL mal formada {"message":"El campo primary_color no es un color hex válido."}
+
+
+Código	Causa	Ejemplo de mensaje
+
+
+401	No autenticado (falta cookie de sesión)	{"message":"Unauthenticated."}
+
+422	Validación: dominio inválido, más de 10 dominios	{"message":"El campo domains.0 no es un dominio válido."}
+
+
+
+
+
 
 Notas de implementación
+
+
+- Los dominios se cachean en el middleware cors.dynamic por 12h. El cambio se refleja con el próximo miss de caché.
+
+- Máximo 10 dominios por empresa. Para limpiar la lista, enviar {"domains": []}.
+
+- Validación FQDN: no acepta protocolos (http://), rutas (/path) ni direcciones IP.
+
+- Más detalle en Característica D de la Guía Conceptual.
+
+
+
+
+
+
+
+
+
+
+PATCH
+
+Personalizar widget visual
+
+/api/panel/companies/widget-config
+
+
+
+
+
+
+Propósito / Cuándo se usa
+
+
+Actualiza la configuración visual del Trust Widget de la Pyme: color primario, logo, textos del banner y etiquetas de botones. Usa deep merge recursivo (array_replace_recursive) para preservar llaves anidadas existentes (ej: legal_texts.policy_url) que no se envíen en el request.
+
+
+
+
+
+
+PATCH
+/api/panel/companies/widget-config
+
+
+
+Headers requeridos
+
+
+Header	Valor	Notas
+
+
+Content-Type	string	application/json Requerido
+
+Accept	string	application/json Requerido
+
+Cookie	string	Session cookie (Sanctum SPA). Requiere withCredentials: true. Requerido
+
+
+
+
+
+
+Body params (todos opcionales)
+
+
+Campo	Tipo	Reglas de validación	Notas
+
+
+primary_color	string|null	regex: ^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$	Color hex. Ej: #1a73e8.
+
+logo_url	string|null	url, max:2048	URL del logo de la Pyme en el banner.
+
+legal_texts	object|null	array	Textos legales del banner (anidado).
+
+legal_texts.banner_title	string|null	string, max:255	Título del banner de cookies.
+
+legal_texts.banner_body	string|null	string, max:1000	Cuerpo del texto del banner.
+
+button_accept_text	string|null	string, max:50	Texto del botón "Aceptar".
+
+button_reject_text	string|null	string, max:50	Texto del botón "Rechazar".
+
+
+
+
+
+
+Ejemplo de request
+
+{
+"primary_color": "#2ecc71",
+"logo_url": "https://cdn.mitienda.cl/logo.png",
+"legal_texts": {
+"banner_title": "Valoramos tu privacidad",
+"banner_body": "Usamos cookies para mejorar tu experiencia..."
+},
+"button_accept_text": "Aceptar todas",
+"button_reject_text": "Solo necesarias"
+}
+
+
+
+Respuesta exitosa 200 OK
+
+Devuelve el objeto completo de widget_config después del merge, incluyendo llaves preexistentes que no se enviaron.
+
+
+{
+"status": true,
+"message": "Configuración del widget actualizada.",
+"data": {
+"position": "bottom-left",
+"primary_color": "#2ecc71",
+"logo_url": "https://cdn.mitienda.cl/logo.png",
+"show_reject_all": true,
+"legal_texts": {
+"banner_title": "Valoramos tu privacidad",
+"banner_body": "Usamos cookies para mejorar tu experiencia...",
+"policy_url": "https://cdn.tudominio.com/policies/abc123.html"
+},
+"button_accept_text": "Aceptar todas",
+"button_reject_text": "Solo necesarias"
+}
+}
+
+
+
+Respuestas de error
+
+
+Código	Causa	Ejemplo de mensaje
+
+
+401	No autenticado (falta cookie de sesión)	{"message":"Unauthenticated."}
+
+422	Validación: color inválido, URL mal formada	{"message":"El campo primary_color no es un color hex válido."}
+
+
+
+
+
+
+Notas de implementación
+
+
 - Todos los campos son opcionales. Se envía solo lo que se quiere cambiar.
+
 - Deep merge: array_replace_recursive preserva llaves anidadas no enviadas (ej: legal_texts.policy_url).
+
 - Valores null se filtran antes del merge para no sobrescribir configuraciones existentes.
+
 - Más detalle en Característica E de la Guía Conceptual.
+
+
+
+
+
+
+
 
 Portal Cautivo
 
+
+
+
 GET
+
 Portal Cautivo — datos de firma
+
 /api/portal/consent/{token}
 
+
+
+
+
+
 Propósito / Cuándo se usa
+
+
 Punto de entrada del Portal Cautivo. Se invoca cuando el destinatario hace clic en el enlace mágico de su correo transaccional. Devuelve los datos de la empresa, la política legal, el email del destinatario y los propósitos activos para renderizar la pantalla de firma. Sin autenticación.
 
-GET /api/portal/consent/{token}
+
+
+
+
+
+GET
+/api/portal/consent/{token}
+
+
 
 Path parameters
-Parámetro Tipo Descripción
-token string (hex 64) Token criptográfico aleatorio de 64 caracteres hexadecimales. Identifica la empresa + política + destinatario. No enumerable. Requerido
+
+
+Parámetro	Tipo	Descripción
+
+
+token	string (hex 64)	Token criptográfico aleatorio de 64 caracteres hexadecimales. Identifica la empresa + política + destinatario. No enumerable. Requerido
+
+
 
 El token va solo en la URL. No debe persistirse en localStorage ni sessionStorage por seguridad.
 
+
+
+
 Respuesta exitosa 200 OK
+
 {
-  "company": {
-    "business_name": "Tech Solutions Latam",
-    "logo_url": "https://cdn.mitienda.cl/logo.png"
-  },
-  "policy": {
-    "name": "Política de Cookies",
-    "policy_hash": "a1b2c3d4e5f67890...",
-    "url": "http://127.0.0.1:8000/api/public/policies/a1b2c3..."
-  },
-  "recipient": {
-    "email": "juan.perez@empresa.cl"
-  },
-  "purposes": {
-    "necessary_technical": {
-      "label": "Cookies técnicas y necesarias",
-      "description": "Indispensables para el funcionamiento...",
-      "required": true,
-      "default": true,
-      "legal_basis": "legitimate_interest",
-      "widget_action": null
-    },
-    "analytics_behavior": {
-      "label": "Análisis de visitas y comportamiento",
-      "description": "Nos permiten entender cómo navegas...",
-      "required": false,
-      "default": false,
-      "legal_basis": "consent",
-      "widget_action": "load_analytics_scripts"
-    }
-  }
+"company": {
+"business_name": "Tech Solutions Latam",
+"logo_url": "https://cdn.mitienda.cl/logo.png"
+},
+"policy": {
+"name": "Política de Cookies",
+"policy_hash": "a1b2c3d4e5f67890...",
+"url": "http://127.0.0.1:8000/api/public/policies/a1b2c3..."
+},
+"recipient": {
+"email": "juan.perez@empresa.cl"
+},
+"purposes": {
+"necessary_technical": {
+"label": "Cookies técnicas y necesarias",
+"description": "Indispensables para el funcionamiento...",
+"required": true,
+"default": true,
+"legal_basis": "legitimate_interest",
+"widget_action": null
+},
+"analytics_behavior": {
+"label": "Análisis de visitas y comportamiento",
+"description": "Nos permiten entender cómo navegas...",
+"required": false,
+"default": false,
+"legal_basis": "consent",
+"widget_action": "load_analytics_scripts"
+}
+}
 }
 
 Nota: La estructura de cada propósito en el Portal Cautivo es idéntica a la del endpoint GET /api/widget/{company_public_uuid}/config. El mismo código que renderiza los toggles del Trust Widget puede reutilizarse en el Portal Cautivo.
 
+
 Campos de la respuesta
-Campo Tipo Descripción
-company.business_name string Razón social de la empresa que emite el documento.
-company.logo_url string | null URL del logo de la empresa (desde widget_config). null si no configurado.
-policy.name string Nombre legible de la política. Ej: "Política de Cookies".
-policy.policy_hash string SHA-256 del contenido de la política.
-policy.url string URL pública para leer el documento completo en el navegador.
-recipient.email string | null Email del destinatario (PII descifrado en memoria, nunca loggeado).
-purposes object Diccionario slug → {label, description, required, default, legal_basis}. No es un array, iterar con Object.entries().
+
+Campos de la respuesta
+
+
+Campo	Tipo	Descripción
+
+
+company.business_name	string	Razón social de la empresa que emite el documento.
+
+company.logo_url	string | null	URL del logo de la empresa (desde widget_config). null si no configurado.
+
+policy.name	string	Nombre legible de la política. Ej: "Política de Cookies".
+
+policy.policy_hash	string	SHA-256 del contenido de la política.
+
+policy.url	string	URL pública para leer el documento completo en el navegador.
+
+recipient.email	string | null	Email del destinatario (PII descifrado en memoria, nunca loggeado).
+
+purposes	object	Diccionario slug &rarr; {label, description, required, default, legal_basis}. No es un array, iterar con Object.entries().
+
+
+
+
+
 
 Manejo de estados HTTP (errores)
-Código Significado Mensaje JSON
-404 Token no existe {"status":false,"message":"El enlace no es válido o no existe.","data":null}
-409 Ya confirmado {"status":false,"message":"Este documento ya fue firmado previamente.","data":null}
-410 Token expirado {"status":false,"message":"El enlace ha expirado. Solicita uno nuevo.","data":null}
+
+
+Código	Significado	Mensaje JSON
+
+
+404	Token no existe	{"status":false,"message":"El enlace no es válido o no existe.","data":null}
+
+409	Ya confirmado	{"status":false,"message":"Este documento ya fue firmado previamente.","data":null}
+
+410	Token expirado	{"status":false,"message":"El enlace ha expirado. Solicita uno nuevo.","data":null}
+
+
 
 El frontend debe leer y mostrar el campo message del JSON de error, no hardcodear textos. Cada código HTTP tiene su propia UI (error, éxito preventivo, expiración).
 
+
+
+
 Notas de seguridad
+
+
 - El token es criptográficamente aleatorio (64 chars hex), no enumerable ni predecible.
+
 - El PII del destinatario se descifra en memoria, nunca se loggea ni se expone en URLs.
+
 - No guardar el token en localStorage ni sessionStorage.
+
 - Rate limiting: 60 req/min por IP.
 
+
+
+
+
+
+
+
+
+
 POST
+
 Portal Cautivo — confirmar firma
+
 /api/portal/consent/{token}/confirm
 
+
+
+
+
+
 Propósito / Cuándo se usa
+
+
 Procesa la firma del destinatario. Crea un registro inmutable en consent_logs (capture_method = live_portal), marca el token como confirmado y devuelve un proof_hash como recibo criptográfico. Idempotente: reenvíos retornan 409.
 
-POST /api/portal/consent/{token}/confirm
+
+
+
+
+
+POST
+/api/portal/consent/{token}/confirm
+
+
 
 Headers requeridos
-Header Valor Notas
-Content-Type string application/json Requerido
-Accept string application/json Requerido
+
+
+Header	Valor	Notas
+
+
+Content-Type	string	application/json Requerido
+
+Accept	string	application/json Requerido
+
+
+
+
+
 
 Path parameters
-Parámetro Tipo Descripción
-token string (hex 64) Mismo token recibido en el GET. Identifica la sesión de firma. Requerido
+
+
+Parámetro	Tipo	Descripción
+
+
+token	string (hex 64)	Mismo token recibido en el GET. Identifica la sesión de firma. Requerido
+
+
+
+
+
 
 Body params
-Campo Tipo Reglas de validación Notas
-purposes object required, array; slugs: boolean Diccionario slug → booleano reflejando el estado de los toggles. Los fines obligatorios (required=true) se fuerzan a true en backend.
-visitor_uuid UUID v4 required, uuid UUID anónimo del dispositivo, persistido en localStorage. Generado con crypto.randomUUID().
+
+
+Campo	Tipo	Reglas de validación	Notas
+
+
+purposes	object	required, array; slugs: boolean	Diccionario slug &rarr; booleano reflejando el estado de los toggles. Los fines obligatorios (required=true) se fuerzan a true en backend.
+
+visitor_uuid	UUID v4	required, uuid	UUID anónimo del dispositivo, persistido en localStorage. Generado con crypto.randomUUID().
+
+
+
+
+
 
 Ejemplo de request
+
 {
-  "purposes": {
-    "necessary_technical": true,
-    "analytics": false
-  },
-  "visitor_uuid": "550e8400-e29b-41d4-a716-446655440000"
+"purposes": {
+"necessary_technical": true,
+"analytics": false
+},
+"visitor_uuid": "550e8400-e29b-41d4-a716-446655440000"
 }
+
+
 
 Respuesta exitosa 201 Created
+
 {
-  "status": true,
-  "message": "Documento firmado correctamente.",
-  "data": {
-    "status": "confirmed",
-    "proof_hash": "ee76856e57b8ecd5eca0f6d22fa7311cc33398440921f7af8142e1c966747320"
-  }
+"status": true,
+"message": "Documento firmado correctamente.",
+"data": {
+"status": "confirmed",
+"proof_hash": "ee76856e57b8ecd5eca0f6d22fa7311cc33398440921f7af8142e1c966747320"
+}
 }
 
+
+
 Manejo de estados HTTP
-Código Significado UI / Mensaje
-404 Token no existe (entre GET y POST) Pantalla error: usar response.error.message
-409 Ya confirmado Pantalla éxito preventivo: leer message del JSON
-410 Expiró entre GET y POST Pantalla expiración: leer message del JSON
-422 Validación falló (purposes vacío, visitor_uuid inválido) Mensaje inline, no cambiar pantalla
-500 Error interno BD Mensaje genérico, reintentar
+
+
+Código	Significado	UI / Mensaje
+
+
+404	Token no existe (entre GET y POST)	Pantalla error: usar response.error.message
+
+409	Ya confirmado	Pantalla éxito preventivo: leer message del JSON
+
+410	Expiró entre GET y POST	Pantalla expiración: leer message del JSON
+
+422	Validación falló (purposes vacío, visitor_uuid inválido)	Mensaje inline, no cambiar pantalla
+
+500	Error interno BD	Mensaje genérico, reintentar
+
+
 
 El backend retorna el mensaje exacto en message. El frontend debe leerlo y mostrarlo, no hardcodear textos distintos.
 
+
+
+
 Notas de implementación
+
+
 - Idempotencia: si el token ya fue confirmado, retorna 409 (no 200). El frontend muestra pantalla de "ya firmado".
+
 - Recarga de página: si el usuario recarga después de firmar, el GET retorna 409. El frontend debe mostrar pantalla de éxito preventivo.
+
 - Fines con required=true se fuerzan a true en backend aunque el frontend envíe false (defensa en profundidad).
+
 - Slugs no activos se ignoran silenciosamente.
+
 - El proof_hash debe mostrarse al usuario como "Código de recibo de firma" con botón de copiar al portapapeles.
+
 - Rate limiting: 60 req/min por IP. No spammear reintentos.
+
+- Los correos enviados desde el Portal Cautivo son transaccionales (no marketing). Deben configurarse con un remitente verificado y prioridad alta en el proveedor de email transactional (Resend, SES, etc.).
+
 - Más detalle en Característica F de la Guía Conceptual.
 
-Tabla resumen — Diez endpoints
-# Endpoint Método Auth Módulo Descripción
-01 /api/widget/{uuid}/config GET Público Widget Configuración del banner
-02 /api/widget/{uuid}/consent POST Público Widget Registrar consentimiento
-03 /api/panel/pending-consents GET Sanctum Gestión de Envíos Listar consents pendientes
-04 /api/panel/pending-consents POST Sanctum Gestión de Envíos Generar enlace de firma
-05 /api/panel/consent-logs GET Sanctum Bóveda de Auditoría Bóveda de auditoría
-06 /api/panel/consent-purposes GET Sanctum Configuración Catálogo de fines legales
-07 /api/panel/companies/domains PATCH Sanctum Configuración Dominios autorizados CORS
-08 /api/panel/companies/widget-config PATCH Sanctum Configuración Personalizar widget visual
-09 /api/portal/consent/{token} GET Público Portal Cautivo Portal Cautivo — datos de firma
-10 /api/portal/consent/{token}/confirm POST Público Portal Cautivo Portal Cautivo — confirmar firma
+
+
+
+
+
+
+
+
+Tabla resumen — Once endpoints
+
+
+#	Endpoint	Método	Auth	Módulo	Descripción
+
+
+01	/api/widget/{uuid}/config	GET	Público	Widget	Configuración del banner
+
+02	/api/widget/{uuid}/consent	POST	Público	Widget	Registrar consentimiento
+
+03	/api/panel/pending-consents	GET	Sanctum	Gestión de Envíos	Listar consents pendientes
+
+04	/api/panel/pending-consents	POST	Sanctum	Gestión de Envíos	Generar enlace de firma
+
+05	/api/panel/consent-logs	GET	Sanctum	Bóveda de Auditoría	Bóveda de auditoría
+
+06	/api/panel/consent-purposes	GET	Sanctum	Configuración	Catálogo de fines legales
+
+07	/api/panel/companies/domains	PATCH	Sanctum	Configuración	Dominios autorizados CORS
+
+08	/api/panel/companies/widget-config	PATCH	Sanctum	Configuración	Personalizar widget visual
+
+09	/api/portal/consent/{token}	GET	Público	Portal Cautivo	Portal Cautivo — datos de firma
+
+10	/api/portal/consent/{token}/confirm	POST	Público	Portal Cautivo	Portal Cautivo — confirmar firma
+
+11	/api/company/policies	GET	Público	Configuración	Políticas publicadas (dropdown)

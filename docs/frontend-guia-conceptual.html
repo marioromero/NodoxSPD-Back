@@ -1470,6 +1470,7 @@ const payload = {
     <ul>
         <li><strong>CORS:</strong> El backend ya configura <code>Access-Control-Allow-Origin</code> para <code>http://localhost:4200</code> y <code>https://nodoxspd.cl</code>. No requiere headers especiales del frontend.</li>
         <li><strong>Rate limiting:</strong> 60 req/min por IP. No spammear reintentos en errores 4xx/5xx.</li>
+        <li><strong>Correo transaccional:</strong> Los correos del Portal Cautivo son transaccionales (no marketing). Configurar remitente verificado y prioridad alta en el proveedor de email (Resend, SES, etc.).</li>
         <li><strong>No persistir el token:</strong> El token va solo en la URL. No guardarlo en localStorage ni sessionStorage.</li>
         <li><strong>Recarga de página post-firma:</strong> Si el usuario recarga la página después de haber firmado, el <code>GET /api/portal/consent/{token}</code> retorna <strong>409</strong>. El frontend debe interpretar el 409 del GET exactamente igual que el 201 del POST: mostrar la pantalla de éxito con el <code>proof_hash</code> (si el backend lo incluye). No mostrar error. No redirigir. La pantalla de éxito debe poder renderizarse sin haber pasado por el flujo de firma — solo con el 409 del GET es suficiente.</li>
         <li><strong>Accesibilidad:</strong> Los toggles deben ser operables por teclado (tab + space). El botón de copiar proof_hash debe tener <code>aria-label</code>.</li>

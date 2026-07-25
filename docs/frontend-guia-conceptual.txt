@@ -1,129 +1,384 @@
-﻿Guía Frontend — Módulo 2 — NodoxSPD
+Guía Frontend — Módulo 2 — NodoxSPD
 
-Guía Frontend — Módulo 2
 
-Características frontend para integrar el Trust Widget de Consentimientos: widget embebible Vanilla JS, patch de selección de propósitos legales en el wizard, pantalla de auditoría de consentimientos, gestión de dominios CORS, personalización visual del widget y Portal Cautivo público de firma.
+
+
+&#9776;
+
+
+
+
+
+
+&#128218; Documentación
+Frontend — Guía
+
+
+&larr; Volver al índice
+
+
+
 
 Introducción
 
+- Visión general
+
+- Flujo global frontend-backend
+
+
+
+
+
+Característica A
+
+- Vanilla JS — Widget de Cookies
+
+- ⚠️ Orden de instalación
+
+- Inicialización
+
+- Gestión del visitor_uuid
+
+- Llamada a /config
+
+- Detección de consentimiento previo
+
+- Render del banner
+
+- Envío de consentimiento
+
+- Construcción del payload
+
+- Tabla de mapeo de acciones
+
+- Degradación graceful
+
+
+
+
+
+Característica B
+
+- Angular — Patch de Propósitos
+
+- Origen del patch
+
+- Código del patch
+
+
+
+
+
+Característica C
+
+- Angular — Pantalla de Registro de Consentimientos
+
+- Ruta y endpoint
+
+- Layout y encabezado
+
+- Barra de filtros
+
+- Tabla de datos
+
+- Paginación y estado vacío
+
+- Contrato JSON de datos
+
+
+
+
+
+Característica D
+
+- Panel — Dominios Autorizados CORS
+
+- Endpoint
+
+- Funcionamiento
+
+
+
+
+
+Característica E
+
+- Panel — Personalización Visual del Widget
+
+- Endpoint
+
+- Funcionamiento
+
+
+
+
+
+Característica F
+
+- Portal Cautivo Público
+
+- Ruta Angular y layout
+
+- GET — Obtener datos de firma
+
+- POST — Confirmar firma
+
+- Flujo completo
+
+
+
+
+
+
+
+
+
+Guía Frontend — Módulo 2
+Características frontend para integrar el Trust Widget de Consentimientos: widget embebible Vanilla JS, patch de selección de propósitos legales en el wizard, pantalla de auditoría de consentimientos, gestión de dominios CORS, personalización visual del widget y Portal Cautivo público de firma.
+
+
+
+
+
+
+Introducción
+
+
+
+
 El Módulo 2 expone endpoints públicos y del panel: configuración del widget, registro de consentimiento, catálogo de fines legales, gestión de dominios CORS, personalización visual y Portal Cautivo de firma. Además incluye un flujo Angular que complementa el wizard de generación de políticas con la selección manual de propósitos legales cuando el usuario escribe texto libre en campos "Otro".
+
+
+
 
 Esta guía describe las siguientes características frontend:
 
+
+
+
 - Característica A — Widget de cookies en Vanilla JS que las Pymes embeden en sus sitios web. Renderiza un banner, obtiene la config desde el backend y envía el consentimiento del visitante.
+
 - Característica B — Patch de selección de propósitos en Angular (panel interno de la Pyme). Se activa cuando un campo "Otro" del wizard tiene requires_purpose_selection: true.
+
 - Característica C — Pantalla de Registro de Consentimientos en Angular (panel interno de la Pyme). Muestra el ledger inmutable con filtros, paginación y sellos legales.
+
 - Característica D — Panel de gestión de dominios autorizados CORS para el Trust Widget (endpoint PATCH /api/panel/companies/domains).
+
 - Característica E — Panel de personalización visual del Trust Widget (endpoint PATCH /api/panel/companies/widget-config).
+
 - Característica F — Portal Cautivo Público: interfaz de firma de documentos legales vía enlace mágico, fuera del panel protegido. Rutas GET /api/portal/consent/{token} y POST /api/portal/consent/{token}/confirm.
+
+
+
+
+
+
 
 Característica A — Widget de Cookies (Vanilla JS)
 
+
+Característica A
 Widget de Cookies — Vanilla JS
 Script embebible que las Pymes insertan en su sitio web. Sin dependencias externas (sin jQuery, sin React). Compatible con CSP estrictas.
 
+
+
+
+
 Flujo del widget
 
-1. Visitante carga el sitio. El snippet bloquea rastreadores por defecto (dataLayer con denied) y carga widget.js.
-2. Widget se inicializa: genera/obtiene visitor_uuid de localStorage, identifica la empresa por data-company.
-3. Widget hace GET /api/widget/{uuid}/config. Backend responde con propósitos, configuración visual, policy_hash.
-4. Widget renderiza banner de cookies usando la configuración visual recibida (color, posición, textos).
-5. Visitante acepta, rechaza o configura propósitos. Widget ensambla payload {purposes, visitor_uuid}.
-6. Widget envía POST /api/widget/consent. Backend registra en consent_logs, firma con SHA-256, responde 201.
-7. Widget actualiza dataLayer de Google Consent Mode con la preferencia del visitante.
-8. Si el request falla (timeout/red/5xx): guardar el payload en localStorage bajo la clave nodox_consent_pending_{companyUuid}. En la próxima inicialización del widget, verificar si existe esta clave y reintentar el POST silenciosamente antes de evaluar si mostrar el banner.
+
+1Visitante carga el sitio. El snippet bloquea rastreadores por defecto (dataLayer con denied) y carga widget.js.
+
+&darr;
+
+2Widget se inicializa: genera/obtiene visitor_uuid de localStorage, identifica la empresa por data-company.
+
+&darr;
+
+3Widget hace GET /api/widget/{uuid}/config. Backend responde con propósitos, configuración visual, policy_hash.
+
+&darr;
+
+4Widget renderiza banner de cookies usando la configuración visual recibida (color, posición, textos).
+
+&darr;
+
+5Visitante acepta, rechaza o configura propósitos. Widget ensambla payload {purposes, visitor_uuid}.
+
+&darr;
+
+6Widget envía POST /api/widget/consent. Backend registra en consent_logs, firma con SHA-256, responde 201.
+
+&darr;
+
+7Widget actualiza dataLayer de Google Consent Mode con la preferencia del visitante.
+
+&darr;
+
+8Si el request falla (timeout/red/5xx): guardar el payload en localStorage bajo la clave nodox_consent_pending_{companyUuid}. En la próxima inicialización del widget, verificar si existe esta clave y reintentar el POST silenciosamente antes de evaluar si mostrar el banner.
+
+
+
+
 
 ⚠️ Orden de Instalación Obligatorio (Cumplimiento Legal)
 
+
+
+
 El snippet de instalación no es un solo script: son tres bloques que deben respetarse estrictamente en el orden indicado. Si la Pyme ya tiene Google Analytics u otro tracker en su <head>, debe moverlo obligatoriamente después del Bloque 2. Si se ejecuta antes, la cookie se inyecta sin consentimiento y pierde toda validez legal bajo la Ley 21.719.
+
+
+
+
 
 <!-- BLOQUE 1 (Obligatorio, síncrono): -->
 <!-- Debe ir ANTES de cualquier script de rastreo. -->
 <!-- Establece la denegación por defecto desde el primer milisegundo. -->
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('consent', 'default', {
-    analytics_storage:   'denied',
-    ad_storage:          'denied',
-    ad_user_data:        'denied',
-    ad_personalization:  'denied',
-    wait_for_update:     500
-  });
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('consent', 'default', {
+analytics_storage:   'denied',
+ad_storage:          'denied',
+ad_user_data:        'denied',
+ad_personalization:  'denied',
+wait_for_update:     500
+});
 </script>
 
 <!-- BLOQUE 2: El Trust Widget (async, no bloquea el render) -->
 <script src="https://cdn.tudominio.com/widget/v1/widget.js"
-        data-company="TU_PUBLIC_UUID_AQUI" async></script>
+data-company="TU_PUBLIC_UUID_AQUI" async></script>
 
 <!-- BLOQUE 3: Scripts de terceros (ej. Google Analytics) SIEMPRE después del widget -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXX"></script>
 
-Bloque  | Qué hace | Advertencia legal
-1 — Denegación por defecto | Establece gtag('consent', 'default', {...denied...}) para Google Consent Mode v2. Esto bloquea cualquier cookie de analytics, ads y personalización desde el primer milisegundo de carga, incluso si terceros scripts aparecen accidentalmente antes del widget. | Sin este bloque, el tracker de GA4 o Meta puede cargar y etiquetar al usuario antes de que el widget tenga oportunidad de denegar. Nulo de pleno derecho.
-2 — Trust Widget | Carga el widget de consentimiento (async). El widget obtiene la configuración desde el backend y renderiza el banner. Cuando el visitante decide sus preferencias, el widget ejecuta gtag('consent', 'update', ...) según la configuración recibida. | Debe cargarse antes que cualquier script de terceros. Si se carga después de GA4, las cookies de analytics ya se habrán inyectado sin consentimiento.
-3 — Scripts de terceros | Google Analytics, Meta Pixel, Hotjar, etc. Se cargan después del widget para que éste tenga tiempo de establecer el consentimiento default antes de que los trackers se ejecuten. | Si la Pyme tiene estos scripts en el <head> antes del Bloque 2, debe moverlos obligatoriamente después. No hacerlo invalida el consentimiento legal.
+
+
+
+Bloque	Qué hace	Advertencia legal
+
+
+
+1 &mdash; Denegación por defecto	
+Establece gtag('consent', 'default', {...denied...}) para Google Consent Mode v2. Esto bloquea cualquier cookie de analytics, ads y personalización desde el primer milisegundo de carga, incluso si terceros scripts aparecen accidentalmente antes del widget.	
+Sin este bloque, el tracker de GA4 o Meta puede cargar y etiquetar al usuario antes de que el widget tenga oportunidad de denegar. Nulo de pleno derecho.	
+
+
+
+2 &mdash; Trust Widget	
+Carga el widget de consentimiento (async). El widget obtiene la configuración desde el backend y renderiza el banner. Cuando el visitante decide sus preferencias, el widget ejecuta gtag('consent', 'update', ...) según la configuración recibida.	
+Debe cargarse antes que cualquier script de terceros. Si se carga después de GA4, las cookies de analytics ya se habrán inyectado sin consentimiento.	
+
+
+
+3 &mdash; Scripts de terceros	
+Google Analytics, Meta Pixel, Hotjar, etc. Se cargan después del widget para que éste tenga tiempo de establecer el consentimiento default antes de que los trackers se ejecuten.	
+Si la Pyme tiene estos scripts en el <head> antes del Bloque 2, debe moverlos obligatoriamente después. No hacerlo invalida el consentimiento legal.	
+
+
+
+
+
 
 Consecuencia legal: Si el Bloque 1 no está presente o los scripts de terceros se cargan antes del Bloque 2, cualquier cookie inyectada antes del consentimiento constituye una infracción a la Ley 21.719 (Art. 14, 15 y 15 bis). El responsable del tratamiento (la Pyme) es quien asume la responsabilidad.
 
+
+
+
+
 Inicialización
+
 
 El widget se instancia con un data-widget-uuid en un <script> tag embebido. No usa DOMContentLoaded si se carga con defer o al final del body.
 
+
+
 <!-- Código que la Pyme pega en su sitio web -->
 <script src="https://cdn.nodoxspd.com/widget.js"
-        data-widget-uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-        data-position="bottom-left"
-        data-primary-color="#1a73e8"
-        defer></script>
+data-widget-uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+data-position="bottom-left"
+data-primary-color="#1a73e8"
+defer></script>
+
 
 El script construye la URL de configuración dinámicamente y llama al endpoint público.
 
+
+
+
+
 Gestión del visitor_uuid
+
 
 El visitor_uuid identifica el navegador del visitante de forma persistente entre visitas. El widget debe gestionarlo así:
 
+
+
+
 function getOrCreateVisitorUuid() {
-  const KEY = 'nodox_visitor_uuid';
-  let uuid = localStorage.getItem(KEY);
-  if (!uuid) {
-    uuid = crypto.randomUUID(); // Nativo en todos los browsers modernos
-    localStorage.setItem(KEY, uuid);
-  }
-  return uuid;
+const KEY = 'nodox_visitor_uuid';
+let uuid = localStorage.getItem(KEY);
+if (!uuid) {
+uuid = crypto.randomUUID(); // Nativo en todos los browsers modernos
+localStorage.setItem(KEY, uuid);
 }
+return uuid;
+}
+
+
+
 
 Nunca generar un UUID nuevo en cada visita. El mismo UUID debe enviarse en todas las llamadas POST /consent del mismo navegador para que el ledger mantenga coherencia histórica por visitante. Si se regenera el UUID en cada visita, el ledger no puede vincular consentimientos del mismo usuario a través del tiempo.
 
+
+
+
+
 Llamada a /config
+
 
 El widget invoca el endpoint de configuración para obtener los propósitos activos y la personalización visual de la Pyme.
 
+
+
 // widget.js — obtener configuración
 const uuid = document.currentScript
-    .getAttribute('data-widget-uuid');
+.getAttribute('data-widget-uuid');
 
 const res = await fetch(
-    `https://api.nodoxspd.com/api/widget/${uuid}/config`,
-    {
-        headers: { 'Accept': 'application/json' },
-        signal: AbortSignal.timeout(5000),
-    }
+`https://api.nodoxspd.com/api/widget/${uuid}/config`,
+{
+headers: { 'Accept': 'application/json' },
+signal: AbortSignal.timeout(5000),
+}
 );
 
 if (!res.ok) {
-    // 404 = no active policy → no mostrar banner (la Pyme no configuró)
-    return;
+// 404 = no active policy → no mostrar banner (la Pyme no configuró)
+return;
 }
 
 const config = await res.json();
 const { purposes, widget_config, policy_hash } = config.data;
 
+
+
 Timeout: Usar AbortSignal.timeout(5000). Si el CDN (Cloudflare) responde desde cache edge, la latencia será <100ms. El widget no debe bloquear la carga del sitio.
+
+
+
+
 
 Detección de consentimiento previo y política actualizada
 
+
 Antes de renderizar el banner, el widget debe verificar si el visitante ya consintió esta versión de la política. Si lo hizo y la política no cambió, no se muestra el banner pero se ejecutan las widget_action de los propósitos previamente aceptados (rehydratación).
+
+
+
 
 // widget.js — detección de consentimiento previo
 const uuid = getOrCreateVisitorUuid();
@@ -131,37 +386,54 @@ const CONSENT_KEY = `nodox_consent_${uuid}`;
 const stored = JSON.parse(localStorage.getItem(CONSENT_KEY) || 'null');
 
 if (stored && stored.policy_hash === config.policy_hash) {
-  // Usuario ya consintió esta versión de política → no mostrar banner
-  // Pero sí ejecutar las widget_actions de los propósitos previamente aceptados
-  rehydrateConsent(stored.purposes, config.purposes);
-  return;
+// Usuario ya consintió esta versión de política → no mostrar banner
+// Pero sí ejecutar las widget_actions de los propósitos previamente aceptados
+rehydrateConsent(stored.purposes, config.purposes);
+return;
 }
 
 // Si stored existe pero el policy_hash difiere → política actualizada
 // Mostrar banner de nuevo aunque el usuario haya consentido antes
 // El consentimiento anterior sigue válido para el ledger pero necesita renovarse
 
+
+
 La función rehydrateConsent debe ejecutar las widget_action correspondientes a los propósitos que el usuario aceptó previamente, para que los scripts de terceros se carguen sin volver a preguntar:
 
+
+
+
 function rehydrateConsent(storedPurposes, configPurposes) {
-  for (const [slug, accepted] of Object.entries(storedPurposes)) {
-    if (!accepted) continue;
+for (const [slug, accepted] of Object.entries(storedPurposes)) {
+if (!accepted) continue;
 
-    const purposeConfig = configPurposes?.[slug];
-    const action = purposeConfig?.widget_action;
-    if (!action) continue;
+const purposeConfig = configPurposes?.[slug];
+const action = purposeConfig?.widget_action;
+if (!action) continue;
 
-    executeWidgetAction(action, slug);
-  }
+executeWidgetAction(action, slug);
+}
 }
 
-Rehidratación sin banner: Cuando el policy_hash coincide y hay consentimiento previo, el usuario no vuelve a ver el banner. Los scripts de terceros se cargan inmediatamente basándose en sus preferencias guardadas. Esto es crítico para UX: un usuario que ya consintió no debe ser interrumpido.
+
+
+
+Rehydratación sin banner: Cuando el policy_hash coincide y hay consentimiento previo, el usuario no vuelve a ver el banner. Los scripts de terceros se cargan inmediatamente basándose en sus preferencias guardadas. Esto es crítico para UX: un usuario que ya consintió no debe ser interrumpido.
+
+
 
 Política actualizada: Si el policy_hash cambió, el banner se muestra de nuevo. El consentimiento anterior permanece en el ledger pero la nueva versión requiere consentimiento fresco. El widget debe actualizar el CONSENT_KEY con el nuevo hash al registrar el nuevo consentimiento.
 
+
+
+
+
 Render del banner
 
+
 Con la configuración recibida, el widget inserta un contenedor <div id="nodox-consent-banner"> al final del body, estilizado con los colores y posición configurados.
+
+
 
 // widget.js — renderizar banner
 const position = widget_config.position || 'bottom-left';
@@ -171,200 +443,305 @@ const showRejectAll = widget_config.show_reject_all !== false;
 const banner = document.createElement('div');
 banner.id = 'nodox-consent-banner';
 banner.style.cssText = `
-    position: fixed;
-    ${position.includes('bottom') ? 'bottom: 20px' : 'top: 20px'};
-    ${position.includes('left') ? 'left: 20px' : 'right: 20px'};
-    z-index: 999999;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-    padding: 20px;
-    max-width: 400px;
-    font-family: system-ui, sans-serif;
-    font-size: 14px;
+position: fixed;
+${position.includes('bottom') ? 'bottom: 20px' : 'top: 20px'};
+${position.includes('left') ? 'left: 20px' : 'right: 20px'};
+z-index: 999999;
+background: #fff;
+border-radius: 12px;
+box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+padding: 20px;
+max-width: 400px;
+font-family: system-ui, sans-serif;
+font-size: 14px;
 `;
 
 // Listar propósitos con toggle
 const togglesHtml = purposes.map(p => `
-    <label style="display:flex;align-items:center;gap:8px;margin:6px 0;">
-        <input type="checkbox" value="${p.slug}"
-               ${p.slug === 'necessary_technical' ? 'checked disabled' : ''}>
-        <strong>${p.label}</strong>
-    </label>
+<label style="display:flex;align-items:center;gap:8px;margin:6px 0;">
+<input type="checkbox" value="${p.slug}"
+${p.slug === 'necessary_technical' ? 'checked disabled' : ''}>
+<strong>${p.label}</strong>
+</label>
 `).join('');
 
 banner.innerHTML = `
-    <div style="margin-bottom:12px;font-weight:700;color:${primaryColor};">
-        Este sitio usa cookies
-    </div>
-    <div style="margin-bottom:12px;font-size:13px;color:#555;">
-        Seleccione qué cookies autoriza.
-    </div>
-    ${togglesHtml}
-    <div style="display:flex;gap:8px;margin-top:14px;">
-        <button id="nodox-accept-all" style="...">Aceptar todas</button>
-        ${showRejectAll ? '<button id="nodox-reject-all" style="...">Rechazar</button>' : ''}
-    </div>
+<div style="margin-bottom:12px;font-weight:700;color:${primaryColor};">
+Este sitio usa cookies
+</div>
+<div style="margin-bottom:12px;font-size:13px;color:#555;">
+Seleccione qué cookies autoriza.
+</div>
+${togglesHtml}
+<div style="display:flex;gap:8px;margin-top:14px;">
+<button id="nodox-accept-all" style="...">Aceptar todas</button>
+${showRejectAll ? '<button id="nodox-reject-all" style="...">Rechazar</button>' : ''}
+</div>
 `;
 
 document.body.appendChild(banner);
 
+
+
+
+
 Envío de consentimiento
+
 
 Cuando el visitante hace clic en "Aceptar", "Rechazar" o "Guardar preferencias", el widget recolecta los slugs seleccionados y los envía al backend.
 
+
+
 // widget.js — enviar consentimiento
 async function sendConsent(acceptedSlugs, policyHash) {
-    const payload = {
-        purposes: acceptedSlugs,
-        policy_hash: policyHash,
-        visitor_uuid: getVisitorUuid(),     // cookie/localStorage del visitante
-        timestamp: new Date().toISOString(),
-        user_agent: navigator.userAgent,
-        screen_resolution: `${screen.width}x${screen.height}`,
-    };
+const payload = {
+purposes: acceptedSlugs,
+policy_hash: policyHash,
+visitor_uuid: getVisitorUuid(),     // cookie/localStorage del visitante
+timestamp: new Date().toISOString(),
+user_agent: navigator.userAgent,
+screen_resolution: `${screen.width}x${screen.height}`,
+};
 
-    const res = await fetch(
-        `https://api.nodoxspd.com/api/widget/${companyUuid}/consent`,
-        {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify(payload),
-        }
-    );
+const res = await fetch(
+`https://api.nodoxspd.com/api/widget/${companyUuid}/consent`,
+{
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'Accept': 'application/json',
+},
+body: JSON.stringify(payload),
+}
+);
 
-    if (res.ok) {
-        // Guardar proof_hash localmente para futura auditoría
-        const { data } = await res.json();
-        localStorage.setItem(
-            'nodox_consent_proof',
-            JSON.stringify({
-                proof_hash: data.hash,
-                timestamp: data.timestamp,
-                policy_hash: policyHash,
-            })
-        );
-        banner.remove(); // Ocultar banner tras consentir
-    }
+if (res.ok) {
+// Guardar proof_hash localmente para futura auditoría
+const { data } = await res.json();
+localStorage.setItem(
+'nodox_consent_proof',
+JSON.stringify({
+proof_hash: data.hash,
+timestamp: data.timestamp,
+policy_hash: policyHash,
+})
+);
+banner.remove(); // Ocultar banner tras consentir
+}
 }
 
+
+
 Visitor UUID: El widget genera un UUID anónimo en el navegador (localStorage o cookie) para tracking de sesión. No contiene PII. Se envía como visitor_uuid para identity stitching posterior.
+
+
 
 Construcción del payload según acción del usuario
 
 El widget ofrece tres acciones de UI que construyen el objeto purposes de forma distinta antes de enviarlo al backend:
 
+
+
+
 // "Aceptar todo" — todos los propósitos que requieren consentimiento → true
 function buildAcceptAllPayload(purposes) {
-  return Object.fromEntries(
-    Object.entries(purposes).map(([slug, def]) => [slug, true])
-  );
-  // El backend fuerza necessary_technical: true independientemente
+return Object.fromEntries(
+Object.entries(purposes).map(([slug, def]) => [slug, true])
+);
+// El backend fuerza necessary_technical: true independientemente
 }
 
 // "Rechazar todo" — solo los required quedan true, el resto false
 function buildRejectAllPayload(purposes) {
-  return Object.fromEntries(
-    Object.entries(purposes).map(([slug, def]) => [slug, def.required ? true : false])
-  );
+return Object.fromEntries(
+Object.entries(purposes).map(([slug, def]) => [slug, def.required ? true : false])
+);
 }
 
 // "Guardar preferencias" — estado actual de cada toggle en la UI
 function buildCustomPayload(purposes, toggleStates) {
-  return Object.fromEntries(
-    Object.entries(purposes).map(([slug, def]) => [
-      slug,
-      def.required ? true : (toggleStates[slug] ?? def.default)
-    ])
-  );
+return Object.fromEntries(
+Object.entries(purposes).map(([slug, def]) => [
+slug,
+def.required ? true : (toggleStates[slug] ?? def.default)
+])
+);
 }
 
-necessary_technical: El backend siempre fuerza necessary_technical: true independientemente del payload enviado. Los propósitos con required: true no son negociables.
+
+
+
+necessary_technical: El backend siempre fuerza necessary_technical: true independientemente del payload enviado. Los propsitos con required: true no son negociables.
+
+
+
+
+
 
 Tabla de Mapeo de Acciones (widget_action)
 
+
+
+
 Cada fin legal en la respuesta de /config incluye un campo widget_action que indica qué debe hacer el navegador cuando el visitante otorga su consentimiento para ese fin. El desarrollador de widget.js debe implementar cada acción según esta tabla:
 
-widget_action | Cuándo se activa | Implementación en widget.js
-load_analytics_scripts | El visitante acepta analytics_behavior o analytics_preferences | Inyectar dinámicamente (createElement + appendChild) el script de GA4, Hotjar o Mixpanel según los providers.analytics indicados en la configuración del widget.
-load_marketing_scripts | El visitante acepta marketing_direct | Inyectar Meta Pixel (fbq('consent','grant')), TikTok Pixel, LinkedIn Insight Tag, etc. según los providers.marketing.
-load_functional_scripts | El visitante acepta functional_third_party o analytics_preferences | Inyectar scripts de soporte (Intercom, Zendesk, WhatsApp API) o reemplazar placeholders de iframes bloqueados (YouTube, Google Maps, Vimeo) con el contenido real.
-consent_mode_v2_ads | El visitante acepta marketing_profiling | Ejecutar la actualización de Google Consent Mode v2: gtag('consent', 'update', { ad_storage: 'granted', ad_user_data: 'granted', ad_personalization: 'granted' });
-null | Fines sin acción en navegador (ej: necessary_technical, international_transfer, legal_compliance) | Sin acción en el navegador. Es puramente un registro legal en el ledger. El widget no debe inyectar scripts ni modificar el DOM por este fin.
+
+
+
+
+widget_action	Cuándo se activa	Implementación en widget.js
+
+
+
+load_analytics_scripts	
+El visitante acepta analytics_behavior o analytics_preferences	
+Inyectar dinámicamente (createElement + appendChild) el script de GA4, Hotjar o Mixpanel según los providers.analytics indicados en la configuración del widget.	
+
+
+
+load_marketing_scripts	
+El visitante acepta marketing_direct	
+Inyectar Meta Pixel (fbq('consent','grant')), TikTok Pixel, LinkedIn Insight Tag, etc. según los providers.marketing.	
+
+
+
+load_functional_scripts	
+El visitante acepta functional_third_party o analytics_preferences	
+Inyectar scripts de soporte (Intercom, Zendesk, WhatsApp API) o reemplazar placeholders de iframes bloqueados (YouTube, Google Maps, Vimeo) con el contenido real.	
+
+
+
+consent_mode_v2_ads	
+El visitante acepta marketing_profiling	
+Ejecutar la actualización de Google Consent Mode v2: gtag('consent', 'update', { ad_storage: 'granted', ad_user_data: 'granted', ad_personalization: 'granted' });	
+
+
+
+null	
+Fines sin acción en navegador (ej: necessary_technical, international_transfer, legal_compliance)	
+Sin acción en el navegador. Es puramente un registro legal en el ledger. El widget no debe inyectar scripts ni modificar el DOM por este fin.	
+
+
+
+
 
 Mapeo de widget_action a implementación
 
 Detalle de cada acción con el código correspondiente:
 
-widget_action | Implementación en widget.js
-load_analytics_scripts | Inyectar dinámicamente los scripts declarados en widget_config.providers.analytics. Por cada provider: crear <script> tag con la URL del SDK correspondiente y agregarlo al <head>.
-load_marketing_scripts | Inyectar scripts de widget_config.providers.marketing. Para Meta Pixel: inicializar fbq y llamar fbq('consent', 'grant') antes de fbq('track', 'PageView').
-load_functional_scripts | Inyectar scripts de widget_config.providers.personalization. Para iframes de YouTube o Maps: reemplazar placeholders <div data-embed-src="..."> por el <iframe> real.
-consent_mode_v2_ads | Llamar gtag('consent', 'update', {ad_storage: 'granted', ad_user_data: 'granted', ad_personalization: 'granted'}).
-null | Sin acción en el navegador. Solo registro legal en el ledger.
+
+
+
+widget_action	Implementación en widget.js
+
+
+
+load_analytics_scripts	
+Inyectar dinámicamente los scripts declarados en widget_config.providers.analytics. Por cada provider: crear <script> tag con la URL del SDK correspondiente y agregarlo al <head>.	
+
+
+
+load_marketing_scripts	
+Inyectar scripts de widget_config.providers.marketing. Para Meta Pixel: inicializar fbq y llamar fbq('consent', 'grant') antes de fbq('track', 'PageView').	
+
+
+
+load_functional_scripts	
+Inyectar scripts de widget_config.providers.personalization. Para iframes de YouTube o Maps: reemplazar placeholders <div data-embed-src="..."> por el <iframe> real.	
+
+
+
+consent_mode_v2_ads	
+Llamar gtag('consent', 'update', {ad_storage: 'granted', ad_user_data: 'granted', ad_personalization: 'granted'}).	
+
+
+
+null	
+Sin acción en el navegador. Solo registro legal en el ledger.	
+
+
+
+
+
 
 function executeWidgetAction(action, slug, config) {
-  switch (action) {
-    case 'load_analytics_scripts':
-      config.providers.analytics.forEach(p => injectScript(p));
-      break;
-    case 'load_marketing_scripts':
-      config.providers.marketing.forEach(p => injectScript(p));
-      // Meta Pixel específico:
-      if (config.providers.marketing.includes('meta_pixel')) {
-        fbq('consent', 'grant');
-      }
-      break;
-    case 'load_functional_scripts':
-      config.providers.personalization.forEach(p => injectScript(p));
-      replaceEmbedPlaceholders();
-      break;
-    case 'consent_mode_v2_ads':
-      gtag('consent', 'update', {
-        ad_storage: 'granted',
-        ad_user_data: 'granted',
-        ad_personalization: 'granted'
-      });
-      break;
-    case null:
-    default:
-      // Sin acción en el navegador
-      break;
-  }
+switch (action) {
+case 'load_analytics_scripts':
+config.providers.analytics.forEach(p => injectScript(p));
+break;
+case 'load_marketing_scripts':
+config.providers.marketing.forEach(p => injectScript(p));
+// Meta Pixel específico:
+if (config.providers.marketing.includes('meta_pixel')) {
+fbq('consent', 'grant');
+}
+break;
+case 'load_functional_scripts':
+config.providers.personalization.forEach(p => injectScript(p));
+replaceEmbedPlaceholders();
+break;
+case 'consent_mode_v2_ads':
+gtag('consent', 'update', {
+ad_storage: 'granted',
+ad_user_data: 'granted',
+ad_personalization: 'granted'
+});
+break;
+case null:
+default:
+// Sin acción en el navegador
+break;
+}
 }
 
 function injectScript(provider) {
-  const s = document.createElement('script');
-  s.src = provider.url;
-  s.async = true;
-  document.head.appendChild(s);
+const s = document.createElement('script');
+s.src = provider.url;
+s.async = true;
+document.head.appendChild(s);
 }
 
+
+
+
 Orden de ejecución obligatorio:
+
 - consent_mode_v2_ads debe ejecutarse síncronamente ANTES del POST /consent. Esto actualiza Google Consent Mode v2 inmediatamente para que el signal llegue a Google antes de cualquier evento.
+
 - La inyección de scripts de terceros (load_analytics_scripts, load_marketing_scripts, load_functional_scripts) debe ejecutarse DESPUÉS de recibir el HTTP 201 del POST /consent para garantizar que el registro exista en el ledger antes de activar el tracking.
 
-Rehidratación: En el flujo de rehydrateConsent() (consentimiento previo sin banner), todas las acciones se ejecutan inmediatamente sin POST porque el consentimiento ya está en el ledger. No hay necesidad de re-registrar.
+
+
+
+
+
+Rehydratación: En el flujo de rehydrateConsent() (consentimiento previo sin banner), todas las acciones se ejecutan inmediatamente sin POST porque el consentimiento ya está en el ledger. No hay necesidad de re-registrar.
+
+
+
+
 
 Degradación graceful (obligatoria)
 
+
 El widget nunca debe romper el sitio de la Pyme. Implementar estos tres casos:
+
+
 
 Caso 1: GET /config falla (red, timeout, 404)
 
 try {
-  const config = await fetchConfig(uuid);
-  renderBanner(config);
+const config = await fetchConfig(uuid);
+renderBanner(config);
 } catch (e) {
-  // Silencioso. No mostrar banner. No lanzar error.
-  // Si hay consentimiento previo en localStorage, rehydratarlo.
-  const stored = getStoredConsent(uuid);
-  if (stored) rehydrateConsent(stored.purposes, null);
-  return;
+// Silencioso. No mostrar banner. No lanzar error.
+// Si hay consentimiento previo en localStorage, rehydratarlo.
+const stored = getStoredConsent(uuid);
+if (stored) rehydrateConsent(stored.purposes, null);
+return;
 }
+
+
 
 Caso 2: POST /consent falla (red, 500)
 
@@ -373,6 +750,8 @@ Caso 2: POST /consent falla (red, 500)
 // En la próxima visita, si el localStorage tiene propósitos pero no proof_hash,
 // el widget debe reintentar el POST silenciosamente.
 
+
+
 Caso 3: localStorage no disponible (modo incógnito estricto, Safari ITP)
 
 // Usar sessionStorage como fallback.
@@ -380,102 +759,212 @@ Caso 3: localStorage no disponible (modo incógnito estricto, Safari ITP)
 // En ese caso mostrar el banner en cada visita.
 
 function getStorage() {
-  try { return localStorage; } catch { }
-  try { return sessionStorage; } catch { }
-  return null; // In-memory fallback
+try { return localStorage; } catch { }
+try { return sessionStorage; } catch { }
+return null; // In-memory fallback
 }
+
+
+
 
 Regla de oro: Ningún error del widget debe propagarse al sitio de la Pyme. El banner de cookies es un overlay: si falla, el sitio sigue funcionando. Nunca usar throw sin catch en el flujo principal del widget.
 
+
+
+
+
+
+
+
 Característica B — Angular (Patch de Selección de Propósitos)
 
+
+Característica B
 Angular — Patch de Propósitos
 Módulo Angular dentro del panel de administración de la Pyme. Extiende el componente del wizard para mostrar un selector de propósitos legales cuando un campo "Otro/especificar" tiene requires_purpose_selection: true.
 
+
+
+
+
 Flujo del patch
 
-1. Admin edita o crea una política en el panel. El componente wizard carga el wizard_schema con sus campos y reglas.
-2. Frontend itera los campos del schema. Si encuentra field.requires_purpose_selection === true, prepara un selector de checkboxes debajo de ese campo.
-3. Frontend hace GET /api/panel/consent-purposes. Backend retorna el catálogo completo de propósitos legales (9 slugs con label, legal_basis, etc.).
-4. Se renderizan checkboxes. Los que tienen purpose.default === true aparecen pre-seleccionados. Cada checkbox muestra purpose.label y su base legal.
-5. Admin marca/desmarca propósitos. La selección se almacena temporalmente en wizard_data.{fieldKey}_purposes como array de slugs.
-6. Admin guarda el wizard completo. wizard_data viaja al backend con todos los campos, incluyendo los _purposes arrays.
-7. Backend valida que cada slug exista en consent_purposes. Slugs inválidos se ignoran silenciosamente. Los propósitos aceptados se asocian a la política.
+
+1Admin edita o crea una política en el panel. El componente wizard carga el wizard_schema con sus campos y reglas.
+
+&darr;
+
+2Frontend itera los campos del schema. Si encuentra field.requires_purpose_selection === true, prepara un selector de checkboxes debajo de ese campo.
+
+&darr;
+
+3Frontend hace GET /api/panel/consent-purposes. Backend retorna el catálogo completo de propósitos legales (9 slugs con label, legal_basis, etc.).
+
+&darr;
+
+4Se renderizan checkboxes. Los que tienen purpose.default === true aparecen pre-seleccionados. Cada checkbox muestra purpose.label y su base legal.
+
+&darr;
+
+5Admin marca/desmarca propósitos. La selección se almacena temporalmente en wizard_data.{fieldKey}_purposes como array de slugs.
+
+&darr;
+
+6Admin guarda el wizard completo. wizard_data viaja al backend con todos los campos, incluyendo los _purposes arrays.
+
+&darr;
+
+7Backend valida que cada slug exista en consent_purposes. Slugs inválidos se ignoran silenciosamente. Los propósitos aceptados se asocian a la política.
+
+
+
 
 Origen del patch
 
+
 El LegalTemplateSeeder define 7 campos con requires_purpose_selection: true. Cuando el usuario escribe texto libre en estos campos, debe también seleccionar manualmente los propósitos legales que aplican a ese texto, ya que el backend no puede inferirlos automáticamente.
+
+
+
 
 Campos afectados: Típicamente input type="text" con show_if = "otros" en un multiselect. Ej: step_2_analytics_other_provider, step_3_marketing_other_provider, step_4_functionality_other_provider, step_3_sharing_hr_software_names, etc.
 
+
+
 El endpoint GET /api/panel/consent-purposes devuelve el catálogo completo de propósitos (9 slugs) ordenados por display_order. El frontend usa esta lista para mostrar checkboxes.
+
+
+
 
 // Angular — servicio que obtiene el catálogo de propósitos
 // GET /api/panel/consent-purposes
 
 // Respuesta esperada:
 {
-  "status": "success",
-  "message": "Catálogo de propósitos de consentimiento",
-  "data": [
-    {
-      "slug": "analytics_behavior",
-      "label": "Analítica de comportamiento",
-      "description": "... utilizado para medir el comportamiento del usuario...",
-      "required": false,
-      "default": true,
-      "legal_basis": "Consentimiento (Art. 15)",
-      "display_order": 2
-    }
-    // ... 8 más
-  ]
+"status": "success",
+"message": "Catálogo de propósitos de consentimiento",
+"data": [
+{
+"slug": "analytics_behavior",
+"label": "Analítica de comportamiento",
+"description": "... utilizado para medir el comportamiento del usuario...",
+"required": false,
+"default": true,
+"legal_basis": "Consentimiento (Art. 15)",
+"display_order": 2
 }
+// ... 8 más
+]
+}
+
+
+
+
 
 Código del patch Angular
 
-Comportamiento esperado del patch en el wizard
 
+
+Comportamiento esperado del patch en el wizard
 El formulario del wizard debe inspeccionar cada campo de wizard_schema y, para aquellos con requires_purpose_selection: true, inyectar un selector de propósitos debajo del input correspondiente. La lógica debe ser:
 
-1. Cargar catálogo: Al iniciar, hacer GET /api/panel/consent-purposes. La respuesta contiene el listado completo de propósitos legales (slug, label, description, required, default, legal_basis, display_order). Guardar en estado local para usar como fuente del selector.
-2. Renderizar checkboxes: Debajo del input de texto del campo marcado, mostrar un grupo de checkboxes — uno por propósito del catálogo. Cada checkbox debe mostrar purpose.label y, entre paréntesis, purpose.legal_basis. Aquellos con purpose.default === true deben aparecer pre-seleccionados.
-3. Persistir selección: El estado de los checkboxes se almacena en wizard_data bajo la clave {fieldKey}_purposes como un array de slugs. Ej: un campo campo_legal tendrá su selección en wizard_data.campo_legal_purposes = ["analytics", "marketing"].
-4. Tooltip: Incluir un texto informativo que indique: "Estos propósitos se agregarán a la política al publicarla. Los que aparecen pre-seleccionados son los que vienen por defecto."
+
+
+- Cargar catálogo: Al iniciar, hacer GET /api/panel/consent-purposes. La respuesta contiene el listado completo de propósitos legales (slug, label, description, required, default, legal_basis, display_order). Guardar en estado local para usar como fuente del selector.
+
+- Renderizar checkboxes: Debajo del input de texto del campo marcado, mostrar un grupo de checkboxes — uno por propósito del catálogo. Cada checkbox debe mostrar purpose.label y, entre paréntesis, purpose.legal_basis. Aquellos con purpose.default === true deben aparecer pre-seleccionados.
+
+- Persistir selección: El estado de los checkboxes se almacena en wizard_data bajo la clave {fieldKey}_purposes como un array de slugs. Ej: un campo campo_legal tendrá su selección en wizard_data.campo_legal_purposes = ["analytics", "marketing"].
+
+- Tooltip: Incluir un texto informativo que indique: "Estos propósitos se agregarán a la política al publicarla. Los que aparecen pre-seleccionados son los que vienen por defecto."
+
 
 No es necesario que los checkboxes tengan estilos complejos desde el inicio. Un grupo de inputs HTML nativos con espaciado vertical es suficiente para la implementación inicial.
 
-Lógica del componente (alto nivel)
 
+
+
+
+
+Lógica del componente (alto nivel)
 Independientemente del framework, el componente del wizard debe implementar lo siguiente:
 
+
+
 - Inicialización: Al montar el componente, disparar la petición GET a /api/panel/consent-purposes. El componente debe exponer el listado de propósitos al template para que el selector de checkboxes pueda consumirlo.
+
 - Manejo de selección: Implementar una función/handler que reciba tres parámetros: el identificador del campo (fieldKey), el slug del propósito, y el nuevo estado (seleccionado o no). Esta función debe agregar o remover el slug del array correspondiente en wizard_data.
+
 - Pre-selección: Al inicializar los checkboxes, aquellos propósitos con default: true deben cargarse como seleccionados en wizard_data a menos que el usuario haya modificado previamente la selección (ej: en una edición posterior).
+
 - Persistencia diferida: No enviar los propósitos al backend por separado. La selección se guarda en wizard_data y se envía al backend solo cuando se completa y guarda el wizard completo.
+
+
+
+
+
 
 Precaución: El backend valida en WizardPurposeResolverService (regla 3) que solo los slugs existentes en consent_purposes son aceptados. Si el frontend envía un slug inválido o mal escrito, se ignora silenciosamente (no causa error 422).
 
-Característica C — Angular: Pantalla de Registro de Consentimientos (Ledger)
 
-Angular — Pantalla de Auditoría de Consentimientos
+
+
+
+
+
+
+Característica C &mdash; Angular: Pantalla de Registro de Consentimientos (Ledger)
+
+
+Característica C
+Angular &mdash; Pantalla de Auditoría de Consentimientos
 Componente Angular dentro del panel de administración de la Pyme. Muestra el ledger inmutable de consentimientos con filtros, paginación y sellos legales.
+
+
+
+
 
 Flujo del ledger
 
-1. Admin navega a /panel/consentimientos. Frontend verifica autenticación Sanctum y rol company_admin.
-2. Frontend hace GET /api/panel/consent-logs (page 1, sin filtros). Backend retorna registros paginados + total.
-3. Frontend renderiza tabla con los datos: identificador, fecha, canal, propósitos y sello legal con botón de copia.
-4. Badge del encabezado se actualiza con pagination.total. Paginación se muestra si last_page > 1.
-5. Admin aplica filtros: método de captura, política, rango de fechas. Frontend construye query params y llama GET nuevamente.
-6. Frontend actualiza la tabla y la paginación con la respuesta filtrada. El estado de filtros se refleja en la URL.
-7. Admin navega páginas o copia proof_hash al portapapeles usando navigator.clipboard.writeText().
+
+1Admin navega a /panel/consentimientos. Frontend verifica autenticación Sanctum y rol company_admin.
+
+&darr;
+
+2Frontend hace GET /api/panel/consent-logs (page 1, sin filtros). Backend retorna registros paginados + total.
+
+&darr;
+
+3Frontend renderiza tabla con los datos: identificador, fecha, canal, propósitos y sello legal con botón de copia.
+
+&darr;
+
+4Badge del encabezado se actualiza con pagination.total. Paginación se muestra si last_page > 1.
+
+&darr;
+
+5Admin aplica filtros: método de captura, política, rango de fechas. Frontend construye query params y llama GET nuevamente.
+
+&darr;
+
+6Frontend actualiza la tabla y la paginación con la respuesta filtrada. El estado de filtros se refleja en la URL.
+
+&darr;
+
+7Admin navega páginas o copia proof_hash al portapapeles usando navigator.clipboard.writeText().
+
+
+
 
 Ruta Angular y endpoint
+
 
 Ruta del componente
 /panel/consentimientos
 
 Ruta protegida del panel de administración. Solo accesible por usuarios con rol company_admin autenticados vía Sanctum.
+
+
 
 Endpoint a consumir
 
@@ -491,397 +980,825 @@ Endpoint a consumir
 //   from            (date, opcional)    — Fecha inicio (Y-m-d), inclusiva
 //   to              (date, opcional)    — Fecha fin (Y-m-d), inclusiva (cierra a 23:59:59)
 
+
+
+
 Endpoint de políticas para el filtro: GET /api/company/policies?status=published bajo middleware role:company_admin + prefix company. Retorna el listado de políticas publicadas. El combo de selección debe mostrar document_type + "v" + company_version (ej: "cookie_policy v2") y usar integrity_hash como valor del filtro policy_hash.
+
+
+
+
 
 Layout y encabezado
 
-Encabezado de la vista
 
+Encabezado de la vista
 La pantalla se compone de:
 
-- Título: "Registro de Consentimientos" en <h1>.
-- Badge dinámico: Contador total de registros leyendo pagination.total de la respuesta. Ej: "72 registros". Debe actualizarse al aplicar filtros o cambiar de página.
+
+
+- Título: &ldquo;Registro de Consentimientos&rdquo; en <h1>.
+
+- Badge dinámico: Contador total de registros leyendo pagination.total de la respuesta. Ej: &ldquo;72 registros&rdquo;. Debe actualizarse al aplicar filtros o cambiar de página.
+
+
+
 
 Estructura del encabezado
-
 La pantalla se compone de dos elementos visuales en el encabezado:
 
+
+
 - Título: "Registro de Consentimientos" como encabezado principal de la vista.
+
 - Badge dinámico: Un contador que muestre el total de registros leyendo pagination.total de cada respuesta del backend. Ej: "72 registros". Este contador debe actualizarse cada vez que se aplican filtros o se cambia de página.
+
 
 El badge obtiene su valor del objeto pagination que retorna GET /api/panel/consent-logs. No hardcodear valores estáticos.
 
+
+
+
+
+
+
 Barra de filtros
 
-Cuatro controles en línea que disparan la recarga de la tabla al hacer clic en "Aplicar filtros". El estado de los filtros debe reflejarse en los query params de la URL para permitir navegación hacia atrás.
 
-Método de captura: [select: Todos / live_widget / live_portal / bulk_import]
-Política: [select: Todas / cookie_policy v2 / privacy_policy v1]
-Desde: [input type="date"]
-Hasta: [input type="date"]
-[Aplicar filtros]
+Cuatro controles en línea que disparan la recarga de la tabla al hacer clic en &ldquo;Aplicar filtros&rdquo;. El estado de los filtros debe reflejarse en los query params de la URL para permitir navegación hacia atrás.
+
+
+
+
+
+Método de captura
+
+Todos
+live_widget
+live_portal
+bulk_import
+
+
+
+
+Política
+
+Todas
+cookie_policy v2
+privacy_policy v1
+
+
+
+
+Desde
+
+
+
+
+Hasta
+
+
+
+
+Aplicar filtros
+
+
+
+
+
 
 Llamada al backend
-
 Construir la URL de GET /api/panel/consent-logs agregando como query params solo aquellos filtros que tengan valor seleccionado. La estructura esperada:
+
+
 
 GET /api/panel/consent-logs?capture_method=live_widget&policy_hash=abc123&from=2026-01-01&to=2026-07-22&page=1
 
+
 Reglas para construir los params:
 
+
+
 - page: siempre enviar, default 1.
+
 - capture_method: solo si el filtro tiene un valor distinto de "Todos".
+
 - policy_hash: solo si hay una política seleccionada.
+
 - from, to: solo si la fecha está definida.
+
 - Params vacíos o nulos deben omitirse, no enviarse con valor "".
 
-Selector de política: La lista de opciones se obtiene de GET /api/company/policies?status=published. Cada opción usa integrity_hash como value y document_type + " v" + company_version como etiqueta. El dropdown debe mostrar "Todas" como opción por defecto (value vacío).
+
+
+
+
+
+Selector de política: La lista de opciones se obtiene de GET /api/company/policies?status=published. Cada opción usa integrity_hash como value y document_type + " v" + company_version como etiqueta. El dropdown debe mostrar &ldquo;Todas&rdquo; como opción por defecto (value vacío).
+
+
+
+
 
 Tabla de datos
 
+
 Tabla HTML responsiva con las siguientes columnas. Cada fila corresponde a un elemento del array data en la respuesta.
 
-Columna | Fuente | Regla de UI
-Identificador | identifier o visitor_uuid | Si identifier no es nulo, mostrar el valor completo. Si es nulo (actualmente siempre ocurre), mostrar los primeros 8 caracteres de visitor_uuid seguido de "..." con un tooltip que diga "Visitante anónimo". Identity Stitching pendiente. El backend fuerza identifier = null hasta que se implemente la tabla person_visitor_uuids. El frontend debe dejar la lógica de UI preparada para cuando llegue el valor real.
-Fecha | consent_occurred_at | Formato DD/MM/YYYY HH:mm en zona horaria local del navegador. Usar toLocaleDateString('es-CL', ...).
-Canal | capture_method | Badge de color según el valor: live_widget (verde), live_portal (azul), bulk_import (gris).
-Propósitos | purposes (objeto) | Iterar las keys del objeto. Si el valor es true, renderizar un chip verde con el nombre del slug. Si es false, chip rojo tachado. Orden de iteración: alfabético por slug.
-Sello Legal | proof_hash | Mostrar los primeros 12 caracteres en fuente monoespaciada (mono-hash). Botón con icono de copiar (📋) que copie el hash completo al portapapeles via navigator.clipboard.writeText().
+
+
+
+Columna	Fuente	Regla de UI
+
+
+
+Identificador	
+identifier o visitor_uuid	
+
+Si identifier no es nulo, mostrar el valor completo.
+
+Si es nulo (actualmente siempre ocurre), mostrar los primeros 8 caracteres de visitor_uuid seguido de &ldquo;...&rdquo; con un tooltip que diga &ldquo;Visitante anónimo&rdquo;.
+
+Identity Stitching pendiente El backend fuerza identifier = null hasta que se implemente la tabla person_visitor_uuids. El frontend debe dejar la lógica de UI preparada para cuando llegue el valor real.
+
+
+
+
+Fecha	
+consent_occurred_at	
+Formato DD/MM/YYYY HH:mm en zona horaria local del navegador. Usar toLocaleDateString('es-CL', ...).	
+
+
+
+Canal	
+capture_method	
+
+Badge de color según el valor:
+live_widget (verde),
+live_portal (azul),
+bulk_import (gris).
+
+
+
+
+Propósitos	
+purposes (objeto)	
+
+Iterar las keys del objeto. Si el valor es true, renderizar un chip verde con el nombre del slug.
+Si es false, chip rojo tachado.
+Orden de iteración: alfabético por slug.
+
+
+
+
+Sello Legal	
+proof_hash	
+
+Mostrar los primeros 12 caracteres en fuente monoespaciada (mono-hash).
+Botón con ícono de copiar (📋) que copie el hash completo al portapapeles via navigator.clipboard.writeText().
+
+
+
+
+
+
 
 Comportamiento de la tabla
-
 Iterar sobre el array data de la respuesta siguiendo las reglas de la especificación de columnas de arriba. No hay lógica adicional fuera de lo descrito en cada columna. El helper getBadgeClass y copyToClipboard detallados abajo completan el comportamiento de la tabla.
 
-Lógica auxiliar del componente
 
+
+
+
+
+Lógica auxiliar del componente
 Dos funciones utilitarias necesarias para la tabla:
 
+
+
 - getBadgeClass(capture_method): Retorna la clase CSS correspondiente al método de captura. Mapeo: live_widget → clase verde, live_portal → clase azul, bulk_import → clase gris. Cualquier valor desconocido debe usar la clase gris por defecto.
+
 - copyToClipboard(text): Intenta navigator.clipboard.writeText(). Si falla (navegadores sin soporte o contextos inseguros), crear un elemento <textarea> temporal, seleccionarlo y ejecutar document.execCommand('copy'), limpiando después. Idealmente mostrar feedback visual (toast) al copiar.
+
+
+
+
+
+
 
 Paginación y estado vacío
 
-Paginación
 
+Paginación
 El backend retorna 25 registros por página. La paginación se renderiza usando los campos de pagination:
 
-Campo | Uso en UI
-pagination.current_page | Página activa actual
-pagination.last_page | Última página disponible
-pagination.total | Total de registros (se muestra en el badge del encabezado)
-pagination.per_page | Registros por página (25)
+
+
+
+Campo	Uso en UI
+
+
+pagination.current_page	Página activa actual
+
+pagination.last_page	Última página disponible
+
+pagination.total	Total de registros (se muestra en el badge del encabezado)
+
+pagination.per_page	Registros por página (25)
+
+
+
+
 
 Paginación
-
 El backend retorna 25 registros por página. La paginación debe construirse usando los campos del objeto pagination:
 
+
+
 - pagination.current_page: página activa actual.
+
 - pagination.last_page: última página disponible. Si es 1, ocultar la paginación.
+
 - pagination.total: total de registros (se muestra en el badge del encabezado).
+
 - pagination.per_page: registros por página (25).
+
 
 La navegación consiste en: botón "Anterior" (deshabilitado si current_page === 1), números de página (con la página actual destacada), y botón "Siguiente" (deshabilitado si current_page === last_page). Al cambiar de página, disparar una nueva llamada a GET /api/panel/consent-logs con el nuevo número de página.
 
-Estado vacío
 
+
+
+
+Estado vacío
 Cuando el array data viene vacío (después de aplicar filtros o cuando aún no hay registros), mostrar:
 
+
+
+
 📋
+
 Aún no hay consentimientos registrados. Instala el Trust Widget en tu sitio para comenzar a capturar.
 
-Estado vacío
 
+
+
+
+
+Estado vacío
 Cuando el array data viene vacío (sin registros o filtros sin coincidencias), la vista debe mostrar un estado vacío con:
 
+
+
 - Un ícono representativo (clipboard o documento).
+
 - Texto: "Aún no hay consentimientos registrados. Instala el Trust Widget en tu sitio para comenzar a capturar."
+
 
 La tabla de datos solo debe renderizarse cuando hay registros (data.length > 0). En caso contrario, mostrar el estado vacío.
 
+
+
+
+
+
+
 Contrato JSON de datos
+
 
 Ejemplo de respuesta real del endpoint GET /api/panel/consent-logs:
 
+
+
+
 {
-  "status": true,
-  "message": "Registros de consentimiento.",
-  "data": {
-    "data": [
-      {
-        "id": 42,
-        "visitor_uuid": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
-        "identifier": null,
-        "purposes": {
-          "analytics_behavior": true,
-          "analytics_preferences": true,
-          "functional_third_party": false,
-          "legal_compliance": true,
-          "marketing_direct": true,
-          "marketing_profiling": false,
-          "necessary_technical": true,
-          "international_transfer": true
-        },
-        "policy_hash": "a1b2c3d4e5f6...",
-        "proof_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "capture_method": "live_widget",
-        "consent_occurred_at": "2026-07-22T14:30:00+00:00",
-        "recorded_at": "2026-07-22T14:30:05+00:00"
-      }
-    ],
-    "pagination": {
-      "current_page": 1,
-      "last_page": 3,
-      "per_page": 25,
-      "total": 72,
-      "from": 1,
-      "to": 25
-    }
-  }
+"status": true,
+"message": "Registros de consentimiento.",
+"data": {
+"data": [
+{
+"id": 42,
+"visitor_uuid": "f1a2b3c4-d5e6-7890-abcd-ef1234567890",
+"identifier": null,
+"purposes": {
+"analytics_behavior": true,
+"analytics_preferences": true,
+">functional_third_party": false,
+"legal_compliance": true,
+"marketing_direct": true,
+"marketing_profiling": false,
+"necessary_technical": true,
+"international_transfer": true
+},
+"policy_hash": "a1b2c3d4e5f6...",
+"proof_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+"capture_method": "live_widget",
+"consent_occurred_at": "2026-07-22T14:30:00+00:00",
+"recorded_at": "2026-07-22T14:30:05+00:00"
 }
+],
+"pagination": {
+"current_page": 1,
+"last_page": 3,
+"per_page": 25,
+"total": 72,
+"from": 1,
+"to": 25
+}
+}
+}
+
+
+
 
 Tipos de datos: purposes es un objeto { "slug": boolean }. identifier es null hoy (Identity Stitching pendiente). consent_occurred_at y recorded_at vienen en ISO 8601 (UTC). policy_hash es el integrity_hash de la política vigente al momento del consentimiento. proof_hash es SHA-256 del payload canónico.
 
+
+
+
+
+
+
+
 Característica D — Panel: Dominios Autorizados CORS
 
+
+Característica D
 Panel — Dominios Autorizados CORS
 Endpoint del panel de administración que permite a la Pyme configurar la lista blanca de dominios donde está embebido el Trust Widget. El middleware cors.dynamic valida el header Origin contra esta lista en cada request del widget.
 
+
+
+
+
 Endpoint
+
 
 PATCH /api/panel/companies/domains · Auth: Sanctum
 
 Controlador: CompanyDomainController@update en app/Http/Controllers/Api/Panel/CompanyDomainController.php.
 
+
 Actualiza el array JSON allowed_domains en la tabla companies. Recibe un array de FQDN (Fully Qualified Domain Names) con máximo 10 entradas.
+
+
 
 Validación
 
 - domains: obligatorio (present), array, máximo 10 elementos. Se usa present (no required) para permitir enviar [] y limpiar la lista.
+
 - domains.*: string, regex FQDN. No acepta protocolos (http://), rutas (/path) ni IPs. Ej: mitienda.cl, checkout.mitienda.cl.
+
+
+
 
 Nota: El middleware cors.dynamic cachea los dominios por 12 horas. Un cambio en esta lista se refleja con el próximo miss de caché (máximo 12h). Para invalidación inmediata: borrar la clave company_domains:{uuid} del caché.
 
+
+
+
+
 Funcionamiento
+
 
 Flujo de validación CORS
 
-1. La Pyme configura sus dominios desde el panel vía PATCH /api/panel/companies/domains. Los dominios se persisten en companies.allowed_domains.
-2. El widget JS embebido en el sitio de la Pyme envía un request al endpoint público con header Origin.
-3. DynamicCorsMiddleware resuelve la empresa por public_uuid, busca sus allowed_domains (caché 12h) y compara el host del Origin contra la lista blanca.
-4. Si coincide: agrega headers Access-Control-Allow-Origin (nunca *), Allow-Methods, Allow-Headers. Si es OPTIONS: responde 204.
-5. Si NO coincide: responde 403 con mensaje origin_not_allowed. El widget no puede cargar.
+1La Pyme configura sus dominios desde el panel vía PATCH /api/panel/companies/domains. Los dominios se persisten en companies.allowed_domains.
+
+&darr;
+
+2El widget JS embebido en el sitio de la Pyme envía un request al endpoint público con header Origin.
+
+&darr;
+
+3DynamicCorsMiddleware resuelve la empresa por public_uuid, busca sus allowed_domains (caché 12h) y compara el host del Origin contra la lista blanca.
+
+&darr;
+
+4Si coincide: agrega headers Access-Control-Allow-Origin (nunca *), Allow-Methods, Allow-Headers. Si es OPTIONS: responde 204.
+
+&darr;
+
+5Si NO coincide: responde 403 con mensaje origin_not_allowed. El widget no puede cargar.
+
+
+
 
 Headers CORS que establece el middleware:
 
+
+
 - Access-Control-Allow-Origin → el origen específico (nunca *)
+
 - Access-Control-Allow-Methods → GET, POST, OPTIONS
+
 - Access-Control-Allow-Headers → Content-Type, X-Requested-With
+
 - Access-Control-Max-Age → 86400s (24h)
+
 - Vary → Origin
+
+
+
 
 Importante: Sin esta configuración, el widget no puede comunicarse con el backend desde el sitio de la Pyme. CORS denegado por defecto. La Pyme debe configurar al menos un dominio antes de integrar el widget.
 
+
+
+
+
+
+
+
 Característica E — Panel: Personalización Visual del Widget
 
+
+Característica E
 Panel — Personalización Visual del Widget
 Endpoint del panel de administración que permite a la Pyme personalizar la apariencia del Trust Widget: color primario, logo, textos del banner y etiquetas de botones. Usa deep merge recursivo para preservar configuraciones existentes.
 
+
+
+
+
 Endpoint
+
 
 PATCH /api/panel/companies/widget-config · Auth: Sanctum
 
 Controlador: CompanyWidgetConfigController@update en app/Http/Controllers/Api/Panel/CompanyWidgetConfigController.php.
 
+
 Actualiza el JSON widget_config en la tabla companies. Todos los campos son opcionales. Se envía solo lo que se quiere cambiar. El controlador usa array_replace_recursive para fusionar los datos nuevos con la configuración existente.
+
+
 
 Campos disponibles
 
-Campo | Tipo | Validación | Descripción
-primary_color | string | regex hex: #xxx o #xxxxxx | Color primario del banner. Default: #1a73e8
-logo_url | string | url, max 2048 | URL del logo de la Pyme en el banner
-legal_texts | object | array | Textos legales anidados (banner_title, banner_body)
-button_accept_text | string | max 50 | Texto del botón Aceptar
-button_reject_text | string | max 50 | Texto del botón Rechazar
+Campo	Tipo	Validación	Descripción
+
+
+primary_color	string	regex hex: #xxx o #xxxxxx	Color primario del banner. Default: #1a73e8
+
+logo_url	string	url, max 2048	URL del logo de la Pyme en el banner
+
+legal_texts	object	array	Textos legales anidados (banner_title, banner_body)
+
+button_accept_text	string	max 50	Texto del botón Aceptar
+
+button_reject_text	string	max 50	Texto del botón Rechazar
+
+
+
+
 
 Deep merge: array_replace_recursive preserva llaves anidadas no enviadas. Si solo envías legal_texts.banner_title, la llave legal_texts.policy_url se mantiene intacta. Los valores null se filtran antes del merge para no sobrescribir configuraciones existentes.
 
+
+
+
+
 Funcionamiento
 
-¿Qué se puede personalizar?
 
+¿Qué se puede personalizar?
 La configuración visual se almacena en companies.widget_config como un JSON estructurado. Cuando el endpoint público GET /api/widget/{uuid}/config sirve la configuración, lee estos valores y los combina con defaults hardcodeados:
 
+
+
 - Posición: bottom-left, bottom-right, top-left, top-right (default: bottom-left)
+
 - Color primario: Cualquier color hex válido (default: #1a73e8)
+
 - Logo: URL opcional del logo de la Pyme
+
 - Mostrar botón Rechazar: Boolean (default: true)
+
 - Duración cookie preferencia: 365 días (fijo)
+
 - Textos del banner: Título, cuerpo y URL de política completa
+
 - Etiquetas de botones: Texto personalizado para Aceptar y Rechazar
+
+
 
 Comportamiento del merge:
 
-1. El frontend Angular envía solo los campos que cambiaron (ej: primary_color).
-2. El controlador lee el JSON actual de company.widget_config.
-3. Filtra valores null del request para evitar sobrescrituras accidentales.
-4. Aplica array_replace_recursive entre la configuración actual y los datos validados.
-5. Persiste el resultado y devuelve el objeto completo de widget_config en la respuesta.
+
+
+1El frontend Angular envía solo los campos que cambiaron (ej: primary_color).
+
+&darr;
+
+2El controlador lee el JSON actual de company.widget_config.
+
+&darr;
+
+3Filtra valores null del request para evitar sobrescrituras accidentales.
+
+&darr;
+
+4Aplica array_replace_recursive entre la configuración actual y los datos validados.
+
+&darr;
+
+5Persiste el resultado y devuelve el objeto completo de widget_config en la respuesta.
+
+
+
+
 
 Nota arquitectónica: widget_config es un JSON con nodos anidados. Usar array_replace_recursive evita que un proceso que escribe legal_texts.banner_title destruya legal_texts.policy_url que otro proceso (ej: importación) haya escrito. Esto es intencional para permitir actualizaciones parciales concurrentes.
 
+
+
+
+
+
+
+
 Característica F — Portal Cautivo Público
 
+
+Característica F
 Angular — Portal Cautivo de Firma
 Interfaz Angular pública (sin autenticación, sin sidebar, sin menú de navegación) que permite a un destinatario firmar documentos legales mediante un enlace mágico recibido por correo transaccional.
 
+
+
+
+
 Flujo del Portal Cautivo
 
-1. Destinatario recibe enlace mágico por email. Abre /portal/consent/{token} en el navegador.
-2. Frontend genera/obtiene visitor_uuid de localStorage (misma lógica que el widget). Extrae el :token de la URL.
-3. Frontend hace GET /api/portal/consent/{token}. Backend valida existencia, expiración y estado del token.
-4. Si 200: renderiza vista de firma con datos de empresa, política, email del destinatario y toggles de propósitos. Si 404/409/410: muestra pantalla con mensaje del backend.
-5. Usuario ajusta toggles. Propósitos con required: true están bloqueados en ON con candado. Estado inicial = purpose.default.
-6. Usuario hace clic en "Firmar Documento". Frontend arma payload {purposes, visitor_uuid} y envía POST /api/portal/consent/{token}/confirm.
-7. Si 201: muestra pantalla de éxito con proof_hash y botón copiar. Si 409: éxito preventivo. Si 410: expiración. Si 422: mensaje inline.
+
+1Destinatario recibe enlace mágico por email. Abre /portal/consent/{token} en el navegador.
+
+&darr;
+
+2Frontend genera/obtiene visitor_uuid de localStorage (misma lógica que el widget). Extrae el :token de la URL.
+
+&darr;
+
+3Frontend hace GET /api/portal/consent/{token}. Backend valida existencia, expiración y estado del token.
+
+&darr;
+
+4Si 200: renderiza vista de firma con datos de empresa, política, email del destinatario y toggles de propósitos. Si 404/409/410: muestra pantalla con mensaje del backend.
+
+&darr;
+
+5Usuario ajusta toggles. Propósitos con required: true están bloqueados en ON con candado. Estado inicial = purpose.default.
+
+&darr;
+
+6Usuario hace clic en "Firmar Documento". Frontend arma payload {purposes, visitor_uuid} y envía POST /api/portal/consent/{token}/confirm.
+
+&darr;
+
+7Si 201: muestra pantalla de éxito con proof_hash y botón copiar. Si 409: éxito preventivo. Si 410: expiración. Si 422: mensaje inline.
+
+
+
 
 Ruta Angular y layout
+
 
 /portal/consent/:token
 
 Ruta pública, sin guard de autenticación. Layout minimalista: contenido centrado, sin sidebar, sin menú de navegación, sin header del panel. El :token se extrae de la URL y se usa para invocar los endpoints GET y POST.
 
+
+
+
+
 GET /api/portal/consent/{token} — Obtener datos de firma
+
 
 Endpoint público. Al montar la vista, extraer el :token de la URL y disparar la petición GET para cargar los datos de firma.
 
+
 Controlador: PortalConsentController@show en app/Http/Controllers/Api/Portal/PortalConsentController.php.
 
-Estructura de la respuesta del GET
 
+
+
+Estructura de la respuesta del GET
 El endpoint GET /api/portal/consent/{token} retorna un objeto con 4 secciones principales que el frontend debe consumir para renderizar la vista de firma:
 
+
+
 - company: business_name (razón social) y logo_url (opcional, URL del logo).
+
 - policy: name (nombre del documento), policy_hash (hash de integridad), url (enlace al documento completo para abrir en nueva pestaña).
+
 - recipient: email del destinatario que recibió el enlace mágico.
+
 - purposes: Objeto donde cada key es un slug y cada valor es un objeto con: label, description, required (boolean — si true, el toggle debe estar bloqueado en ON), default (boolean — estado inicial del toggle), legal_basis (texto como "Consentimiento (Art. 15)").
 
-Manejo de estados HTTP
 
+
+
+
+Manejo de estados HTTP
 Importante: el backend retorna el mensaje exacto en el campo message del JSON de error. El frontend debe leerlo y mostrarlo, no hardcodear textos distintos.
 
-Código | Significado | UI a renderizar
-200 | Token válido | Vista de firma con datos del GET
-404 | Token no existe | Pantalla error: usar response.error.message (ej: "El enlace no es válido o no existe.")
-409 | Ya confirmado | Pantalla éxito preventivo: usar response.error.message (ej: "Este documento ya fue firmado previamente.")
-410 | Expirado | Pantalla expiración: usar response.error.message (ej: "El enlace ha expirado. Solicita uno nuevo.")
+
+
+Código	Significado	UI a renderizar
+
+
+200	Token válido	Vista de firma con datos del GET
+
+404	Token no existe	Pantalla error: usar response.error.message (ej: "El enlace no es válido o no existe.")
+
+409	Ya confirmado	Pantalla éxito preventivo: usar response.error.message (ej: "Este documento ya fue firmado previamente.")
+
+410	Expirado	Pantalla expiración: usar response.error.message (ej: "El enlace ha expirado. Solicita uno nuevo.")
+
+
+
 
 Estructura del JSON de error (todos los códigos)
 
 {
-  "status": false,
-  "message": "...",
-  "data": null
+"status": false,
+"message": "...",
+"data": null
 }
+
+
+
+
 
 POST /api/portal/consent/{token}/confirm — Confirmar firma
 
+
 Endpoint público. Al hacer clic en "Firmar Documento":
 
-Gestión del visitor_uuid
 
+
+
+Gestión del visitor_uuid
 Al igual que el Trust Widget, el Portal Cautivo debe asignar un identificador único de visitante para correlacionar la firma con el navegador del destinatario. La lógica:
 
+
+
 - Al cargar el Portal Cautivo, revisar en localStorage si existe una key nodox_visitor_uuid.
+
 - Si no existe: generar un nuevo UUID v4 (usar crypto.randomUUID() o función equivalente con criptografía segura) y persistirlo en localStorage.
+
 - Si ya existe: reutilizar el valor almacenado.
+
 - Este UUID se envía en el payload del POST como visitor_uuid.
+
+
+
+
+
 
 // Payload POST /api/portal/consent/{token}/confirm
 {
-  "purposes": {
-    "necessary_technical": true,
-    "analytics": false
-  },
-  "visitor_uuid": "550e8400-e29b-41d4-a716-446655440000"
+"purposes": {
+"necessary_technical": true,
+"analytics": false
+},
+"visitor_uuid": "550e8400-e29b-41d4-a716-446655440000"
 }
+
+
 
 Manejo de errores del POST
 
-Código | Significado | UI
-201 | Firma exitosa | Pantalla de éxito con proof_hash y botón copiar
-404 | Token no existe (entre GET y POST) | Pantalla error
-409 | Ya confirmado | Pantalla éxito preventivo
-410 | Expiró entre GET y POST | Pantalla expiración
-422 | Validación falló (purposes vacío, visitor_uuid inválido) | Mensaje inline, no cambiar pantalla
-500 | Error interno | Mensaje error genérico, reintentar
+Código	Significado	UI
+
+
+201	Firma exitosa	Pantalla de éxito con proof_hash y botón copiar
+
+404	Token no existe (entre GET y POST)	Pantalla error
+
+409	Ya confirmado	Pantalla éxito preventivo
+
+410	Expiró entre GET y POST	Pantalla expiración
+
+422	Validación falló (purposes vacío, visitor_uuid inválido)	Mensaje inline, no cambiar pantalla
+
+500	Error interno	Mensaje error genérico, reintentar
+
+
 
 Para 404/409/410 del POST: leer message del JSON de error (misma estructura que GET).
 
+
+
+
+
 Flujo completo y consideraciones técnicas
+
 
 Layout de la Vista de Firma (solo si 200 OK)
 
 - Encabezado: Logo si company.logo_url no es null. Si es null, mostrar solo company.business_name como texto. Centrado, fondo limpio.
+
 - Título: policy.name (ej: "Política de Cookies").
+
 - Subtítulo/email: Texto "Estás firmando este documento como: {recipient.email}".
+
 - Link a política completa: Botón o link "Leer documento completo" que abra policy.url en nueva pestaña.
 
-Toggles de Propósitos
 
+
+Toggles de Propósitos
 Iterar Object.entries(purposes). Por cada propósito:
 
+
+
 - Label: purpose.label.
+
 - Descripción: purpose.description (texto secundario bajo el label).
+
 - Badge de base legal: Mostrar purpose.legal_basis como tag. Traducir: "consent" → "Consentimiento", "legitimate_interest" → "Interés legítimo".
+
 - Toggle/switch: Estado inicial = purpose.default.
+
 - Si purpose.required === true: Toggle bloqueado en ON, no permite deselección. Mostrar icono de candado y texto "(obligatorio)".
+
 - Si purpose.required === false: Toggle editable, usuario puede aceptar o rechazar.
 
-Botón de envío
 
+
+Botón de envío
 "Firmar Documento" al pie, destacado, color primario. Deshabilitado si la petición POST está en curso (loading spinner).
 
-Pantalla de éxito (201 Created)
 
+
+Pantalla de éxito (201 Created)
 Mostrar: "¡Gracias! Has firmado exitosamente." Mostrar data.proof_hash como "Código de recibo de firma" con botón de copiar al portapapeles (con aria-label). Texto explicativo: "Guarda este código como comprobante de tu firma."
 
-Flujo de envío (POST) y manejo de estados
 
+
+
+Flujo de envío (POST) y manejo de estados
 Al hacer clic en "Firmar Documento", el frontend debe ejecutar el siguiente flujo:
 
-1. Armar payload: Construir un objeto purposes incluyendo todos los slugs recibidos del GET (no solo los que el usuario modificó). Los propósitos con required: true deben enviarse siempre como true aunque el toggle esté bloqueado en la UI. El backend los fuerza igualmente, pero enviar el payload completo garantiza coherencia del proof_hash.
+
+
+- Armar payload: Construir un objeto purposes incluyendo todos los slugs recibidos del GET (no solo los que el usuario modificó). Los propósitos con required: true deben enviarse siempre como true aunque el toggle esté bloqueado en la UI. El backend los fuerza igualmente, pero enviar el payload completo garantiza coherencia del proof_hash.
+
 
 function buildPortalPayload(purposesFromGet, toggleStates) {
-  return Object.fromEntries(
-    Object.entries(purposesFromGet).map(([slug, def]) => [
-      slug,
-      def.required ? true : (toggleStates[slug] ?? def.default)
-    ])
-  );
+return Object.fromEntries(
+Object.entries(purposesFromGet).map(([slug, def]) => [
+slug,
+def.required ? true : (toggleStates[slug] ?? def.default)
+])
+);
 }
 
 // Uso:
 const purposes = buildPortalPayload(getResponse.purposes, currentToggleStates);
 const payload = {
-  purposes,
-  visitor_uuid: getOrCreateVisitorUuid()
+purposes,
+visitor_uuid: getOrCreateVisitorUuid()
 };
 
-2. Prevenir doble envío: Bloquear el botón de envío mientras la petición está en curso (estado loading).
-3. Enviar POST: Hacer la petición a POST /api/portal/consent/{token}/confirm con el payload.
-4. Manejar respuesta por código HTTP:
-   - 201: Firma exitosa. Cambiar a pantalla de éxito mostrando data.proof_hash como comprobante, con botón de copiar al portapapeles.
-   - 409: Ya confirmado previamente. Mostrar pantalla de éxito preventivo (no es error, el documento ya estaba firmado). Leer message del JSON de error.
-   - 410: Token expiró entre el GET y el POST. Mostrar pantalla de expiración. Leer message del error.
-   - 404: Token no existe (raro, pero posible si se eliminó entre GET y POST). Mostrar pantalla de error con message.
-   - 422: Error de validación (purposes vacío, visitor_uuid inválido). Mostrar mensaje inline sin cambiar de pantalla.
-   - 500: Error interno. Mostrar mensaje genérico y permitir reintento.
-5. Siempre leer message del backend: No hardcodear textos de error. El backend retorna el mensaje exacto en error.message. El frontend debe mostrarlo tal cual.
+
+- Prevenir doble envío: Bloquear el botón de envío mientras la petición está en curso (estado loading).
+
+- Enviar POST: Hacer la petición a POST /api/portal/consent/{token}/confirm con el payload.
+
+- Manejar respuesta por código HTTP:
+
+- 201: Firma exitosa. Cambiar a pantalla de éxito mostrando data.proof_hash como comprobante, con botón de copiar al portapapeles.
+
+- 409: Ya confirmado previamente. Mostrar pantalla de éxito preventivo (no es error, el documento ya estaba firmado). Leer message del JSON de error.
+
+- 410: Token expiró entre el GET y el POST. Mostrar pantalla de expiración. Leer message del error.
+
+- 404: Token no existe (raro, pero posible si se eliminó entre GET y POST). Mostrar pantalla de error con message.
+
+- 422: Error de validación (purposes vacío, visitor_uuid inválido). Mostrar mensaje inline sin cambiar de pantalla.
+
+- 500: Error interno. Mostrar mensaje genérico y permitir reintento.
+
+
+
+
+- Siempre leer message del backend: No hardcodear textos de error. El backend retorna el mensaje exacto en error.message. El frontend debe mostrarlo tal cual.
+
+
+
+
 
 Consideraciones adicionales
 
 - CORS: El backend ya configura Access-Control-Allow-Origin para http://localhost:4200 y https://nodoxspd.cl. No requiere headers especiales del frontend.
+
 - Rate limiting: 60 req/min por IP. No spammear reintentos en errores 4xx/5xx.
+
+- Correo transaccional: Los correos del Portal Cautivo son transaccionales (no marketing). Configurar remitente verificado y prioridad alta en el proveedor de email (Resend, SES, etc.).
+
 - No persistir el token: El token va solo en la URL. No guardarlo en localStorage ni sessionStorage.
+
 - Recarga de página post-firma: Si el usuario recarga la página después de haber firmado, el GET /api/portal/consent/{token} retorna 409. El frontend debe interpretar el 409 del GET exactamente igual que el 201 del POST: mostrar la pantalla de éxito con el proof_hash (si el backend lo incluye). No mostrar error. No redirigir. La pantalla de éxito debe poder renderizarse sin haber pasado por el flujo de firma — solo con el 409 del GET es suficiente.
+
 - Accesibilidad: Los toggles deben ser operables por teclado (tab + space). El botón de copiar proof_hash debe tener aria-label.

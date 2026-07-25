@@ -658,8 +658,9 @@ provideHttpClient(withFetch(), withInterceptors([...])),
     <table class="param-table">
       <thead><tr><th>Campo</th><th>Tipo</th><th>Reglas de validaci&oacute;n</th><th>Notas</th></tr></thead>
       <tbody>
-        <tr><td>email</td><td>string</td><td>required, email, max:255</td><td>Email del destinatario (trabajador o lead). Se cifra autom&aacute;ticamente en el mutador del modelo v&iacute;a <code class="inline">Crypt::encryptString()</code>. Nunca en texto plano. <span class="pill pill-req">Requerido</span></td></tr>
-        <tr><td>company_policy_id</td><td>integer</td><td>required, integer, exists:company_policies,id</td><td>ID autoincremental de la pol&iacute;tica a firmar. Debe obtenerse del listado de pol&iacute;ticas publicadas (<code class="inline">GET /company/policies?status=published</code>). <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>emails</td><td>array</td><td>required, array, min:1, max:50</td><td>Array de emails de destinatarios. Cada email se cifra autom&aacute;ticamente en el mutador del modelo v&iacute;a <code class="inline">Crypt::encryptString()</code>. M&aacute;ximo 50 por request. <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>emails.*</td><td>string</td><td>email, max:255</td><td>Email individual v&aacute;lido.</td></tr>
+        <tr><td>company_policy_id</td><td>integer</td><td>required, integer, exists:company_policies,id</td><td>ID autoincremental de la pol&iacute;tica a firmar. Debe obtenerse del listado de pol&iacute;ticas publicadas (<code class="inline">GET /api/company/policies?status=published</code>). <span class="pill pill-req">Requerido</span></td></tr>
       </tbody>
     </table>
   </div>
@@ -670,39 +671,41 @@ provideHttpClient(withFetch(), withInterceptors([...])),
       <tbody>
         <tr><td>Pertenencia</td><td>La pol&iacute;tica (<code class="inline">company_policy_id</code>) debe pertenecer a la empresa del usuario autenticado.</td><td>403</td></tr>
         <tr><td>Estado de pol&iacute;tica</td><td>La pol&iacute;tica debe estar <code class="inline">published</code>. No se aceptan borradores (<code class="inline">draft</code>) ni archivadas (<code class="inline">archived</code>).</td><td>403</td></tr>
-        <tr><td>Unicidad parcial</td><td>&Iacute;ndice <code class="inline">pending_uniqueness_key</code> previene duplicados activos para el mismo <code class="inline">pii_hash + company_policy_id</code>.</td><td>422 / 409 (constraint violation)</td></tr>
+        <tr><td>Unicidad parcial</td><td>&Iacute;ndice <code class="inline">pending_uniqueness_key</code> previene duplicados activos para el mismo <code class="inline">pii_hash + company_policy_id</code>. Los duplicados se omiten silenciosamente y se reportan en <code class="inline">skipped_count</code>.</td><td>Las inserciones duplicadas se omiten (no fallan).</td></tr>
       </tbody>
     </table>
   </div>
   <div class="ep-section">
     <div class="ep-section-title"><span class="dot"></span>Ejemplo de request</div>
     <pre>{
-  <span class="hl-key">&quot;email&quot;</span>: <span class="hl-str">&quot;trabajador@empresa.cl&quot;</span>,
+  <span class="hl-key">&quot;emails&quot;</span>: [
+    <span class="hl-str">&quot;trabajador1@empresa.cl&quot;</span>,
+    <span class="hl-str">&quot;trabajador2@empresa.cl&quot;</span>
+  ],
   <span class="hl-key">&quot;company_policy_id&quot;</span>: <span class="hl-num">20</span>
 }</pre>
   </div>
   <div class="ep-section">
-    <div class="ep-section-title"><span class="pill pill-201">201 Created</span> &mdash; Enlace creado</div>
+    <div class="ep-section-title"><span class="pill pill-201">201 Created</span> &mdash; Env&iacute;os creados (parcial o total)</div>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;">Cuando al menos un email del array se procesa exitosamente, se retorna 201 con el conteo de enviados y omitidos.</p>
     <pre>{
   <span class="hl-key">&quot;status&quot;</span>: <span class="hl-bool">true</span>,
-  <span class="hl-key">&quot;message&quot;</span>: <span class="hl-str">&quot;Enlace de firma enviado correctamente.&quot;</span>,
+  <span class="hl-key">&quot;message&quot;</span>: <span class="hl-str">&quot;Proceso completado. 2 enlaces enviados, 1 omitidos (ya estaban pendientes).&quot;</span>,
   <span class="hl-key">&quot;data&quot;</span>: {
-    <span class="hl-key">&quot;id&quot;</span>: <span class="hl-num">2</span>,
-    <span class="hl-key">&quot;status&quot;</span>: <span class="hl-str">&quot;pending&quot;</span>,
-    <span class="hl-key">&quot;expires_at&quot;</span>: <span class="hl-str">&quot;2026-07-31T04:02:00+00:00&quot;</span>
+    <span class="hl-key">&quot;sent_count&quot;</span>: <span class="hl-num">2</span>,
+    <span class="hl-key">&quot;skipped_count&quot;</span>: <span class="hl-num">1</span>
   }
 }</pre>
   </div>
   <div class="ep-section">
-    <div class="ep-section-title"><span class="pill pill-200">200 OK</span> &mdash; Ya exist&iacute;a un env&iacute;o pendiente</div>
-    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;">Si ya existe un <code class="inline">PendingConsent</code> activo para el mismo <code class="inline">email + company_policy_id</code>, el endpoint retorna 200 con el registro existente en lugar de 201. No se crea un duplicado ni se reenv&iacute;a el correo.</p>
+    <div class="ep-section-title"><span class="pill pill-200">200 OK</span> &mdash; Todos los emails ya estaban pendientes</div>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;">Cuando todos los emails del array ya ten&iacute;an un <code class="inline">PendingConsent</code> activo, no se crea ninguno nuevo. El frontend debe mostrar el mensaje tal como llega del backend.</p>
     <pre>{
   <span class="hl-key">&quot;status&quot;</span>: <span class="hl-bool">true</span>,
-  <span class="hl-key">&quot;message&quot;</span>: <span class="hl-str">&quot;Ya existe un enlace de firma vigente para este destinatario.&quot;</span>,
+  <span class="hl-key">&quot;message&quot;</span>: <span class="hl-str">&quot;Proceso completado. 0 enlaces enviados, 3 omitidos (ya estaban pendientes).&quot;</span>,
   <span class="hl-key">&quot;data&quot;</span>: {
-    <span class="hl-key">&quot;id&quot;</span>: <span class="hl-num">2</span>,
-    <span class="hl-key">&quot;status&quot;</span>: <span class="hl-str">&quot;pending&quot;</span>,
-    <span class="hl-key">&quot;expires_at&quot;</span>: <span class="hl-str">&quot;2026-07-31T04:02:00+00:00&quot;</span>
+    <span class="hl-key">&quot;sent_count&quot;</span>: <span class="hl-num">0</span>,
+    <span class="hl-key">&quot;skipped_count&quot;</span>: <span class="hl-num">3</span>
   }
 }</pre>
   </div>
@@ -713,48 +716,59 @@ provideHttpClient(withFetch(), withInterceptors([...])),
       <tbody>
         <tr><td>401</td><td>No autenticado (falta cookie de sesi&oacute;n)</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;Unauthenticated.&quot;,&quot;data&quot;:null}</code></td></tr>
         <tr><td>403</td><td>Pol&iacute;tica no pertenece a la empresa o no est&aacute; publicada</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;La pol&iacute;tica especificada no est&aacute; disponible para firma.&quot;,&quot;data&quot;:null}</code></td></tr>
-        <tr><td>404</td><td>company_policy_id no encontrado</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;La pol&iacute;tica especificada no existe.&quot;,&quot;data&quot;:null}</code></td></tr>
-        <tr><td>422</td><td>Validaci&oacute;n: email inv&aacute;lido, policy_id faltante</td><td>Errores de validaci&oacute;n est&aacute;ndar de Laravel</td></tr>
-        <tr><td>429</td><td>Rate limit excedido</td><td><code class="inline">{&quot;message&quot;:&quot;Too Many Attempts.&quot;}</code></td></tr>
-        <tr><td>500</td><td>Error interno (constraint violation, Job dispatch fall&oacute;)</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;Error al generar el enlace de firma.&quot;,&quot;data&quot;:null}</code></td></tr>
+        <tr><td>422</td><td>Validaci&oacute;n: emails vac&iacute;o, excede 50 o alg&uacute;n email inv&aacute;lido</td><td>Errores de validaci&oacute;n est&aacute;ndar de Laravel</td></tr>
+        <tr><td>429</td><td>M&aacute;s de 10 requests POST por minuto (throttle)</td><td><code class="inline">{&quot;message&quot;:&quot;Too Many Attempts.&quot;}</code></td></tr>
       </tbody>
     </table>
   </div>
   <div class="ep-section">
     <div class="ep-section-title"><span class="dot"></span>Flujo interno</div>
     <div class="flow-diagram">
-      <div class="flow-step"><span class="num">1</span><span class="desc">Frontend env&iacute;a <code>POST /panel/pending-consents</code> con email + company_policy_id.</span></div>
+      <div class="flow-step"><span class="num">1</span><span class="desc">Frontend env&iacute;a <code>POST /panel/pending-consents</code> con array <code>emails</code> + company_policy_id.</span></div>
       <div class="flow-arrow">&darr;</div>
-      <div class="flow-step"><span class="num">2</span><span class="desc">Backend valida email y company_policy_id. Resuelve empresa del usuario autenticado.</span></div>
+      <div class="flow-step"><span class="num">2</span><span class="desc">Backend valida emails y company_policy_id. Resuelve empresa del usuario autenticado.</span></div>
       <div class="flow-arrow">&darr;</div>
       <div class="flow-step"><span class="num">3</span><span class="desc">Verifica que la pol&iacute;tica pertenezca a la empresa y est&eacute; <code>published</code>. Si no: 403.</span></div>
       <div class="flow-arrow">&darr;</div>
-      <div class="flow-step"><span class="num">4</span><span class="desc">Genera token criptogr&aacute;fico (64 chars hex). Crea PendingConsent: el mutador cifra el email autom&aacute;ticamente.</span></div>
+      <div class="flow-step"><span class="num">4</span><span class="desc">Itera cada email. Si no existe un pending activo: genera token, cifra email, crea PendingConsent y despacha <code>SendConsentLinkJob</code>. Si ya existe: incrementa <code>skipped_count</code>.</span></div>
       <div class="flow-arrow">&darr;</div>
-      <div class="flow-step"><span class="num">5</span><span class="desc">Despacha <code>SendConsentLinkJob</code> a la cola (queue: database). Retorna 201 con id, status, expires_at.</span></div>
+      <div class="flow-step"><span class="num">5</span><span class="desc">Retorna 200 (si todos omitidos) o 201 (si al menos 1 enviado) con <code>sent_count</code> y <code>skipped_count</code>.</span></div>
       <div class="flow-arrow">&darr;</div>
-      <div class="flow-step"><span class="num">6</span><span class="desc"><em>[Background — Queue Worker]</em> SendConsentLinkJob descifra el email en memoria, construye URL m&aacute;gica y despacha <code>ConsentLinkMail</code>.</span></div>
+      <div class="flow-step"><span class="num">6</span><span class="desc"><em>[Background — Queue Workers]</em> Cada SendConsentLinkJob descifra el email en memoria, construye URL m&aacute;gica y despacha <code>ConsentLinkMail</code>.</span></div>
     </div>
-    <div class="note note-warn">El 201 confirma que el registro se cre&oacute; y el Job se encol&oacute;, <strong>no</strong> que el correo ya lleg&oacute;. El env&iacute;o es asincr&oacute;nico v&iacute;a la cola de base de datos. Posibles demoras de segundos a minutos seg&uacute;n la carga del worker.</div>
+    <div class="note note-warn">El 201 confirma que al menos un registro se cre&oacute; y su Job se encol&oacute;, <strong>no</strong> que los correos ya llegaron. El env&iacute;o es asincr&oacute;nico v&iacute;a la cola de base de datos.</div>
   </div>
   <div class="ep-section">
     <div class="ep-section-title"><span class="dot"></span>Ejemplo de c&oacute;digo (servicio Angular)</div>
-    <div class="note-note" style="margin-bottom:6px;">Ejemplo ilustrativo, no vinculante a una versi&oacute;n espec&iacute;fica de Angular.</div>
-    <pre>sendPortalLink(email: string, companyPolicyId: number): Observable&lt;PortalLinkResponse&gt; {
-  <span class="hl-key">return</span> this.http.post&ltPortalLinkResponse&gt;(
+    <div class="note-note" style="margin-bottom:6px;">El input de correo en el modal de "Nuevo Env&iacute;o" debe permitir m&uacute;ltiples correos (separados por coma o usando un componente de chips/tags). El frontend transforma ese input en un array de strings antes de enviarlo.</div>
+    <pre>sendPortalLinks(emails: string[], companyPolicyId: number): Observable&lt;BulkSendResponse&gt; {
+  <span class="hl-key">return</span> this.http.post&lt;BulkSendResponse&gt;(
     `${environment.apiUrl}/panel/pending-consents`,
-    { email, company_policy_id: companyPolicyId }
+    { emails, company_policy_id: companyPolicyId }
   );
-}</pre>
+}
+
+<span class="hl-comment">// Manejo de respuesta</span>
+this.sendPortalLinks(emails, policyId).subscribe({
+  next: (res) =&gt; {
+    const msg = res.data.sent_count &gt; 0
+      ? `${res.data.sent_count} enlaces enviados`
+      : &grave;Todos los correos ya estaban pendientes&grave;;
+    if (res.data.skipped_count &gt; 0) {
+      msg += &grave;, ${res.data.skipped_count} omitidos&grave;;
+    }
+    this.showToast(msg);
+  },
+  error: (err) =&gt; this.showToast(err.error?.message || &grave;Error al enviar&grave;)
+});</pre>
   </div>
   <div class="ep-section">
     <div class="ep-section-title"><span class="dot"></span>Notas de implementaci&oacute;n</div>
     <ul class="sec-list">
-      <li>El <code class="inline">company_policy_id</code> debe obtenerse del listado de pol&iacute;ticas publicadas (<code class="inline">GET /company/policies?status=published</code>). Solo pol&iacute;ticas publicadas son elegibles.</li>
-      <li>No se expone el token ni el PII en la respuesta. Solo <code class="inline">id</code>, <code class="inline">status</code> y <code class="inline">expires_at</code>.</li>
-      <li>El frontend debe implementar feedback visual de loading durante el POST (deshabilitar bot&oacute;n, spinner).</li>
-      <li>Tras &eacute;xito (201), mostrar mensaje de confirmaci&oacute;n. Opcional: listar enlaces pendientes enviados si se implementa un GET index futuro.</li>
-      <li>Si el email ya tiene un pending activo para esa pol&iacute;tica, el insert falla por constraint violation (&iacute;ndice &uacute;nico). Manejarlo como 409 en el frontend.</li>
+      <li>Throttle: m&aacute;ximo 10 requests POST por minuto por usuario.</li>
+      <li>El <code class="inline">company_policy_id</code> debe obtenerse del listado de pol&iacute;ticas publicadas (<code class="inline">GET /api/company/policies?status=published</code>). Solo pol&iacute;ticas publicadas son elegibles.</li>
+      <li>Mostrar mensaje de confirmaci&oacute;n con <code class="inline">sent_count</code> y <code class="inline">skipped_count</code> tras la respuesta (ej: "2 enlaces enviados, 1 ya estaba pendiente").</li>
+      <li>Los emails duplicados dentro del mismo array no se procesan dos veces.</li>
       <li>M&aacute;s detalle en <a class="doc-link" href="frontend-guia-conceptual.html#caracter&iacute;stica-f">Caracter&iacute;stica F de la Gu&iacute;a Conceptual</a>.</li>
     </ul>
   </div>
@@ -811,7 +825,8 @@ provideHttpClient(withFetch(), withInterceptors([...])),
         <tr><td>date_to</td><td>date|null</td><td><em>ninguno</em></td><td>Filtro por fecha final (incluyente). Formato: <code class="inline">Y-m-d</code>.</td></tr>
         <tr><td>email</td><td>string|null</td><td><em>ninguno</em></td><td>Filtro por email del titular (b&uacute;squeda parcial, case-insensitive).</td></tr>
         <tr><td>status</td><td>string|null</td><td><em>todos</em></td><td>Filtrar por estado: <code class="inline">accepted</code>, <code class="inline">rejected</code>, <code class="inline">expired</code>, <code class="inline">revoked</code>.</td></tr>
-        <tr><td>per_page</td><td>int</td><td><code class="inline">20</code></td><td>Resultados por p&aacute;gina. M&aacute;ximo 100.</td></tr>
+        <tr><td>search</td><td>string|null</td><td><em>ninguno</em></td><td>B&uacute;squeda global en email del titular (parcial, case-insensitive). Busca tanto en identifier (email real) como en el email cifrado almacenado.</td></tr>
+        <tr><td>per_page</td><td>int</td><td><code class="inline">15</code></td><td>Resultados por p&aacute;gina. M&aacute;ximo 100.</td></tr>
         <tr><td>page</td><td>int</td><td><code class="inline">1</code></td><td>N&uacute;mero de p&aacute;gina.</td></tr>
       </tbody>
     </table>
@@ -824,7 +839,8 @@ provideHttpClient(withFetch(), withInterceptors([...])),
   <span class="hl-key">&quot;data&quot;</span>: [
     {
       <span class="hl-key">&quot;id&quot;</span>: <span class="hl-num">1</span>,
-      <span class="hl-key">&quot;email&quot;</span>: <span class="hl-str">&quot;trabajador@empresa.cl&quot;</span>,
+      <span class="hl-key">&quot;identifier&quot;</span>: <span class="hl-str">&quot;trabajador@empresa.cl&quot;</span>,
+      <span class="hl-key">&quot;source&quot;</span>: <span class="hl-str">&quot;live_portal&quot;</span>,
       <span class="hl-key">&quot;action&quot;</span>: <span class="hl-str">&quot;consent_given&quot;</span>,
       <span class="hl-key">&quot;status&quot;</span>: <span class="hl-str">&quot;accepted&quot;</span>,
       <span class="hl-key">&quot;proof_hash&quot;</span>: <span class="hl-str">&quot;abc123...&quot;</span>,
@@ -839,7 +855,7 @@ provideHttpClient(withFetch(), withInterceptors([...])),
   <span class="hl-key">&quot;meta&quot;</span>: {
     <span class="hl-key">&quot;current_page&quot;</span>: <span class="hl-num">1</span>,
     <span class="hl-key">&quot;last_page&quot;</span>: <span class="hl-num">10</span>,
-    <span class="hl-key">&quot;per_page&quot;</span>: <span class="hl-num">20</span>,
+    <span class="hl-key">&quot;per_page&quot;</span>: <span class="hl-num">15</span>,
     <span class="hl-key">&quot;total&quot;</span>: <span class="hl-num">195</span>
   }
 }</pre>
@@ -850,7 +866,8 @@ provideHttpClient(withFetch(), withInterceptors([...])),
       <thead><tr><th>Campo</th><th>Tipo</th><th>Descripci&oacute;n</th></tr></thead>
       <tbody>
         <tr><td>id</td><td>int</td><td>ID del registro de auditor&iacute;a.</td></tr>
-        <tr><td>email</td><td>string</td><td>Email del titular en texto plano (descifrado en memoria).</td></tr>
+        <tr><td>identifier</td><td>string|null</td><td>Email del titular en texto plano. <code class="inline">null</code> cuando <code class="inline">source = "live_widget"</code> (el Widget no expone identificadores). Para <code class="inline">source = "live_portal"</code> contiene el email real del destinatario.</td></tr>
+        <tr><td>source</td><td>string</td><td>Origen del consentimiento: <code class="inline">live_widget</code> (desde Widget en sitio p&uacute;blico, sin identificador expuesto) o <code class="inline">live_portal</code> (desde Portal Cautivo del panel, con email real).</td></tr>
         <tr><td>action</td><td>string</td><td>Acci&oacute;n realizada: <code class="inline">consent_given</code>, <code class="inline">consent_rejected</code>, <code class="inline">consent_expired</code>, <code class="inline">consent_revoked</code>.</td></tr>
         <tr><td>status</td><td>string</td><td>Estado resultante: <code class="inline">accepted</code>, <code class="inline">rejected</code>, <code class="inline">expired</code>, <code class="inline">revoked</code>.</td></tr>
         <tr><td>proof_hash</td><td>string</td><td>SHA-256 hash del registro (64 caracteres hex). Identificador &uacute;nico de integridad.</td></tr>
@@ -865,7 +882,7 @@ provideHttpClient(withFetch(), withInterceptors([...])),
     <table class="err-table">
       <thead><tr><th>C&oacute;digo</th><th>Causa</th><th>Ejemplo de mensaje</th></tr></thead>
       <tbody>
-        <tr><td>401</td><td>No autenticado (token inv&aacute;lido o ausente)</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;Unauthenticated.&quot;,&quot;data&quot;:null}</code></td></tr>
+        <tr><td>401</td><td>No autenticado (falta cookie de sesi&oacute;n)</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;Unauthenticated.&quot;,&quot;data&quot;:null}</code></td></tr>
         <tr><td>422</td><td>Par&aacute;metro de filtro inv&aacute;lido</td><td><code class="inline">{&quot;message&quot;:&quot;El campo date_from no es una fecha v&aacute;lida.&quot;}</code></td></tr>
       </tbody>
     </table>
@@ -876,7 +893,7 @@ provideHttpClient(withFetch(), withInterceptors([...])),
       <li><strong>Inmutabilidad:</strong> consent_logs es solo lectura. No expone DELETE, PUT ni PATCH. El frontend no debe ofrecer acciones de edici&oacute;n/eliminaci&oacute;n.</li>
       <li>El proof hash se genera en el backend con <code class="inline">hash('sha256', ...)</code> sobre los campos del registro concatenados.</li>
       <li>La cadena de integridad se verifica comparando <code class="inline">previous_hash</code> de cada registro con el <code class="inline">proof_hash</code> del registro anterior.</li>
-      <li>Paginaci&oacute;n est&aacute;ndar (20 por defecto, m&aacute;x. 100). Orden fijo: <code class="inline">created_at DESC</code>.</li>
+      <li>Paginaci&oacute;n est&aacute;ndar (15 por defecto, m&aacute;x. 100). Orden fijo: <code class="inline">created_at DESC</code>.</li>
       <li>Scoped al tenant: solo devuelve registros de la empresa del usuario autenticado.</li>
       <li>M&aacute;s detalle en <a class="doc-link" href="frontend-guia-conceptual.html#caracter&iacute;stica-g">Caracter&iacute;stica G de la Gu&iacute;a Conceptual</a>.</li>
     </ul>
@@ -886,7 +903,8 @@ provideHttpClient(withFetch(), withInterceptors([...])),
     <table class="param-table">
       <thead><tr><th>Columna</th><th>Datos</th><th>Comportamiento</th></tr></thead>
       <tbody>
-        <tr><td>Email</td><td><code class="inline">item.email</code></td><td>Texto plano.</td></tr>
+        <tr><td>Identificador</td><td><code class="inline">item.identifier</code></td><td>Texto plano si <code>source = &quot;live_portal&quot;</code>. <span class="pill" style="background:#6b7280;color:#fff">No disponible</span> si <code>source = &quot;live_widget&quot;</code>.</td></tr>
+        <tr><td>Origen</td><td><code class="inline">item.source</code></td><td>Badge: <span class="pill" style="background:#3b82f6;color:#fff">live_portal</span> <span class="pill" style="background:#8b5cf6;color:#fff">live_widget</span></td></tr>
         <tr><td>Acci&oacute;n</td><td><code class="inline">item.action</code></td><td>Badge de color: <span class="pill" style="background:#22c55e;color:#000">consent_given</span> <span class="pill" style="background:#ef4444;color:#fff">consent_rejected</span> <span class="pill" style="background:#6b7280;color:#fff">consent_expired</span> <span class="pill" style="background:#eab308;color:#000">consent_revoked</span></td></tr>
         <tr><td>Estado</td><td><code class="inline">item.status</code></td><td>Badge secundario.</td></tr>
         <tr><td>Proof Hash</td><td><code class="inline">item.proof_hash</code></td><td>Mostrar truncado (<code class="inline">abc123...def</code>) + bot&oacute;n copiar. Tooltip con hash completo.</td></tr>
@@ -1380,6 +1398,7 @@ provideHttpClient(withFetch(), withInterceptors([...])),
       <li>Slugs no activos se ignoran silenciosamente.</li>
       <li>El <code class="inline">proof_hash</code> debe mostrarse al usuario como "C&oacute;digo de recibo de firma" con bot&oacute;n de copiar al portapapeles.</li>
       <li>Rate limiting: 60 req/min por IP. No spammear reintentos.</li>
+      <li>Los correos enviados desde el Portal Cautivo son <strong>transaccionales</strong> (no marketing). Deben configurarse con un remitente verificado y prioridad alta en el proveedor de email transactional (Resend, SES, etc.).</li>
       <li>M&aacute;s detalle en <a class="doc-link" href="frontend-guia-conceptual.html#caracter&iacute;stica-f">Caracter&iacute;stica F de la Gu&iacute;a Conceptual</a>.</li>
     </ul>
   </div>
@@ -1387,7 +1406,7 @@ provideHttpClient(withFetch(), withInterceptors([...])),
 </details>
 
 <div class="ep-section" style="max-width:980px;margin:0 auto 20px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px;">
-  <div class="ep-section-title"><span class="dot"></span>Tabla resumen — Diez endpoints</div>
+  <div class="ep-section-title"><span class="dot"></span>Tabla resumen — Once endpoints</div>
   <table class="param-table">
     <thead><tr><th>#</th><th>Endpoint</th><th>M&eacute;todo</th><th>Auth</th><th>M&oacute;dulo</th><th>Descripci&oacute;n</th></tr></thead>
     <tbody>
@@ -1401,6 +1420,7 @@ provideHttpClient(withFetch(), withInterceptors([...])),
       <tr><td>08</td><td>/api/panel/companies/widget-config</td><td><span class="verb verb-patch">PATCH</span></td><td><span class="auth-badge auth-private">Sanctum</span></td><td>Configuraci&oacute;n</td><td>Personalizar widget visual</td></tr>
       <tr><td>09</td><td>/api/portal/consent/{token}</td><td><span class="verb verb-get">GET</span></td><td><span class="auth-badge auth-public">P&uacute;blico</span></td><td>Portal Cautivo</td><td>Portal Cautivo — datos de firma</td></tr>
       <tr><td>10</td><td>/api/portal/consent/{token}/confirm</td><td><span class="verb verb-post">POST</span></td><td><span class="auth-badge auth-public">P&uacute;blico</span></td><td>Portal Cautivo</td><td>Portal Cautivo — confirmar firma</td></tr>
+      <tr><td>11</td><td>/api/company/policies</td><td><span class="verb verb-get">GET</span></td><td><span class="auth-badge auth-public">P&uacute;blico</span></td><td>Configuraci&oacute;n</td><td>Pol&iacute;ticas publicadas (dropdown)</td></tr>
     </tbody>
   </table>
 </div>
