@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
@@ -18,6 +18,7 @@
     --font-mono: JetBrains Mono, Fira Code, ui-monospace, monospace;
     --get: #0f766e; --get-bg: #f0fdfa; --get-border: #5eead4;
     --post: #1d4ed8; --post-bg: #eff6ff; --post-border: #93c5fd;
+    --patch: #b45309; --patch-bg: #fffbeb; --patch-border: #fde68a;
     --green: #166534; --green-bg: #f0fdf4; --green-border: #bbf7d0;
     --red: #991b1b; --red-bg: #fef2f2; --red-border: #fecaca;
     --yellow: #92400e; --yellow-bg: #fffbeb; --yellow-border: #fde68a;
@@ -47,6 +48,7 @@
   .verb { display: inline-flex; align-items: center; justify-content: center; padding: 2px 9px; border-radius: 6px; font-size: 11px; font-weight: 800; font-family: var(--font-mono); letter-spacing: .3px; border: 1.5px solid; white-space: nowrap; }
   .verb-get { color: var(--get); background: var(--get-bg); border-color: var(--get-border); }
   .verb-post { color: var(--post); background: var(--post-bg); border-color: var(--post-border); }
+.verb-patch { color: var(--patch); background: var(--patch-bg); border-color: var(--patch-border); }
   details.ep-details { max-width: 980px; margin: 0 auto 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
   details.ep-details summary { cursor: pointer; list-style: none; user-select: none; padding: 16px 20px; background: var(--surface-2); display: flex; align-items: center; gap: 12px; transition: background .15s; }
   details.ep-details summary::-webkit-details-marker { display: none; }
@@ -93,6 +95,10 @@
   .note { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 8px; font-size: 12.5px; line-height: 1.55; margin-top: 8px; }
   .note-warn { background: var(--yellow-bg); border: 1px solid var(--yellow-border); color: var(--yellow); }
   .note-info { background: var(--blue-bg); border: 1px solid var(--blue-border); color: var(--blue); }
+  .flow-diagram { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin: 8px 0; font-size: 12.5px; line-height: 1.65; }
+  .flow-step { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+  .flow-step .num { width: 26px; height: 26px; border-radius: 50%; background: var(--text-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .flow-step .desc { font-size: 12.5px; color: var(--text-secondary); }
   .auth-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; }
   .auth-public { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
   .auth-private { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
@@ -169,9 +175,31 @@
         </ul>
     </div>
     <div class="nav-section">
-        <a class="nav-section-title" href="#ep3">Panel (Angular)</a>
+        <a class="nav-section-title" href="#ep3">Panel — Gesti&oacute;n de Env&iacute;os</a>
         <ul class="nav-section-items">
-            <li><a href="#ep3">GET /api/panel/consent-purposes</a></li>
+            <li><a href="#ep3">GET /api/panel/pending-consents</a></li>
+            <li><a href="#ep4">POST /api/panel/pending-consents</a></li>
+        </ul>
+    </div>
+    <div class="nav-section">
+        <a class="nav-section-title" href="#ep5">Panel — B&oacute;veda de Auditor&iacute;a</a>
+        <ul class="nav-section-items">
+            <li><a href="#ep5">GET /api/panel/consent-logs</a></li>
+        </ul>
+    </div>
+    <div class="nav-section">
+        <a class="nav-section-title" href="#ep6">Panel — Configuraci&oacute;n</a>
+        <ul class="nav-section-items">
+            <li><a href="#ep6">GET /api/panel/consent-purposes</a></li>
+            <li><a href="#ep7">PATCH /api/panel/companies/domains</a></li>
+            <li><a href="#ep8">PATCH /api/panel/companies/widget-config</a></li>
+        </ul>
+    </div>
+    <div class="nav-section">
+        <a class="nav-section-title" href="#ep9">Portal Cautivo</a>
+        <ul class="nav-section-items">
+            <li><a href="#ep9">GET /api/portal/consent/{token}</a></li>
+            <li><a href="#ep10">POST /api/portal/consent/{token}/confirm</a></li>
         </ul>
     </div>
 </nav>
@@ -180,7 +208,7 @@
 
 <div class="doc-header">
   <h1>API Reference &mdash; Frontend M&oacute;dulo 2</h1>
-  <p>Tres endpoints cr&iacute;ticos para la integraci&oacute;n frontend del Trust Widget: configuraci&oacute;n del banner, registro de consentimiento y cat&aacute;logo de fines legales.</p>
+  <p>Diez endpoints para la integraci&oacute;n frontend del Trust Widget: configuraci&oacute;n del banner, registro de consentimiento, cat&aacute;logo de fines legales, generaci&oacute;n de enlaces de firma, listado de consents pendientes, b&oacute;veda de auditor&iacute;a, gesti&oacute;n de dominios CORS, personalizaci&oacute;n visual y Portal Cautivo (consulta + firma).</p>
   <div class="doc-meta">
     <span><strong>Base URL:</strong> <code style="font-family:var(--font-mono);font-size:12px">https://api.tudominio.com</code></span>
     <span><strong>Formato:</strong> JSON &middot; UTF-8</span>
@@ -193,7 +221,14 @@
   <div class="toc-list">
     <a href="#ep1" class="toc-item"><span class="toc-num">01</span><span class="verb verb-get">GET</span> Configuraci&oacute;n del widget<span class="toc-path">/api/widget/{company_public_uuid}/config</span></a>
     <a href="#ep2" class="toc-item"><span class="toc-num">02</span><span class="verb verb-post">POST</span> Registrar consentimiento<span class="toc-path">/api/widget/{company_public_uuid}/consent</span></a>
-    <a href="#ep3" class="toc-item"><span class="toc-num">03</span><span class="verb verb-get">GET</span> Cat&aacute;logo de fines legales<span class="toc-path">/api/panel/consent-purposes</span></a>
+    <a href="#ep3" class="toc-item"><span class="toc-num">03</span><span class="verb verb-get">GET</span> Listar consents pendientes<span class="toc-path">/api/panel/pending-consents</span></a>
+    <a href="#ep4" class="toc-item"><span class="toc-num">04</span><span class="verb verb-post">POST</span> Generar enlace de firma<span class="toc-path">/api/panel/pending-consents</span></a>
+    <a href="#ep5" class="toc-item"><span class="toc-num">05</span><span class="verb verb-get">GET</span> B&oacute;veda de auditor&iacute;a<span class="toc-path">/api/panel/consent-logs</span></a>
+    <a href="#ep6" class="toc-item"><span class="toc-num">06</span><span class="verb verb-get">GET</span> Cat&aacute;logo de fines legales<span class="toc-path">/api/panel/consent-purposes</span></a>
+    <a href="#ep7" class="toc-item"><span class="toc-num">07</span><span class="verb verb-patch">PATCH</span> Dominios autorizados CORS<span class="toc-path">/api/panel/companies/domains</span></a>
+    <a href="#ep8" class="toc-item"><span class="toc-num">08</span><span class="verb verb-patch">PATCH</span> Personalizar widget visual<span class="toc-path">/api/panel/companies/widget-config</span></a>
+    <a href="#ep9" class="toc-item"><span class="toc-num">09</span><span class="verb verb-get">GET</span> Portal Cautivo — datos de firma<span class="toc-path">/api/portal/consent/{token}</span></a>
+    <a href="#ep10" class="toc-item"><span class="toc-num">10</span><span class="verb verb-post">POST</span> Portal Cautivo — confirmar firma<span class="toc-path">/api/portal/consent/{token}/confirm</span></a>
   </div>
 </div>
 
@@ -441,9 +476,432 @@
 </div>
 </details>
 
-<div class="section-divider"><h2>Panel (Angular)</h2><hr></div>
+<div class="section-divider"><h2>Panel — Gesti&oacute;n de Env&iacute;os</h2><hr></div>
 
 <details class="ep-details" id="ep3">
+<summary>
+  <span class="verb verb-get">GET</span>
+  <div>
+    <div class="ep-summary-title">Listar consents pendientes</div>
+    <div class="ep-summary-desc">/api/panel/pending-consents</div>
+  </div>
+</summary>
+<div class="ep-body">
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Prop&oacute;sito / Cu&aacute;ndo se usa</div>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;">
+      Lista los env&iacute;os de firma pendientes de la empresa autenticada, ordenados por <code class="inline">created_at</code> descendente. Se usa en el panel Angular en la vista &quot;Gesti&oacute;n de Env&iacute;os&quot; para mostrar una tabla con todos los <code class="inline">PendingConsent</code> registrados, su estado actual y acciones disponibles (re-enviar, ver detalle). El email se descifra en memoria v&iacute;a un accessor del modelo.
+    </p>
+  </div>
+  <div class="ep-route">
+    <span class="verb verb-get">GET</span>
+    <span class="ep-path">/api/panel/pending-consents</span>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Headers requeridos</div>
+    <table class="param-table">
+      <thead><tr><th>Header</th><th>Valor</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>Content-Type</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Accept</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Cookie</td><td>string</td><td>Session cookie enviada autom&aacute;ticamente por el navegador. Requiere <code class="inline">withCredentials: true</code> en el HttpClient. <span class="pill pill-req">Requerido</span></td></tr>
+      </tbody>
+    </table>
+    <div class="note note-info">
+      <strong>Autenticaci&oacute;n:</strong> Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con <code class="inline">GET /sanctum/csrf-cookie</code> antes de llamar a este endpoint. Incluir <code class="inline">withCredentials: true</code> en todas las llamadas HTTP del panel. No usar Bearer token — las cookies de sesi&oacute;n se env&iacute;an autom&aacute;ticamente.
+    </div>
+    <pre><span class="hl-key">// En app.config.ts o el interceptor HTTP:</span>
+provideHttpClient(withFetch(), withInterceptors([...])),
+<span class="hl-comment">// Y asegurarse de enviar credenciales (o configurarlo globalmente en el interceptor)</span></pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Query params</div>
+    <table class="param-table">
+      <thead><tr><th>Par&aacute;metro</th><th>Tipo</th><th>Default</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>status</td><td>string|null</td><td><em>todos</em></td><td>Filtrar por estado: <code class="inline">pending</code>, <code class="inline">completed</code>, <code class="inline">expired</code>. Si se omite, devuelve todos.</td></tr>
+        <tr><td>per_page</td><td>int</td><td><code class="inline">20</code></td><td>Resultados por p&aacute;gina. M&aacute;ximo 100.</td></tr>
+        <tr><td>page</td><td>int</td><td><code class="inline">1</code></td><td>N&uacute;mero de p&aacute;gina.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuesta exitosa <span class="pill pill-200">200 OK</span></div>
+    <pre>{
+  <span class="hl-key">&quot;status&quot;</span>: <span class="hl-bool">true</span>,
+  <span class="hl-key">&quot;message&quot;</span>: <span class="hl-str">&quot;Listado de consents pendientes.&quot;</span>,
+  <span class="hl-key">&quot;data&quot;</span>: [
+    {
+      <span class="hl-key">&quot;id&quot;</span>: <span class="hl-num">42</span>,
+      <span class="hl-key">&quot;email&quot;</span>: <span class="hl-str">&quot;trabajador@empresa.cl&quot;</span>,
+      <span class="hl-key">&quot;company_policy_id&quot;</span>: <span class="hl-num">20</span>,
+      <span class="hl-key">&quot;status&quot;</span>: <span class="hl-str">&quot;pending&quot;</span>,
+      <span class="hl-key">&quot;token&quot;</span>: <span class="hl-str">&quot;a1b2c3d4...&quot;</span>,
+      <span class="hl-key">&quot;expires_at&quot;</span>: <span class="hl-str">&quot;2026-07-31T04:02:00+00:00&quot;</span>,
+      <span class="hl-key">&quot;created_at&quot;</span>: <span class="hl-str">&quot;2026-07-24T04:02:00+00:00&quot;</span>
+    }
+  ],
+  <span class="hl-key">&quot;meta&quot;</span>: {
+    <span class="hl-key">&quot;current_page&quot;</span>: <span class="hl-num">1</span>,
+    <span class="hl-key">&quot;last_page&quot;</span>: <span class="hl-num">5</span>,
+    <span class="hl-key">&quot;per_page&quot;</span>: <span class="hl-num">20</span>,
+    <span class="hl-key">&quot;total&quot;</span>: <span class="hl-num">96</span>
+  }
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Campos de la respuesta</div>
+    <table class="param-table">
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Descripci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td>id</td><td>int</td><td>ID del registro PendingConsent.</td></tr>
+        <tr><td>email</td><td>string</td><td>Email del destinatario en texto plano. El backend lo descifra en memoria v&iacute;a accessor (<code class="inline">Crypt::decryptString()</code>).</td></tr>
+        <tr><td>company_policy_id</td><td>int</td><td>ID de la pol&iacute;tica asociada.</td></tr>
+        <tr><td>status</td><td>string</td><td><code class="inline">pending</code> | <code class="inline">completed</code> | <code class="inline">expired</code>.</td></tr>
+        <tr><td>token</td><td>string</td><td>Token criptogr&aacute;fico (64 chars hex). &Uacute;til para trackeo.</td></tr>
+        <tr><td>expires_at</td><td>datetime</td><td>Fecha de expiraci&oacute;n del enlace (7 d&iacute;as desde creaci&oacute;n).</td></tr>
+        <tr><td>created_at</td><td>datetime</td><td>Fecha de creaci&oacute;n.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuestas de error</div>
+    <table class="err-table">
+      <thead><tr><th>C&oacute;digo</th><th>Causa</th><th>Ejemplo de mensaje</th></tr></thead>
+      <tbody>
+        <tr><td>401</td><td>No autenticado (token inv&aacute;lido o ausente)</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;Unauthenticated.&quot;,&quot;data&quot;:null}</code></td></tr>
+        <tr><td>422</td><td>Par&aacute;metro status inv&aacute;lido</td><td><code class="inline">{&quot;message&quot;:&quot;El campo status seleccionado no es v&aacute;lido.&quot;}</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Notas de implementaci&oacute;n</div>
+    <ul class="sec-list">
+      <li>El email viaja en texto plano en la respuesta. El backend lo descifra con <code class="inline">Crypt::decryptString()</code> en el accessor del modelo.</li>
+      <li>Ordenaci&oacute;n fija: <code class="inline">created_at DESC</code>. No se aceptan par&aacute;metros de ordenamiento.</li>
+      <li>Resultados paginados (20 por defecto, m&aacute;x. 100).</li>
+      <li>Scoped al tenant: solo devuelve registros de la empresa del usuario autenticado.</li>
+      <li>M&aacute;s detalle en <a class="doc-link" href="frontend-guia-conceptual.html#caracter&iacute;stica-c">Caracter&iacute;stica C de la Gu&iacute;a Conceptual</a>.</li>
+    </ul>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>UI — Tabla de env&iacute;os</div>
+    <table class="param-table">
+      <thead><tr><th>Columna</th><th>Datos</th><th>Comportamiento</th></tr></thead>
+      <tbody>
+        <tr><td>Email</td><td><code class="inline">item.email</code></td><td>Texto plano. Largo m&aacute;ximo visible 30 chars + tooltip.</td></tr>
+        <tr><td>Pol&iacute;tica</td><td><code class="inline">item.company_policy_id</code></td><td>Resolver nombre desde cat&aacute;logo (cach&eacute; local).</td></tr>
+        <tr><td>Estado</td><td><code class="inline">item.status</code></td><td>Badge de color: <span class="pill" style="background:#eab308;color:#000">pending</span> <span class="pill" style="background:#22c55e;color:#000">completed</span> <span class="pill" style="background:#6b7280;color:#fff">expired</span></td></tr>
+        <tr><td>Enviado</td><td><code class="inline">item.created_at | date:'short'</code></td><td>Formato fecha local.</td></tr>
+        <tr><td>Expira</td><td><code class="inline">item.expires_at | date:'short'</code></td><td>Resaltar en rojo si faltan &lt; 24h. Mostrar tiempo restante calculado desde <code class="inline">item.expires_at</code>. Resaltar en amarillo registros con menos de 12h restantes.</td></tr>
+        <tr><td>Acciones</td><td>Botones</td><td>&quot;Re-enviar&quot; (solo si <code class="inline">pending</code>), &quot;Ver detalle&quot;.</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;margin-top:6px;"><strong>Estado vac&iacute;o:</strong> Mostrar &quot;No hay env&iacute;os pendientes&quot; con ilustraci&oacute;n simple y bot&oacute;n &quot;Nuevo env&iacute;o&quot; que abre el wizard de firma (ep4).</p>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Ejemplo de c&oacute;digo (servicio Angular)</div>
+    <div class="note-note" style="margin-bottom:6px;">Ejemplo ilustrativo, no vinculante a una versi&oacute;n espec&iacute;fica de Angular.</div>
+    <pre><span class="hl-comment">// Servicio de gesti&oacute;n de env&iacute;os</span>
+getPendingConsents(params?: {
+  status?: 'pending' | 'completed' | 'expired';
+  page?: number;
+  perPage?: number;
+}): Observable&lt;PaginatedResponse&lt;PendingConsent&gt;&gt; {
+  <span class="hl-key">return</span> this.http.get&ltPaginatedResponse&ltPendingConsent&gt;&gt;(
+    `${environment.apiUrl}/panel/pending-consents`,
+    { params }
+  );
+}</pre>
+  </div>
+</div>
+</details>
+
+<details class="ep-details" id="ep4">
+<summary>
+  <span class="verb verb-post">POST</span>
+  <div>
+    <div class="ep-summary-title">Generar enlace de firma</div>
+    <div class="ep-summary-desc">/api/panel/pending-consents</div>
+  </div>
+</summary>
+<div class="ep-body">
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Prop&oacute;sito / Cu&aacute;ndo se usa</div>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;">
+      Crea un registro <code class="inline">PendingConsent</code> con el email del destinatario cifrado (AES-256-CBC mediante <code class="inline">Crypt::encryptString()</code>) y despacha un Job en cola que env&iacute;a el correo transaccional con la URL m&aacute;gica del Portal Cautivo. El enlace expira en 7 d&iacute;as. Se usa desde el panel Angular cuando el admin quiere enviar un documento a un trabajador o lead para su firma digital.
+    </p>
+  </div>
+  <div class="ep-route">
+    <span class="verb verb-post">POST</span>
+    <span class="ep-path">/api/panel/pending-consents</span>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Headers requeridos</div>
+    <table class="param-table">
+      <thead><tr><th>Header</th><th>Valor</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>Content-Type</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Accept</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Cookie</td><td>string</td><td>Session cookie enviada autom&aacute;ticamente por el navegador. Requiere <code class="inline">withCredentials: true</code> en el HttpClient. <span class="pill pill-req">Requerido</span></td></tr>
+      </tbody>
+    </table>
+    <div class="note note-info">
+      <strong>Autenticaci&oacute;n:</strong> Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con <code class="inline">GET /sanctum/csrf-cookie</code> antes de llamar a este endpoint. Incluir <code class="inline">withCredentials: true</code> en todas las llamadas HTTP del panel. No usar Bearer token — las cookies de sesi&oacute;n se env&iacute;an autom&aacute;ticamente.
+    </div>
+    <pre><span class="hl-key">// En app.config.ts o el interceptor HTTP:</span>
+provideHttpClient(withFetch(), withInterceptors([...])),
+<span class="hl-comment">// Y asegurarse de enviar credenciales (o configurarlo globalmente en el interceptor)</span></pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Body params</div>
+    <table class="param-table">
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Reglas de validaci&oacute;n</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>email</td><td>string</td><td>required, email, max:255</td><td>Email del destinatario (trabajador o lead). Se cifra autom&aacute;ticamente en el mutador del modelo v&iacute;a <code class="inline">Crypt::encryptString()</code>. Nunca en texto plano. <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>company_policy_id</td><td>integer</td><td>required, integer, exists:company_policies,id</td><td>ID autoincremental de la pol&iacute;tica a firmar. Debe obtenerse del listado de pol&iacute;ticas publicadas (<code class="inline">GET /company/policies?status=published</code>). <span class="pill pill-req">Requerido</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Validaciones de seguridad</div>
+    <table class="param-table">
+      <thead><tr><th>Regla</th><th>Qu&eacute; valida</th><th>Respuesta si falla</th></tr></thead>
+      <tbody>
+        <tr><td>Pertenencia</td><td>La pol&iacute;tica (<code class="inline">company_policy_id</code>) debe pertenecer a la empresa del usuario autenticado.</td><td>403</td></tr>
+        <tr><td>Estado de pol&iacute;tica</td><td>La pol&iacute;tica debe estar <code class="inline">published</code>. No se aceptan borradores (<code class="inline">draft</code>) ni archivadas (<code class="inline">archived</code>).</td><td>403</td></tr>
+        <tr><td>Unicidad parcial</td><td>&Iacute;ndice <code class="inline">pending_uniqueness_key</code> previene duplicados activos para el mismo <code class="inline">pii_hash + company_policy_id</code>.</td><td>422 / 409 (constraint violation)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Ejemplo de request</div>
+    <pre>{
+  <span class="hl-key">&quot;email&quot;</span>: <span class="hl-str">&quot;trabajador@empresa.cl&quot;</span>,
+  <span class="hl-key">&quot;company_policy_id&quot;</span>: <span class="hl-num">20</span>
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="pill pill-201">201 Created</span> &mdash; Enlace creado</div>
+    <pre>{
+  <span class="hl-key">&quot;status&quot;</span>: <span class="hl-bool">true</span>,
+  <span class="hl-key">&quot;message&quot;</span>: <span class="hl-str">&quot;Enlace de firma enviado correctamente.&quot;</span>,
+  <span class="hl-key">&quot;data&quot;</span>: {
+    <span class="hl-key">&quot;id&quot;</span>: <span class="hl-num">2</span>,
+    <span class="hl-key">&quot;status&quot;</span>: <span class="hl-str">&quot;pending&quot;</span>,
+    <span class="hl-key">&quot;expires_at&quot;</span>: <span class="hl-str">&quot;2026-07-31T04:02:00+00:00&quot;</span>
+  }
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="pill pill-200">200 OK</span> &mdash; Ya exist&iacute;a un env&iacute;o pendiente</div>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;">Si ya existe un <code class="inline">PendingConsent</code> activo para el mismo <code class="inline">email + company_policy_id</code>, el endpoint retorna 200 con el registro existente en lugar de 201. No se crea un duplicado ni se reenv&iacute;a el correo.</p>
+    <pre>{
+  <span class="hl-key">&quot;status&quot;</span>: <span class="hl-bool">true</span>,
+  <span class="hl-key">&quot;message&quot;</span>: <span class="hl-str">&quot;Ya existe un enlace de firma vigente para este destinatario.&quot;</span>,
+  <span class="hl-key">&quot;data&quot;</span>: {
+    <span class="hl-key">&quot;id&quot;</span>: <span class="hl-num">2</span>,
+    <span class="hl-key">&quot;status&quot;</span>: <span class="hl-str">&quot;pending&quot;</span>,
+    <span class="hl-key">&quot;expires_at&quot;</span>: <span class="hl-str">&quot;2026-07-31T04:02:00+00:00&quot;</span>
+  }
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuestas de error</div>
+    <table class="err-table">
+      <thead><tr><th>C&oacute;digo</th><th>Causa</th><th>Ejemplo de mensaje</th></tr></thead>
+      <tbody>
+        <tr><td>401</td><td>No autenticado (falta cookie de sesi&oacute;n)</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;Unauthenticated.&quot;,&quot;data&quot;:null}</code></td></tr>
+        <tr><td>403</td><td>Pol&iacute;tica no pertenece a la empresa o no est&aacute; publicada</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;La pol&iacute;tica especificada no est&aacute; disponible para firma.&quot;,&quot;data&quot;:null}</code></td></tr>
+        <tr><td>404</td><td>company_policy_id no encontrado</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;La pol&iacute;tica especificada no existe.&quot;,&quot;data&quot;:null}</code></td></tr>
+        <tr><td>422</td><td>Validaci&oacute;n: email inv&aacute;lido, policy_id faltante</td><td>Errores de validaci&oacute;n est&aacute;ndar de Laravel</td></tr>
+        <tr><td>429</td><td>Rate limit excedido</td><td><code class="inline">{&quot;message&quot;:&quot;Too Many Attempts.&quot;}</code></td></tr>
+        <tr><td>500</td><td>Error interno (constraint violation, Job dispatch fall&oacute;)</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;Error al generar el enlace de firma.&quot;,&quot;data&quot;:null}</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Flujo interno</div>
+    <div class="flow-diagram">
+      <div class="flow-step"><span class="num">1</span><span class="desc">Frontend env&iacute;a <code>POST /panel/pending-consents</code> con email + company_policy_id.</span></div>
+      <div class="flow-arrow">&darr;</div>
+      <div class="flow-step"><span class="num">2</span><span class="desc">Backend valida email y company_policy_id. Resuelve empresa del usuario autenticado.</span></div>
+      <div class="flow-arrow">&darr;</div>
+      <div class="flow-step"><span class="num">3</span><span class="desc">Verifica que la pol&iacute;tica pertenezca a la empresa y est&eacute; <code>published</code>. Si no: 403.</span></div>
+      <div class="flow-arrow">&darr;</div>
+      <div class="flow-step"><span class="num">4</span><span class="desc">Genera token criptogr&aacute;fico (64 chars hex). Crea PendingConsent: el mutador cifra el email autom&aacute;ticamente.</span></div>
+      <div class="flow-arrow">&darr;</div>
+      <div class="flow-step"><span class="num">5</span><span class="desc">Despacha <code>SendConsentLinkJob</code> a la cola (queue: database). Retorna 201 con id, status, expires_at.</span></div>
+      <div class="flow-arrow">&darr;</div>
+      <div class="flow-step"><span class="num">6</span><span class="desc"><em>[Background — Queue Worker]</em> SendConsentLinkJob descifra el email en memoria, construye URL m&aacute;gica y despacha <code>ConsentLinkMail</code>.</span></div>
+    </div>
+    <div class="note note-warn">El 201 confirma que el registro se cre&oacute; y el Job se encol&oacute;, <strong>no</strong> que el correo ya lleg&oacute;. El env&iacute;o es asincr&oacute;nico v&iacute;a la cola de base de datos. Posibles demoras de segundos a minutos seg&uacute;n la carga del worker.</div>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Ejemplo de c&oacute;digo (servicio Angular)</div>
+    <div class="note-note" style="margin-bottom:6px;">Ejemplo ilustrativo, no vinculante a una versi&oacute;n espec&iacute;fica de Angular.</div>
+    <pre>sendPortalLink(email: string, companyPolicyId: number): Observable&lt;PortalLinkResponse&gt; {
+  <span class="hl-key">return</span> this.http.post&ltPortalLinkResponse&gt;(
+    `${environment.apiUrl}/panel/pending-consents`,
+    { email, company_policy_id: companyPolicyId }
+  );
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Notas de implementaci&oacute;n</div>
+    <ul class="sec-list">
+      <li>El <code class="inline">company_policy_id</code> debe obtenerse del listado de pol&iacute;ticas publicadas (<code class="inline">GET /company/policies?status=published</code>). Solo pol&iacute;ticas publicadas son elegibles.</li>
+      <li>No se expone el token ni el PII en la respuesta. Solo <code class="inline">id</code>, <code class="inline">status</code> y <code class="inline">expires_at</code>.</li>
+      <li>El frontend debe implementar feedback visual de loading durante el POST (deshabilitar bot&oacute;n, spinner).</li>
+      <li>Tras &eacute;xito (201), mostrar mensaje de confirmaci&oacute;n. Opcional: listar enlaces pendientes enviados si se implementa un GET index futuro.</li>
+      <li>Si el email ya tiene un pending activo para esa pol&iacute;tica, el insert falla por constraint violation (&iacute;ndice &uacute;nico). Manejarlo como 409 en el frontend.</li>
+      <li>M&aacute;s detalle en <a class="doc-link" href="frontend-guia-conceptual.html#caracter&iacute;stica-f">Caracter&iacute;stica F de la Gu&iacute;a Conceptual</a>.</li>
+    </ul>
+  </div>
+</div>
+</details>
+
+<div class="section-divider"><h2>Panel — B&oacute;veda de Auditor&iacute;a</h2><hr></div>
+
+<details class="ep-details" id="ep5">
+<summary>
+  <span class="verb verb-get">GET</span>
+  <div>
+    <div class="ep-summary-title">B&oacute;veda de auditor&iacute;a</div>
+    <div class="ep-summary-desc">/api/panel/consent-logs</div>
+  </div>
+</summary>
+<div class="ep-body">
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Prop&oacute;sito / Cu&aacute;ndo se usa</div>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;">
+      Registro inmutable de toda acci&oacute;n de consentimiento realizada por trabajadores y leads: firma (aceptar/rechazar), expiraci&oacute;n autom&aacute;tica, revocaci&oacute;n. Cada registro incluye un <strong>proof hash</strong> (SHA-256 de 64 caracteres hex) que encadena cada entrada con su predecesora (<code class="inline">previous_hash</code>), formando una cadena de integridad tipo blockchain. Se usa en el panel Angular en la vista &quot;B&oacute;veda de Auditor&iacute;a&quot; para consulta, exportaci&oacute;n y verificaci&oacute;n forense.
+    </p>
+    <div class="note note-warn">
+      <strong>Inmutabilidad:</strong> Los registros en <code class="inline">consent_logs</code> no pueden ser modificados ni eliminados, ni por el frontend ni por el backend. Solo lectura (GET). Cualquier intento de DELETE/PUT/PATCH devuelve 405 Method Not Allowed.
+    </div>
+  </div>
+  <div class="ep-route">
+    <span class="verb verb-get">GET</span>
+    <span class="ep-path">/api/panel/consent-logs</span>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Headers requeridos</div>
+    <table class="param-table">
+      <thead><tr><th>Header</th><th>Valor</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>Content-Type</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Accept</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Cookie</td><td>string</td><td>Session cookie enviada autom&aacute;ticamente por el navegador. Requiere <code class="inline">withCredentials: true</code> en el HttpClient. <span class="pill pill-req">Requerido</span></td></tr>
+      </tbody>
+    </table>
+    <div class="note note-info">
+      <strong>Autenticaci&oacute;n:</strong> Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con <code class="inline">GET /sanctum/csrf-cookie</code> antes de llamar a este endpoint. Incluir <code class="inline">withCredentials: true</code> en todas las llamadas HTTP del panel. No usar Bearer token — las cookies de sesi&oacute;n se env&iacute;an autom&aacute;ticamente.
+    </div>
+    <pre><span class="hl-key">// En app.config.ts o el interceptor HTTP:</span>
+provideHttpClient(withFetch(), withInterceptors([...])),
+<span class="hl-comment">// Y asegurarse de enviar credenciales (o configurarlo globalmente en el interceptor)</span></pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Query params</div>
+    <table class="param-table">
+      <thead><tr><th>Par&aacute;metro</th><th>Tipo</th><th>Default</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>date_from</td><td>date|null</td><td><em>ninguno</em></td><td>Filtro por fecha inicial (incluyente). Formato: <code class="inline">Y-m-d</code>.</td></tr>
+        <tr><td>date_to</td><td>date|null</td><td><em>ninguno</em></td><td>Filtro por fecha final (incluyente). Formato: <code class="inline">Y-m-d</code>.</td></tr>
+        <tr><td>email</td><td>string|null</td><td><em>ninguno</em></td><td>Filtro por email del titular (b&uacute;squeda parcial, case-insensitive).</td></tr>
+        <tr><td>status</td><td>string|null</td><td><em>todos</em></td><td>Filtrar por estado: <code class="inline">accepted</code>, <code class="inline">rejected</code>, <code class="inline">expired</code>, <code class="inline">revoked</code>.</td></tr>
+        <tr><td>per_page</td><td>int</td><td><code class="inline">20</code></td><td>Resultados por p&aacute;gina. M&aacute;ximo 100.</td></tr>
+        <tr><td>page</td><td>int</td><td><code class="inline">1</code></td><td>N&uacute;mero de p&aacute;gina.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuesta exitosa <span class="pill pill-200">200 OK</span></div>
+    <pre>{
+  <span class="hl-key">&quot;status&quot;</span>: <span class="hl-bool">true</span>,
+  <span class="hl-key">&quot;message&quot;</span>: <span class="hl-str">&quot;B&oacute;veda de auditor&iacute;a.&quot;</span>,
+  <span class="hl-key">&quot;data&quot;</span>: [
+    {
+      <span class="hl-key">&quot;id&quot;</span>: <span class="hl-num">1</span>,
+      <span class="hl-key">&quot;email&quot;</span>: <span class="hl-str">&quot;trabajador@empresa.cl&quot;</span>,
+      <span class="hl-key">&quot;action&quot;</span>: <span class="hl-str">&quot;consent_given&quot;</span>,
+      <span class="hl-key">&quot;status&quot;</span>: <span class="hl-str">&quot;accepted&quot;</span>,
+      <span class="hl-key">&quot;proof_hash&quot;</span>: <span class="hl-str">&quot;abc123...&quot;</span>,
+      <span class="hl-key">&quot;previous_hash&quot;</span>: <span class="hl-str">&quot;def456...&quot;</span>,
+      <span class="hl-key">&quot;metadata&quot;</span>: {
+        <span class="hl-key">&quot;ip_address&quot;</span>: <span class="hl-str">&quot;192.168.1.1&quot;</span>,
+        <span class="hl-key">&quot;user_agent&quot;</span>: <span class="hl-str">&quot;Mozilla/5.0...&quot;</span>
+      },
+      <span class="hl-key">&quot;created_at&quot;</span>: <span class="hl-str">&quot;2026-07-24T04:02:00+00:00&quot;</span>
+    }
+  ],
+  <span class="hl-key">&quot;meta&quot;</span>: {
+    <span class="hl-key">&quot;current_page&quot;</span>: <span class="hl-num">1</span>,
+    <span class="hl-key">&quot;last_page&quot;</span>: <span class="hl-num">10</span>,
+    <span class="hl-key">&quot;per_page&quot;</span>: <span class="hl-num">20</span>,
+    <span class="hl-key">&quot;total&quot;</span>: <span class="hl-num">195</span>
+  }
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Campos de la respuesta</div>
+    <table class="param-table">
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Descripci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td>id</td><td>int</td><td>ID del registro de auditor&iacute;a.</td></tr>
+        <tr><td>email</td><td>string</td><td>Email del titular en texto plano (descifrado en memoria).</td></tr>
+        <tr><td>action</td><td>string</td><td>Acci&oacute;n realizada: <code class="inline">consent_given</code>, <code class="inline">consent_rejected</code>, <code class="inline">consent_expired</code>, <code class="inline">consent_revoked</code>.</td></tr>
+        <tr><td>status</td><td>string</td><td>Estado resultante: <code class="inline">accepted</code>, <code class="inline">rejected</code>, <code class="inline">expired</code>, <code class="inline">revoked</code>.</td></tr>
+        <tr><td>proof_hash</td><td>string</td><td>SHA-256 hash del registro (64 caracteres hex). Identificador &uacute;nico de integridad.</td></tr>
+        <tr><td>previous_hash</td><td>string|null</td><td>SHA-256 del registro anterior en la cadena. <code class="inline">null</code> para el primer registro.</td></tr>
+        <tr><td>metadata</td><td>object</td><td>Metadatos contextuales: IP, user-agent, etc.</td></tr>
+        <tr><td>created_at</td><td>datetime</td><td>Timestamp de la acci&oacute;n.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuestas de error</div>
+    <table class="err-table">
+      <thead><tr><th>C&oacute;digo</th><th>Causa</th><th>Ejemplo de mensaje</th></tr></thead>
+      <tbody>
+        <tr><td>401</td><td>No autenticado (token inv&aacute;lido o ausente)</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;Unauthenticated.&quot;,&quot;data&quot;:null}</code></td></tr>
+        <tr><td>422</td><td>Par&aacute;metro de filtro inv&aacute;lido</td><td><code class="inline">{&quot;message&quot;:&quot;El campo date_from no es una fecha v&aacute;lida.&quot;}</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Notas de implementaci&oacute;n</div>
+    <ul class="sec-list">
+      <li><strong>Inmutabilidad:</strong> consent_logs es solo lectura. No expone DELETE, PUT ni PATCH. El frontend no debe ofrecer acciones de edici&oacute;n/eliminaci&oacute;n.</li>
+      <li>El proof hash se genera en el backend con <code class="inline">hash('sha256', ...)</code> sobre los campos del registro concatenados.</li>
+      <li>La cadena de integridad se verifica comparando <code class="inline">previous_hash</code> de cada registro con el <code class="inline">proof_hash</code> del registro anterior.</li>
+      <li>Paginaci&oacute;n est&aacute;ndar (20 por defecto, m&aacute;x. 100). Orden fijo: <code class="inline">created_at DESC</code>.</li>
+      <li>Scoped al tenant: solo devuelve registros de la empresa del usuario autenticado.</li>
+      <li>M&aacute;s detalle en <a class="doc-link" href="frontend-guia-conceptual.html#caracter&iacute;stica-g">Caracter&iacute;stica G de la Gu&iacute;a Conceptual</a>.</li>
+    </ul>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>UI — Tabla de auditor&iacute;a</div>
+    <table class="param-table">
+      <thead><tr><th>Columna</th><th>Datos</th><th>Comportamiento</th></tr></thead>
+      <tbody>
+        <tr><td>Email</td><td><code class="inline">item.email</code></td><td>Texto plano.</td></tr>
+        <tr><td>Acci&oacute;n</td><td><code class="inline">item.action</code></td><td>Badge de color: <span class="pill" style="background:#22c55e;color:#000">consent_given</span> <span class="pill" style="background:#ef4444;color:#fff">consent_rejected</span> <span class="pill" style="background:#6b7280;color:#fff">consent_expired</span> <span class="pill" style="background:#eab308;color:#000">consent_revoked</span></td></tr>
+        <tr><td>Estado</td><td><code class="inline">item.status</code></td><td>Badge secundario.</td></tr>
+        <tr><td>Proof Hash</td><td><code class="inline">item.proof_hash</code></td><td>Mostrar truncado (<code class="inline">abc123...def</code>) + bot&oacute;n copiar. Tooltip con hash completo.</td></tr>
+        <tr><td>Fecha</td><td><code class="inline">item.created_at | date:'medium'</code></td><td>Formato fecha local con hora.</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;margin-top:6px;"><strong>Filtros:</strong> Input de fecha desde/hasta, campo de b&uacute;squeda por email, selector de estado. Los filtros se aplican v&iacute;a query params y actualizan la tabla v&iacute;a nueva petici&oacute;n HTTP (no filtro en cliente).</p>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;margin-top:6px;"><strong>Estado vac&iacute;o:</strong> Mostrar &quot;No se encontraron registros de auditor&iacute;a&quot; con ilustraci&oacute;n simple. Si hay filtros activos, mostrar bot&oacute;n &quot;Limpiar filtros&quot;.</p>
+  </div>
+</div>
+</details>
+
+<div class="section-divider"><h2>Panel — Configuraci&oacute;n</h2><hr></div>
+
+<details class="ep-details" id="ep6">
 <summary>
   <span class="verb verb-get">GET</span>
   <div>
@@ -467,12 +925,12 @@
     <table class="param-table">
       <thead><tr><th>Header</th><th>Valor</th><th>Notas</th></tr></thead>
       <tbody>
-<tr><td>Accept</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Accept</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
         <tr><td>Cookie</td><td>string</td><td>Session cookie enviada autom&aacute;ticamente por el navegador. Requiere <code class="inline">withCredentials: true</code> en el HttpClient. <span class="pill pill-req">Requerido</span></td></tr>
       </tbody>
     </table>
     <div class="note note-info">
-      <strong>Autenticaci&oacute;n:</strong> Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con <code class="inline">GET /sanctum/csrf-cookie</code> antes de llamar a este endpoint. Incluir <code class="inline">withCredentials: true</code> en todas las llamadas HTTP del panel. No usar Bearer token &mdash; las cookies de sesi&oacute;n se env&iacute;an autom&aacute;ticamente.
+      <strong>Autenticaci&oacute;n:</strong> Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con <code class="inline">GET /sanctum/csrf-cookie</code> antes de llamar a este endpoint. Incluir <code class="inline">withCredentials: true</code> en todas las llamadas HTTP del panel. No usar Bearer token — las cookies de sesi&oacute;n se env&iacute;an autom&aacute;ticamente.
     </div>
     <pre><span class="hl-key">// En app.config.ts o el interceptor HTTP:</span>
 provideHttpClient(withFetch(), withInterceptors([...])),
@@ -532,11 +990,420 @@ provideHttpClient(withFetch(), withInterceptors([...])),
       <li>Solo se usa en el panel Angular, no en el widget p&uacute;blico.</li>
       <li>Devuelve todos los fines activos del cat&aacute;logo global (13 slugs), no solo los que aplican a la empresa.</li>
       <li>Para el widget, los fines activos se resuelven din&aacute;micamente con WizardPurposeResolverService (3 reglas).</li>
-      <li>M&aacute;s detalle en <a class="doc-link" href="frontend-guia-conceptual.html#artefacto-b">Artefacto B de la Gu&iacute;a Conceptual</a>.</li>
+      <li>M&aacute;s detalle en <a class="doc-link" href="frontend-guia-conceptual.html#caracter&iacute;stica-b">Caracter&iacute;stica B de la Gu&iacute;a Conceptual</a>.</li>
     </ul>
   </div>
 </div>
 </details>
+
+<details class="ep-details" id="ep7">
+<summary>
+  <span class="verb verb-patch">PATCH</span>
+  <div>
+    <div class="ep-summary-title">Dominios autorizados CORS</div>
+    <div class="ep-summary-desc">/api/panel/companies/domains</div>
+  </div>
+</summary>
+<div class="ep-body">
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Prop&oacute;sito / Cu&aacute;ndo se usa</div>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;">
+      Actualiza la lista blanca de dominios donde la Pyme tiene embebido el Trust Widget. El middleware <code class="inline">cors.dynamic</code> valida el header <code class="inline">Origin</code> de cada request del widget contra esta lista. Sin esta configuraci&oacute;n, el widget no puede comunicarse con el backend desde el sitio de la Pyme (CORS denegado).
+    </p>
+  </div>
+  <div class="ep-route">
+    <span class="verb verb-patch">PATCH</span>
+    <span class="ep-path">/api/panel/companies/domains</span>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Headers requeridos</div>
+    <table class="param-table">
+      <thead><tr><th>Header</th><th>Valor</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>Content-Type</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Accept</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Cookie</td><td>string</td><td>Session cookie (Sanctum SPA). Requiere <code class="inline">withCredentials: true</code>. <span class="pill pill-req">Requerido</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Body params</div>
+    <table class="param-table">
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Reglas de validaci&oacute;n</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>domains</td><td>array</td><td>present, array, max:10</td><td>Array de dominios FQDN. Enviar <code class="inline">[]</code> para limpiar. <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>domains.*</td><td>string</td><td>regex FQDN v&aacute;lido</td><td>Sin <code class="inline">http://</code>, sin rutas, sin IPs. Ej: <code class="inline">mitienda.cl</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Ejemplo de request</div>
+    <pre>{
+  <span class="hl-key">&quot;domains&quot;</span>: [
+    <span class="hl-str">&quot;mitienda.cl&quot;</span>,
+    <span class="hl-str">&quot;checkout.mitienda.cl&quot;</span>
+  ]
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuesta exitosa <span class="pill pill-200">200 OK</span></div>
+    <pre>{
+  <span class="hl-key">&quot;status&quot;</span>: <span class="hl-bool">true</span>,
+  <span class="hl-key">&quot;message&quot;</span>: <span class="hl-str">&quot;Dominios actualizados correctamente.&quot;</span>,
+  <span class="hl-key">&quot;data&quot;</span>: {
+    <span class="hl-key">&quot;allowed_domains&quot;</span>: [
+      <span class="hl-str">&quot;mitienda.cl&quot;</span>,
+      <span class="hl-str">&quot;checkout.mitienda.cl&quot;</span>
+    ]
+  }
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuestas de error</div>
+    <table class="err-table">
+      <thead><tr><th>C&oacute;digo</th><th>Causa</th><th>Ejemplo de mensaje</th></tr></thead>
+      <tbody>
+        <tr><td>401</td><td>No autenticado (falta cookie de sesi&oacute;n)</td><td><code class="inline">{&quot;message&quot;:&quot;Unauthenticated.&quot;}</code></td></tr>
+        <tr><td>422</td><td>Validaci&oacute;n: dominio inv&aacute;lido, m&aacute;s de 10 dominios</td><td><code class="inline">{&quot;message&quot;:&quot;El campo domains.0 no es un dominio v&aacute;lido.&quot;}</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Notas de implementaci&oacute;n</div>
+    <ul class="sec-list">
+      <li>Los dominios se cachean en el middleware <code class="inline">cors.dynamic</code> por 12h. El cambio se refleja con el pr&oacute;ximo miss de cach&eacute;.</li>
+      <li>M&aacute;ximo 10 dominios por empresa. Para limpiar la lista, enviar <code class="inline">{&quot;domains&quot;: []}</code>.</li>
+      <li>Validaci&oacute;n FQDN: no acepta protocolos (<code class="inline">http://</code>), rutas (<code class="inline">/path</code>) ni direcciones IP.</li>
+      <li>M&aacute;s detalle en <a class="doc-link" href="frontend-guia-conceptual.html#caracter&iacute;stica-d">Caracter&iacute;stica D de la Gu&iacute;a Conceptual</a>.</li>
+    </ul>
+  </div>
+</div>
+</details>
+
+<details class="ep-details" id="ep8">
+<summary>
+  <span class="verb verb-patch">PATCH</span>
+  <div>
+    <div class="ep-summary-title">Personalizar widget visual</div>
+    <div class="ep-summary-desc">/api/panel/companies/widget-config</div>
+  </div>
+</summary>
+<div class="ep-body">
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Prop&oacute;sito / Cu&aacute;ndo se usa</div>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;">
+      Actualiza la configuraci&oacute;n visual del Trust Widget de la Pyme: color primario, logo, textos del banner y etiquetas de botones. Usa <strong>deep merge recursivo</strong> (<code class="inline">array_replace_recursive</code>) para preservar llaves anidadas existentes (ej: <code class="inline">legal_texts.policy_url</code>) que no se env&iacute;en en el request.
+    </p>
+  </div>
+  <div class="ep-route">
+    <span class="verb verb-patch">PATCH</span>
+    <span class="ep-path">/api/panel/companies/widget-config</span>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Headers requeridos</div>
+    <table class="param-table">
+      <thead><tr><th>Header</th><th>Valor</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>Content-Type</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Accept</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Cookie</td><td>string</td><td>Session cookie (Sanctum SPA). Requiere <code class="inline">withCredentials: true</code>. <span class="pill pill-req">Requerido</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Body params (todos opcionales)</div>
+    <table class="param-table">
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Reglas de validaci&oacute;n</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>primary_color</td><td>string|null</td><td>regex: <code class="inline">^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$</code></td><td>Color hex. Ej: <code class="inline">#1a73e8</code>.</td></tr>
+        <tr><td>logo_url</td><td>string|null</td><td>url, max:2048</td><td>URL del logo de la Pyme en el banner.</td></tr>
+        <tr><td>legal_texts</td><td>object|null</td><td>array</td><td>Textos legales del banner (anidado).</td></tr>
+        <tr><td>legal_texts.banner_title</td><td>string|null</td><td>string, max:255</td><td>T&iacute;tulo del banner de cookies.</td></tr>
+        <tr><td>legal_texts.banner_body</td><td>string|null</td><td>string, max:1000</td><td>Cuerpo del texto del banner.</td></tr>
+        <tr><td>button_accept_text</td><td>string|null</td><td>string, max:50</td><td>Texto del bot&oacute;n &quot;Aceptar&quot;.</td></tr>
+        <tr><td>button_reject_text</td><td>string|null</td><td>string, max:50</td><td>Texto del bot&oacute;n &quot;Rechazar&quot;.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Ejemplo de request</div>
+    <pre>{
+  <span class="hl-key">&quot;primary_color&quot;</span>: <span class="hl-str">&quot;#2ecc71&quot;</span>,
+  <span class="hl-key">&quot;logo_url&quot;</span>: <span class="hl-str">&quot;https://cdn.mitienda.cl/logo.png&quot;</span>,
+  <span class="hl-key">&quot;legal_texts&quot;</span>: {
+    <span class="hl-key">&quot;banner_title&quot;</span>: <span class="hl-str">&quot;Valoramos tu privacidad&quot;</span>,
+    <span class="hl-key">&quot;banner_body&quot;</span>: <span class="hl-str">&quot;Usamos cookies para mejorar tu experiencia...&quot;</span>
+  },
+  <span class="hl-key">&quot;button_accept_text&quot;</span>: <span class="hl-str">&quot;Aceptar todas&quot;</span>,
+  <span class="hl-key">&quot;button_reject_text&quot;</span>: <span class="hl-str">&quot;Solo necesarias&quot;</span>
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuesta exitosa <span class="pill pill-200">200 OK</span></div>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;margin-bottom:6px;">Devuelve el objeto completo de <code class="inline">widget_config</code> despu&eacute;s del merge, incluyendo llaves preexistentes que no se enviaron.</p>
+    <pre>{
+  <span class="hl-key">&quot;status&quot;</span>: <span class="hl-bool">true</span>,
+  <span class="hl-key">&quot;message&quot;</span>: <span class="hl-str">&quot;Configuraci&oacute;n del widget actualizada.&quot;</span>,
+  <span class="hl-key">&quot;data&quot;</span>: {
+    <span class="hl-key">&quot;position&quot;</span>: <span class="hl-str">&quot;bottom-left&quot;</span>,
+    <span class="hl-key">&quot;primary_color&quot;</span>: <span class="hl-str">&quot;#2ecc71&quot;</span>,
+    <span class="hl-key">&quot;logo_url&quot;</span>: <span class="hl-str">&quot;https://cdn.mitienda.cl/logo.png&quot;</span>,
+    <span class="hl-key">&quot;show_reject_all&quot;</span>: <span class="hl-bool">true</span>,
+    <span class="hl-key">&quot;legal_texts&quot;</span>: {
+      <span class="hl-key">&quot;banner_title&quot;</span>: <span class="hl-str">&quot;Valoramos tu privacidad&quot;</span>,
+      <span class="hl-key">&quot;banner_body&quot;</span>: <span class="hl-str">&quot;Usamos cookies para mejorar tu experiencia...&quot;</span>,
+      <span class="hl-key">&quot;policy_url&quot;</span>: <span class="hl-str">&quot;https://cdn.tudominio.com/policies/abc123.html&quot;</span>
+    },
+    <span class="hl-key">&quot;button_accept_text&quot;</span>: <span class="hl-str">&quot;Aceptar todas&quot;</span>,
+    <span class="hl-key">&quot;button_reject_text&quot;</span>: <span class="hl-str">&quot;Solo necesarias&quot;</span>
+  }
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuestas de error</div>
+    <table class="err-table">
+      <thead><tr><th>C&oacute;digo</th><th>Causa</th><th>Ejemplo de mensaje</th></tr></thead>
+      <tbody>
+        <tr><td>401</td><td>No autenticado (falta cookie de sesi&oacute;n)</td><td><code class="inline">{&quot;message&quot;:&quot;Unauthenticated.&quot;}</code></td></tr>
+        <tr><td>422</td><td>Validaci&oacute;n: color inv&aacute;lido, URL mal formada</td><td><code class="inline">{&quot;message&quot;:&quot;El campo primary_color no es un color hex v&aacute;lido.&quot;}</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Notas de implementaci&oacute;n</div>
+    <ul class="sec-list">
+      <li>Todos los campos son opcionales. Se env&iacute;a solo lo que se quiere cambiar.</li>
+      <li>Deep merge: <code class="inline">array_replace_recursive</code> preserva llaves anidadas no enviadas (ej: <code class="inline">legal_texts.policy_url</code>).</li>
+      <li>Valores <code class="inline">null</code> se filtran antes del merge para no sobrescribir configuraciones existentes.</li>
+      <li>M&aacute;s detalle en <a class="doc-link" href="frontend-guia-conceptual.html#caracter&iacute;stica-e">Caracter&iacute;stica E de la Gu&iacute;a Conceptual</a>.</li>
+    </ul>
+  </div>
+</div>
+</details>
+
+<div class="section-divider"><h2>Portal Cautivo</h2><hr></div>
+
+<details class="ep-details" id="ep9">
+<summary>
+  <span class="verb verb-get">GET</span>
+  <div>
+    <div class="ep-summary-title">Portal Cautivo — datos de firma</div>
+    <div class="ep-summary-desc">/api/portal/consent/{token}</div>
+  </div>
+</summary>
+<div class="ep-body">
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Prop&oacute;sito / Cu&aacute;ndo se usa</div>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;">
+      Punto de entrada del Portal Cautivo. Se invoca cuando el destinatario hace clic en el enlace m&aacute;gico de su correo transaccional. Devuelve los datos de la empresa, la pol&iacute;tica legal, el email del destinatario y los prop&oacute;sitos activos para renderizar la pantalla de firma. Sin autenticaci&oacute;n.
+    </p>
+  </div>
+  <div class="ep-route">
+    <span class="verb verb-get">GET</span>
+    <span class="ep-path">/api/portal/consent/{token}</span>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Path parameters</div>
+    <table class="param-table">
+      <thead><tr><th>Par&aacute;metro</th><th>Tipo</th><th>Descripci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td>token</td><td>string (hex 64)</td><td>Token criptogr&aacute;fico aleatorio de 64 caracteres hexadecimales. Identifica la empresa + pol&iacute;tica + destinatario. No enumerable. <span class="pill pill-req">Requerido</span></td></tr>
+      </tbody>
+    </table>
+    <div class="note note-info">El token va solo en la URL. No debe persistirse en localStorage ni sessionStorage por seguridad.</div>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuesta exitosa <span class="pill pill-200">200 OK</span></div>
+    <pre>{
+  <span class="hl-key">&quot;company&quot;</span>: {
+    <span class="hl-key">&quot;business_name&quot;</span>: <span class="hl-str">&quot;Tech Solutions Latam&quot;</span>,
+    <span class="hl-key">&quot;logo_url&quot;</span>: <span class="hl-str">&quot;https://cdn.mitienda.cl/logo.png&quot;</span>
+  },
+  <span class="hl-key">&quot;policy&quot;</span>: {
+    <span class="hl-key">&quot;name&quot;</span>: <span class="hl-str">&quot;Pol&iacute;tica de Cookies&quot;</span>,
+    <span class="hl-key">&quot;policy_hash&quot;</span>: <span class="hl-str">&quot;a1b2c3d4e5f67890...&quot;</span>,
+    <span class="hl-key">&quot;url&quot;</span>: <span class="hl-str">&quot;http://127.0.0.1:8000/api/public/policies/a1b2c3...&quot;</span>
+  },
+  <span class="hl-key">&quot;recipient&quot;</span>: {
+    <span class="hl-key">&quot;email&quot;</span>: <span class="hl-str">&quot;juan.perez@empresa.cl&quot;</span>
+  },
+  <span class="hl-key">&quot;purposes&quot;</span>: {
+    <span class="hl-key">&quot;necessary_technical&quot;</span>: {
+      <span class="hl-key">&quot;label&quot;</span>: <span class="hl-str">&quot;Cookies t&eacute;cnicas y necesarias&quot;</span>,
+      <span class="hl-key">&quot;description&quot;</span>: <span class="hl-str">&quot;Indispensables para el funcionamiento...&quot;</span>,
+      <span class="hl-key">&quot;required&quot;</span>: <span class="hl-bool">true</span>,
+      <span class="hl-key">&quot;default&quot;</span>: <span class="hl-bool">true</span>,
+      <span class="hl-key">&quot;legal_basis&quot;</span>: <span class="hl-str">&quot;legitimate_interest&quot;</span>,
+      <span class="hl-key">&quot;widget_action&quot;</span>: <span class="hl-bool">null</span>
+    },
+    <span class="hl-key">&quot;analytics_behavior&quot;</span>: {
+      <span class="hl-key">&quot;label&quot;</span>: <span class="hl-str">&quot;An&aacute;lisis de visitas y comportamiento&quot;</span>,
+      <span class="hl-key">&quot;description&quot;</span>: <span class="hl-str">&quot;Nos permiten entender c&oacute;mo navegas...&quot;</span>,
+      <span class="hl-key">&quot;required&quot;</span>: <span class="hl-bool">false</span>,
+      <span class="hl-key">&quot;default&quot;</span>: <span class="hl-bool">false</span>,
+      <span class="hl-key">&quot;legal_basis&quot;</span>: <span class="hl-str">&quot;consent&quot;</span>,
+      <span class="hl-key">&quot;widget_action&quot;</span>: <span class="hl-str">&quot;load_analytics_scripts&quot;</span>
+    }
+  }
+}</pre>
+    <div class="note note-info">
+      <strong>Nota:</strong> La estructura de cada prop&oacute;sito en el Portal Cautivo es id&eacute;ntica a la del endpoint <code class="inline">GET /api/widget/{company_public_uuid}/config</code>. El mismo c&oacute;digo que renderiza los toggles del Trust Widget puede reutilizarse en el Portal Cautivo.
+    </div>
+    <div class="ep-section-title" style="font-size:10px;margin-top:10px;">Campos de la respuesta</div>
+    <div class="ep-section-title" style="font-size:10px;margin-top:10px;">Campos de la respuesta</div>
+    <table class="param-table">
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Descripci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td>company.business_name</td><td>string</td><td>Raz&oacute;n social de la empresa que emite el documento.</td></tr>
+        <tr><td>company.logo_url</td><td>string | null</td><td>URL del logo de la empresa (desde widget_config). null si no configurado.</td></tr>
+        <tr><td>policy.name</td><td>string</td><td>Nombre legible de la pol&iacute;tica. Ej: "Pol&iacute;tica de Cookies".</td></tr>
+        <tr><td>policy.policy_hash</td><td>string</td><td>SHA-256 del contenido de la pol&iacute;tica.</td></tr>
+        <tr><td>policy.url</td><td>string</td><td>URL p&uacute;blica para leer el documento completo en el navegador.</td></tr>
+        <tr><td>recipient.email</td><td>string | null</td><td>Email del destinatario (PII descifrado en memoria, nunca loggeado).</td></tr>
+        <tr><td>purposes</td><td>object</td><td>Diccionario slug &rarr; {label, description, required, default, legal_basis}. <strong>No es un array</strong>, iterar con <code class="inline">Object.entries()</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Manejo de estados HTTP (errores)</div>
+    <table class="err-table">
+      <thead><tr><th>C&oacute;digo</th><th>Significado</th><th>Mensaje JSON</th></tr></thead>
+      <tbody>
+        <tr><td>404</td><td>Token no existe</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;El enlace no es v&aacute;lido o no existe.&quot;,&quot;data&quot;:null}</code></td></tr>
+        <tr><td>409</td><td>Ya confirmado</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;Este documento ya fue firmado previamente.&quot;,&quot;data&quot;:null}</code></td></tr>
+        <tr><td>410</td><td>Token expirado</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;El enlace ha expirado. Solicita uno nuevo.&quot;,&quot;data&quot;:null}</code></td></tr>
+      </tbody>
+    </table>
+    <div class="note note-warn">El frontend debe leer y mostrar el campo <code class="inline">message</code> del JSON de error, no hardcodear textos. Cada c&oacute;digo HTTP tiene su propia UI (error, &eacute;xito preventivo, expiraci&oacute;n).</div>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Notas de seguridad</div>
+    <ul class="sec-list">
+      <li>El token es criptogr&aacute;ficamente aleatorio (64 chars hex), no enumerable ni predecible.</li>
+      <li>El PII del destinatario se descifra en memoria, nunca se loggea ni se expone en URLs.</li>
+      <li>No guardar el token en localStorage ni sessionStorage.</li>
+      <li>Rate limiting: 60 req/min por IP.</li>
+    </ul>
+  </div>
+</div>
+</details>
+
+<details class="ep-details" id="ep10">
+<summary>
+  <span class="verb verb-post">POST</span>
+  <div>
+    <div class="ep-summary-title">Portal Cautivo — confirmar firma</div>
+    <div class="ep-summary-desc">/api/portal/consent/{token}/confirm</div>
+  </div>
+</summary>
+<div class="ep-body">
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Prop&oacute;sito / Cu&aacute;ndo se usa</div>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;">
+      Procesa la firma del destinatario. Crea un registro inmutable en <code class="inline">consent_logs</code> (capture_method = <code class="inline">live_portal</code>), marca el token como confirmado y devuelve un <code class="inline">proof_hash</code> como recibo criptogr&aacute;fico. Idempotente: reenv&iacute;os retornan 409.
+    </p>
+  </div>
+  <div class="ep-route">
+    <span class="verb verb-post">POST</span>
+    <span class="ep-path">/api/portal/consent/{token}/confirm</span>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Headers requeridos</div>
+    <table class="param-table">
+      <thead><tr><th>Header</th><th>Valor</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>Content-Type</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Accept</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Path parameters</div>
+    <table class="param-table">
+      <thead><tr><th>Par&aacute;metro</th><th>Tipo</th><th>Descripci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td>token</td><td>string (hex 64)</td><td>Mismo token recibido en el GET. Identifica la sesi&oacute;n de firma. <span class="pill pill-req">Requerido</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Body params</div>
+    <table class="param-table">
+      <thead><tr><th>Campo</th><th>Tipo</th><th>Reglas de validaci&oacute;n</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>purposes</td><td>object</td><td>required, array; slugs: boolean</td><td>Diccionario slug &rarr; booleano reflejando el estado de los toggles. Los fines obligatorios (required=true) se fuerzan a true en backend.</td></tr>
+        <tr><td>visitor_uuid</td><td>UUID v4</td><td>required, uuid</td><td>UUID an&oacute;nimo del dispositivo, persistido en localStorage. Generado con <code class="inline">crypto.randomUUID()</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Ejemplo de request</div>
+    <pre>{
+  <span class="hl-key">&quot;purposes&quot;</span>: {
+    <span class="hl-key">&quot;necessary_technical&quot;</span>: <span class="hl-bool">true</span>,
+    <span class="hl-key">&quot;analytics&quot;</span>: <span class="hl-bool">false</span>
+  },
+  <span class="hl-key">&quot;visitor_uuid&quot;</span>: <span class="hl-str">&quot;550e8400-e29b-41d4-a716-446655440000&quot;</span>
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuesta exitosa <span class="pill pill-201">201 Created</span></div>
+    <pre>{
+  <span class="hl-key">&quot;status&quot;</span>: <span class="hl-bool">true</span>,
+  <span class="hl-key">&quot;message&quot;</span>: <span class="hl-str">&quot;Documento firmado correctamente.&quot;</span>,
+  <span class="hl-key">&quot;data&quot;</span>: {
+    <span class="hl-key">&quot;status&quot;</span>: <span class="hl-str">&quot;confirmed&quot;</span>,
+    <span class="hl-key">&quot;proof_hash&quot;</span>: <span class="hl-str">&quot;ee76856e57b8ecd5eca0f6d22fa7311cc33398440921f7af8142e1c966747320&quot;</span>
+  }
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Manejo de estados HTTP</div>
+    <table class="err-table">
+      <thead><tr><th>C&oacute;digo</th><th>Significado</th><th>UI / Mensaje</th></tr></thead>
+      <tbody>
+        <tr><td>404</td><td>Token no existe (entre GET y POST)</td><td>Pantalla error: usar <code class="inline">response.error.message</code></td></tr>
+        <tr><td>409</td><td>Ya confirmado</td><td>Pantalla &eacute;xito preventivo: leer <code class="inline">message</code> del JSON</td></tr>
+        <tr><td>410</td><td>Expir&oacute; entre GET y POST</td><td>Pantalla expiraci&oacute;n: leer <code class="inline">message</code> del JSON</td></tr>
+        <tr><td>422</td><td>Validaci&oacute;n fall&oacute; (purposes vac&iacute;o, visitor_uuid inv&aacute;lido)</td><td>Mensaje inline, no cambiar pantalla</td></tr>
+        <tr><td>500</td><td>Error interno BD</td><td>Mensaje gen&eacute;rico, reintentar</td></tr>
+      </tbody>
+    </table>
+    <div class="note-note">El backend retorna el mensaje exacto en <code class="inline">message</code>. El frontend debe leerlo y mostrarlo, no hardcodear textos distintos.</div>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Notas de implementaci&oacute;n</div>
+    <ul class="sec-list">
+      <li>Idempotencia: si el token ya fue confirmado, retorna 409 (no 200). El frontend muestra pantalla de "ya firmado".</li>
+      <li>Recarga de p&aacute;gina: si el usuario recarga despu&eacute;s de firmar, el GET retorna 409. El frontend debe mostrar pantalla de &eacute;xito preventivo.</li>
+      <li>Fines con <code class="inline">required=true</code> se fuerzan a true en backend aunque el frontend env&iacute;e false (defensa en profundidad).</li>
+      <li>Slugs no activos se ignoran silenciosamente.</li>
+      <li>El <code class="inline">proof_hash</code> debe mostrarse al usuario como "C&oacute;digo de recibo de firma" con bot&oacute;n de copiar al portapapeles.</li>
+      <li>Rate limiting: 60 req/min por IP. No spammear reintentos.</li>
+      <li>M&aacute;s detalle en <a class="doc-link" href="frontend-guia-conceptual.html#caracter&iacute;stica-f">Caracter&iacute;stica F de la Gu&iacute;a Conceptual</a>.</li>
+    </ul>
+  </div>
+</div>
+</details>
+
+<div class="ep-section" style="max-width:980px;margin:0 auto 20px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px;">
+  <div class="ep-section-title"><span class="dot"></span>Tabla resumen — Diez endpoints</div>
+  <table class="param-table">
+    <thead><tr><th>#</th><th>Endpoint</th><th>M&eacute;todo</th><th>Auth</th><th>M&oacute;dulo</th><th>Descripci&oacute;n</th></tr></thead>
+    <tbody>
+      <tr><td>01</td><td>/api/widget/{uuid}/config</td><td><span class="verb verb-get">GET</span></td><td><span class="auth-badge auth-public">P&uacute;blico</span></td><td>Widget</td><td>Configuraci&oacute;n del banner</td></tr>
+      <tr><td>02</td><td>/api/widget/{uuid}/consent</td><td><span class="verb verb-post">POST</span></td><td><span class="auth-badge auth-public">P&uacute;blico</span></td><td>Widget</td><td>Registrar consentimiento</td></tr>
+      <tr><td>03</td><td>/api/panel/pending-consents</td><td><span class="verb verb-get">GET</span></td><td><span class="auth-badge auth-private">Sanctum</span></td><td>Gesti&oacute;n de Env&iacute;os</td><td>Listar consents pendientes</td></tr>
+      <tr><td>04</td><td>/api/panel/pending-consents</td><td><span class="verb verb-post">POST</span></td><td><span class="auth-badge auth-private">Sanctum</span></td><td>Gesti&oacute;n de Env&iacute;os</td><td>Generar enlace de firma</td></tr>
+      <tr><td>05</td><td>/api/panel/consent-logs</td><td><span class="verb verb-get">GET</span></td><td><span class="auth-badge auth-private">Sanctum</span></td><td>B&oacute;veda de Auditor&iacute;a</td><td>B&oacute;veda de auditor&iacute;a</td></tr>
+      <tr><td>06</td><td>/api/panel/consent-purposes</td><td><span class="verb verb-get">GET</span></td><td><span class="auth-badge auth-private">Sanctum</span></td><td>Configuraci&oacute;n</td><td>Cat&aacute;logo de fines legales</td></tr>
+      <tr><td>07</td><td>/api/panel/companies/domains</td><td><span class="verb verb-patch">PATCH</span></td><td><span class="auth-badge auth-private">Sanctum</span></td><td>Configuraci&oacute;n</td><td>Dominios autorizados CORS</td></tr>
+      <tr><td>08</td><td>/api/panel/companies/widget-config</td><td><span class="verb verb-patch">PATCH</span></td><td><span class="auth-badge auth-private">Sanctum</span></td><td>Configuraci&oacute;n</td><td>Personalizar widget visual</td></tr>
+      <tr><td>09</td><td>/api/portal/consent/{token}</td><td><span class="verb verb-get">GET</span></td><td><span class="auth-badge auth-public">P&uacute;blico</span></td><td>Portal Cautivo</td><td>Portal Cautivo — datos de firma</td></tr>
+      <tr><td>10</td><td>/api/portal/consent/{token}/confirm</td><td><span class="verb verb-post">POST</span></td><td><span class="auth-badge auth-public">P&uacute;blico</span></td><td>Portal Cautivo</td><td>Portal Cautivo — confirmar firma</td></tr>
+    </tbody>
+  </table>
+</div>
 
 </main>
 </div>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guía Conceptual Frontend — Módulo 2 — NodoxSPD</title>
+    <title>Guía Frontend — Módulo 2 — NodoxSPD</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body { font-family: system-ui, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f5f7fa; }
@@ -103,9 +103,18 @@
         .flow-step .desc { font-size: 13px; color: #555; }
         .flow-arrow { text-align: center; color: #ccc; font-size: 14px; }
 
-        .artefact-box { background: #f0f4ff; border: 2px solid #93c5fd; border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
-        .artefact-box h3 { color: #1e40af; border: none; margin-top: 0; padding: 0; }
-        .artefact-box .badge { display: inline-block; background: #1e40af; color: #fff; font-size: 0.7em; font-weight: 700; padding: 2px 10px; border-radius: 10px; margin-bottom: 8px; }
+        .caracteristica-box { background: #f0f4ff; border: 2px solid #93c5fd; border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+        .caracteristica-box h3 { color: #1e40af; border: none; margin-top: 0; padding: 0; }
+        .caracteristica-box .badge { display: inline-block; background: #1e40af; color: #fff; font-size: 0.7em; font-weight: 700; padding: 2px 10px; border-radius: 10px; margin-bottom: 8px; }
+
+        .caracteristica-details { margin: 20px 0; border: 1px solid #dce3ec; border-radius: 10px; background: #fff; overflow: hidden; }
+        .caracteristica-details summary { cursor: pointer; list-style: none; user-select: none; padding: 0; }
+        .caracteristica-details summary::-webkit-details-marker { display: none; }
+        .caracteristica-details summary h1 { display: inline-block; margin: 0; padding: 14px 20px; border: none; cursor: pointer; font-size: 1.15em; color: #1a3c5e; }
+        .caracteristica-details summary::after { content: ' ▼'; font-size: 0.75em; color: #999; margin-left: 8px; }
+        .caracteristica-details[open] summary::after { content: ' ▲'; }
+        .caracteristica-details summary:hover { background: #f7f9fc; }
+        .caracteristica-details > .caracteristica-box { margin: 0; border-radius: 0; border-left: none; border-right: none; }
 
         .resp-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
         .resp-table th { background: #f0f2f5; padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #777; text-transform: uppercase; border-bottom: 1px solid #ddd; }
@@ -146,7 +155,7 @@
 <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <h2>&#128218; Documentación</h2>
-        <p>Frontend — Guía Conceptual</p>
+        <p>Frontend — Guía</p>
         <a class="sidebar-back" href="index.html">&larr; Volver al índice</a>
     </div>
 
@@ -158,9 +167,9 @@
         </ul>
     </div>
     <div class="nav-section">
-        <a class="nav-section-title" href="#artefacto-a" data-toggle="artefacto-a-items">Artefacto A</a>
-        <ul class="nav-section-items" id="artefacto-a-items">
-            <li><a href="#artefacto-a">Vanilla JS — Widget de Cookies</a></li>
+        <a class="nav-section-title" href="#característica-a" data-toggle="característica-a-items">Característica A</a>
+        <ul class="nav-section-items" id="característica-a-items">
+            <li><a href="#característica-a">Vanilla JS — Widget de Cookies</a></li>
             <li><a href="#orden-instalacion" class="nav-h3">⚠️ Orden de instalación</a></li>
             <li><a href="#widget-inicializacion" class="nav-h3">Inicialización</a></li>
             <li><a href="#widget-visitor-uuid" class="nav-h3">Gestión del visitor_uuid</a></li>
@@ -174,17 +183,17 @@
         </ul>
     </div>
     <div class="nav-section">
-        <a class="nav-section-title" href="#artefacto-b" data-toggle="artefacto-b-items">Artefacto B</a>
-        <ul class="nav-section-items" id="artefacto-b-items">
-            <li><a href="#artefacto-b">Angular — Patch de Propósitos</a></li>
+        <a class="nav-section-title" href="#característica-b" data-toggle="característica-b-items">Característica B</a>
+        <ul class="nav-section-items" id="característica-b-items">
+            <li><a href="#característica-b">Angular — Patch de Propósitos</a></li>
             <li><a href="#angular-origen">Origen del patch</a></li>
             <li><a href="#angular-parche">Código del patch</a></li>
         </ul>
     </div>
     <div class="nav-section">
-        <a class="nav-section-title" href="#artefacto-c" data-toggle="artefacto-c-items">Artefacto C</a>
-        <ul class="nav-section-items" id="artefacto-c-items">
-            <li><a href="#artefacto-c">Angular — Pantalla de Registro de Consentimientos</a></li>
+        <a class="nav-section-title" href="#característica-c" data-toggle="característica-c-items">Característica C</a>
+        <ul class="nav-section-items" id="característica-c-items">
+            <li><a href="#característica-c">Angular — Pantalla de Registro de Consentimientos</a></li>
             <li><a href="#ledger-ruta">Ruta y endpoint</a></li>
             <li><a href="#ledger-layout">Layout y encabezado</a></li>
             <li><a href="#ledger-filtros">Barra de filtros</a></li>
@@ -193,13 +202,39 @@
             <li><a href="#ledger-contrato">Contrato JSON de datos</a></li>
         </ul>
     </div>
+    <div class="nav-section">
+        <a class="nav-section-title" href="#característica-d" data-toggle="característica-d-items">Característica D</a>
+        <ul class="nav-section-items" id="característica-d-items">
+            <li><a href="#característica-d">Panel — Dominios Autorizados CORS</a></li>
+            <li><a href="#dominios-endpoint">Endpoint</a></li>
+            <li><a href="#dominios-funcionamiento">Funcionamiento</a></li>
+        </ul>
+    </div>
+    <div class="nav-section">
+        <a class="nav-section-title" href="#característica-e" data-toggle="característica-e-items">Característica E</a>
+        <ul class="nav-section-items" id="característica-e-items">
+            <li><a href="#característica-e">Panel — Personalización Visual del Widget</a></li>
+            <li><a href="#widget-config-endpoint">Endpoint</a></li>
+            <li><a href="#widget-config-funcionamiento">Funcionamiento</a></li>
+        </ul>
+    </div>
+    <div class="nav-section">
+        <a class="nav-section-title" href="#característica-f" data-toggle="característica-f-items">Característica F</a>
+        <ul class="nav-section-items" id="característica-f-items">
+            <li><a href="#característica-f">Portal Cautivo Público</a></li>
+            <li><a href="#portal-ruta">Ruta Angular y layout</a></li>
+            <li><a href="#portal-get">GET — Obtener datos de firma</a></li>
+            <li><a href="#portal-submit">POST — Confirmar firma</a></li>
+            <li><a href="#portal-flujo">Flujo completo</a></li>
+        </ul>
+    </div>
 </nav>
 
 <main class="content" id="main-content">
 
 <div class="doc-header">
-    <h1>Guía Conceptual Frontend — Módulo 2</h1>
-    <p>Tres artefactos frontend para integrar el Trust Widget de Consentimientos: Vanilla JS (widget de cookies embebible), Angular (patch de selección de propósitos legales) y Angular (pantalla de auditoría de consentimientos).</p>
+    <h1>Guía Frontend — Módulo 2</h1>
+    <p>Características frontend para integrar el Trust Widget de Consentimientos: widget embebible Vanilla JS, patch de selección de propósitos legales en el wizard, pantalla de auditoría de consentimientos, gestión de dominios CORS, personalización visual del widget y Portal Cautivo público de firma.</p>
 </div>
 
 <!-- ──────────────────────────────────────────── -->
@@ -208,42 +243,49 @@
 
 <div class="card">
     <p>
-        El Módulo 2 expone tres endpoints públicos del widget (<code>/api/widget/{uuid}/config</code>, <code>/api/widget/consent</code>, <code>/api/panel/consent-purposes</code>) y un flujo Angular que complementa el wizard de generación de políticas con la selección manual de propósitos legales cuando el usuario escribe texto libre en campos "Otro".
+        El Módulo 2 expone endpoints públicos y del panel: configuración del widget, registro de consentimiento, catálogo de fines legales, gestión de dominios CORS, personalización visual y Portal Cautivo de firma. Además incluye un flujo Angular que complementa el wizard de generación de políticas con la selección manual de propósitos legales cuando el usuario escribe texto libre en campos "Otro".
     </p>
     <p>
-        Esta guía describe <strong>tres artefactos frontend independientes</strong>:
+        Esta guía describe las siguientes características frontend:
     </p>
     <ul>
-        <li><strong>Artefacto A</strong> — Widget de cookies en Vanilla JS que las Pymes embeden en sus sitios web. Renderiza un banner, obtiene la config desde el backend y envía el consentimiento del visitante.</li>
-        <li><strong>Artefacto B</strong> — Patch de selección de propósitos en Angular (panel interno de la Pyme). Se activa cuando un campo "Otro" del wizard tiene <code>requires_purpose_selection: true</code>.</li>
-        <li><strong>Artefacto C</strong> — Pantalla de Registro de Consentimientos en Angular (panel interno de la Pyme). Muestra el ledger inmutable con filtros, paginación y sellos legales.</li>
+        <li><strong>Característica A</strong> — Widget de cookies en Vanilla JS que las Pymes embeden en sus sitios web. Renderiza un banner, obtiene la config desde el backend y envía el consentimiento del visitante.</li>
+        <li><strong>Característica B</strong> — Patch de selección de propósitos en Angular (panel interno de la Pyme). Se activa cuando un campo "Otro" del wizard tiene <code>requires_purpose_selection: true</code>.</li>
+        <li><strong>Característica C</strong> — Pantalla de Registro de Consentimientos en Angular (panel interno de la Pyme). Muestra el ledger inmutable con filtros, paginación y sellos legales.</li>
+        <li><strong>Característica D</strong> — Panel de gestión de dominios autorizados CORS para el Trust Widget (endpoint <code>PATCH /api/panel/companies/domains</code>).</li>
+        <li><strong>Característica E</strong> — Panel de personalización visual del Trust Widget (endpoint <code>PATCH /api/panel/companies/widget-config</code>).</li>
+        <li><strong>Característica F</strong> — Portal Cautivo Público: interfaz de firma de documentos legales vía enlace mágico, fuera del panel protegido. Rutas <code>GET /api/portal/consent/{token}</code> y <code>POST /api/portal/consent/{token}/confirm</code>.</li>
     </ul>
 </div>
 
-<h2 id="flujo-global">Flujo global frontend-backend</h2>
 
-<div class="flow-diagram">
-    <div class="flow-step"><span class="num">1</span><span class="desc">El visitante carga el sitio de la Pyme. El widget JS se inicializa y llama a <code>GET /api/widget/{uuid}/config</code>.</span></div>
-    <div class="flow-arrow">&darr;</div>
-    <div class="flow-step"><span class="num">2</span><span class="desc">El servidor responde con <code>purposes</code>, <code>widget_config</code> (colores, posición), <code>policy_hash</code>.</span></div>
-    <div class="flow-arrow">&darr;</div>
-    <div class="flow-step"><span class="num">3</span><span class="desc">El widget renderiza el banner de cookies según la configuración visual recibida.</span></div>
-    <div class="flow-arrow">&darr;</div>
-    <div class="flow-step"><span class="num">4</span><span class="desc">El visitante acepta/rechaza/configura propósitos. El widget envía <code>POST /api/widget/consent</code> con los slugs aceptados.</span></div>
-    <div class="flow-arrow">&darr;</div>
-    <div class="flow-step"><span class="num">5</span><span class="desc">El backend registra en <code>consent_logs</code> (ledger inmutable), calcula el <code>proof_hash</code> y responde 201.</span></div>
-    <div class="flow-arrow">&darr;</div>
-    <div class="flow-step"><span class="num">6</span><span class="desc">(Angular) En el panel de políticas, el usuario llena campos "Otro". El template del wizard activa un selector de propósitos si <code>requires_purpose_selection = true</code>.</span></div>
-</div>
+<details class="caracteristica-details" id="caracteristica-a-wrapper" open>
+<summary><h1 id="característica-a">Característica A — Widget de Cookies (Vanilla JS)</h1></summary>
 
-<!-- ════════════════════════════════════════════ -->
-<h1 id="artefacto-a">Artefacto A — Widget de Cookies (Vanilla JS)</h1>
-<!-- ════════════════════════════════════════════ -->
-
-<div class="artefact-box">
-    <span class="badge">Artefacto A</span>
+<div class="caracteristica-box">
+    <span class="badge">Característica A</span>
     <h3>Widget de Cookies — Vanilla JS</h3>
     <p>Script embebible que las Pymes insertan en su sitio web. Sin dependencias externas (sin jQuery, sin React). Compatible con CSP estrictas.</p>
+</div>
+
+<h2 id="widget-flujo">Flujo del widget</h2>
+
+<div class="flow-diagram">
+    <div class="flow-step"><span class="num">1</span><span class="desc">Visitante carga el sitio. El snippet bloquea rastreadores por defecto (dataLayer con <code>denied</code>) y carga <code>widget.js</code>.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">2</span><span class="desc">Widget se inicializa: genera/obtiene <code>visitor_uuid</code> de localStorage, identifica la empresa por <code>data-company</code>.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">3</span><span class="desc">Widget hace <code>GET /api/widget/{uuid}/config</code>. Backend responde con propósitos, configuración visual, policy_hash.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">4</span><span class="desc">Widget renderiza banner de cookies usando la configuración visual recibida (color, posición, textos).</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">5</span><span class="desc">Visitante acepta, rechaza o configura propósitos. Widget ensambla payload <code>{purposes, visitor_uuid}</code>.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">6</span><span class="desc">Widget envía <code>POST /api/widget/consent</code>. Backend registra en consent_logs, firma con SHA-256, responde 201.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">7</span><span class="desc">Widget actualiza dataLayer de Google Consent Mode con la preferencia del visitante.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">8</span><span class="desc">Si el request falla (timeout/red/5xx): guardar el payload en localStorage bajo la clave <code>nodox_consent_pending_{companyUuid}</code>. En la pr&oacute;xima inicializaci&oacute;n del widget, verificar si existe esta clave y reintentar el POST silenciosamente antes de evaluar si mostrar el banner.</span></div>
 </div>
 
 <!-- ──────────────────────────────────────────── -->
@@ -723,14 +765,32 @@ banner.innerHTML = <span class="string">`
 </div>
 
 
-<!-- ════════════════════════════════════════════ -->
-<h1 id="artefacto-b">Artefacto B — Angular (Patch de Selección de Propósitos)</h1>
-<!-- ════════════════════════════════════════════ -->
+</details>
+<details class="caracteristica-details" id="caracteristica-b-wrapper">
+<summary><h1 id="característica-b">Característica B — Angular (Patch de Selección de Propósitos)</h1></summary>
 
-<div class="artefact-box">
-    <span class="badge">Artefacto B</span>
+<div class="caracteristica-box">
+    <span class="badge">Característica B</span>
     <h3>Angular — Patch de Propósitos</h3>
     <p>Módulo Angular dentro del panel de administración de la Pyme. Extiende el componente del wizard para mostrar un selector de propósitos legales cuando un campo "Otro/especificar" tiene <code>requires_purpose_selection: true</code>.</p>
+</div>
+
+<h2 id="angular-flujo">Flujo del patch</h2>
+
+<div class="flow-diagram">
+    <div class="flow-step"><span class="num">1</span><span class="desc">Admin edita o crea una política en el panel. El componente wizard carga el <code>wizard_schema</code> con sus campos y reglas.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">2</span><span class="desc">Frontend itera los campos del schema. Si encuentra <code>field.requires_purpose_selection === true</code>, prepara un selector de checkboxes debajo de ese campo.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">3</span><span class="desc">Frontend hace <code>GET /api/panel/consent-purposes</code>. Backend retorna el catálogo completo de propósitos legales (9 slugs con label, legal_basis, etc.).</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">4</span><span class="desc">Se renderizan checkboxes. Los que tienen <code>purpose.default === true</code> aparecen pre-seleccionados. Cada checkbox muestra <code>purpose.label</code> y su base legal.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">5</span><span class="desc">Admin marca/desmarca propósitos. La selección se almacena temporalmente en <code>wizard_data.{fieldKey}_purposes</code> como array de slugs.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">6</span><span class="desc">Admin guarda el wizard completo. <code>wizard_data</code> viaja al backend con todos los campos, incluyendo los <code>_purposes</code> arrays.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">7</span><span class="desc">Backend valida que cada slug exista en <code>consent_purposes</code>. Slugs inválidos se ignoran silenciosamente. Los propósitos aceptados se asocian a la política.</span></div>
 </div>
 
 <h2 id="angular-origen">Origen del patch</h2>
@@ -771,105 +831,27 @@ banner.innerHTML = <span class="string">`
 <h2 id="angular-parche">Código del patch Angular</h2>
 
 <div class="card">
-    <p>El componente del wizard debe modificarse para detectar campos con <code>requires_purpose_selection: true</code> en el <code>wizard_schema</code> y mostrar un selector de propósitos debajo del input text.</p>
-
-    <div class="code-block">
-<span class="comment">// Angular — extracto del componente wizard (template)</span>
-<span class="comment">// Asumiendo que el wizard_schema se recibe como parte de la política</span>
-
-&lt;<span class="keyword">ng-container</span> *ngFor=<span class="string">"let field of step.fields"</span>&gt;
-
-  <span class="comment">&lt;!-- Campo normal por tipo --&gt;</span>
-  &lt;<span class="keyword">app-dynamic-field</span>
-    [field]=<span class="string">"field"</span>
-    [formControlName]=<span class="string">"field.key"</span>&gt;
-  &lt;/<span class="keyword">app-dynamic-field</span>&gt;
-
-  <span class="comment">&lt;!-- 
-    Patch: si el campo es tipo 'text' y tiene requires_purpose_selection,
-    mostrar un sub-formulario de checkboxes con el catálogo de propósitos.
-    El valor se guarda en wizard_data[{field.key}_purposes] como array de slugs.
-  --&gt;</span>
-  &lt;<span class="keyword">div</span> *ngIf=<span class="string">"field.requires_purpose_selection"</span>
-       class=<span class="string">"purpose-selector"</span>&gt;
-
-    &lt;<span class="keyword">label</span> class=<span class="string">"purpose-label"</span>&gt;
-      Seleccione los propósitos legales que aplican:
-    &lt;/<span class="keyword">label</span>&gt;
-
-    &lt;<span class="keyword">div</span> *ngFor=<span class="string">"let purpose of purposes$ | async"</span> class=<span class="string">"purpose-check"</span>&gt;
-      &lt;<span class="keyword">label</span>&gt;
-        &lt;<span class="keyword">input</span> type=<span class="string">"checkbox"</span>
-               [value]=<span class="string">"purpose.slug"</span>
-               [checked]=<span class="string">"purpose.default &amp;&amp; !wizardData[field.key+'_purposes']"</span>
-               (change)=<span class="string">"togglePurpose(field.key, purpose.slug, $event)"</span>&gt;
-        {{ purpose.label }}
-        &lt;<span class="keyword">span</span> class=<span class="string">"purpose-basis"</span>&gt;({{ purpose.legal_basis }})&lt;/<span class="keyword">span</span>&gt;
-      &lt;/<span class="keyword">label</span>&gt;
-    &lt;/<span class="keyword">div</span>&gt;
-
-    <span class="comment">&lt;!-- Tooltip informativo --&gt;</span>
-    &lt;<span class="keyword">div</span> class=<span class="string">"purpose-help"</span>&gt;
-      Estos propósitos se agregarán a la política cuando se publique.
-      Los propósitos marcados con "default" están pre-seleccionados.
-    &lt;/<span class="keyword">div</span>&gt;
-  &lt;/<span class="keyword">div</span>&gt;
-
-&lt;/<span class="keyword">ng-container</span>&gt;
+    <div class="conceptual-block">
+        <h4>Comportamiento esperado del patch en el wizard</h4>
+        <p>El formulario del wizard debe inspeccionar cada campo de <code>wizard_schema</code> y, para aquellos con <code>requires_purpose_selection: true</code>, inyectar un selector de propósitos debajo del input correspondiente. La lógica debe ser:</p>
+        <ol>
+            <li><strong>Cargar catálogo:</strong> Al iniciar, hacer <code>GET /api/panel/consent-purposes</code>. La respuesta contiene el listado completo de propósitos legales (slug, label, description, required, default, legal_basis, display_order). Guardar en estado local para usar como fuente del selector.</li>
+            <li><strong>Renderizar checkboxes:</strong> Debajo del input de texto del campo marcado, mostrar un grupo de checkboxes — uno por propósito del catálogo. Cada checkbox debe mostrar <code>purpose.label</code> y, entre paréntesis, <code>purpose.legal_basis</code>. Aquellos con <code>purpose.default === true</code> deben aparecer pre-seleccionados.</li>
+            <li><strong>Persistir selección:</strong> El estado de los checkboxes se almacena en <code>wizard_data</code> bajo la clave <code>{fieldKey}_purposes</code> como un array de slugs. Ej: un campo <code>campo_legal</code> tendrá su selección en <code>wizard_data.campo_legal_purposes = ["analytics", "marketing"]</code>.</li>
+            <li><strong>Tooltip:</strong> Incluir un texto informativo que indique: "Estos propósitos se agregarán a la política al publicarla. Los que aparecen pre-seleccionados son los que vienen por defecto."</li>
+        </ol>
+        <p class="nota-conceptual">No es necesario que los checkboxes tengan estilos complejos desde el inicio. Un grupo de inputs HTML nativos con espaciado vertical es suficiente para la implementación inicial.</p>
     </div>
 
-    <div class="code-block">
-<span class="comment">// Angular — lógica del componente</span>
-
-<span class="keyword">import</span> { Component, OnInit } <span class="keyword">from</span> <span class="string">'@angular/core'</span>;
-<span class="keyword">import</span> { HttpClient } <span class="keyword">from</span> <span class="string">'@angular/common/http'</span>;
-<span class="keyword">import</span> { Observable } <span class="keyword">from</span> <span class="string">'rxjs'</span>;
-
-<span class="keyword">interface</span> ConsentPurpose {
-  slug: string;
-  label: string;
-  description: string;
-  required: boolean;
-  default: boolean;
-  legal_basis: string;
-  display_order: number;
-}
-
-@Component({
-  selector: <span class="string">'app-wizard-editor'</span>,
-  templateUrl: <span class="string">'./wizard-editor.component.html'</span>,
-})
-<span class="keyword">export class</span> WizardEditorComponent implements OnInit {
-  purposes$: Observable&lt;ConsentPurpose[]&gt;;
-
-  constructor(<span class="keyword">private</span> http: HttpClient) {}
-
-  ngOnInit(): <span class="keyword">void</span> {
-    <span class="keyword">this</span>.purposes$ = <span class="keyword">this</span>.http.get&lt;{
-      status: string;
-      data: ConsentPurpose[];
-    }&gt;(<span class="string">'/api/panel/consent-purposes'</span>).pipe(
-      map(res =&gt; res.data)
-    );
-  }
-
-  <span class="comment">// Almacena la selección en wizard_data con key = "{fieldKey}_purposes"</span>
-  togglePurpose(fieldKey: string, slug: string, event: Event): <span class="keyword">void</span> {
-    <span class="keyword">const</span> checked = (event.target <span class="keyword">as</span> HTMLInputElement).checked;
-    <span class="keyword">const</span> key = <span class="string">`<span class="function">${fieldKey}</span>_purposes`</span>;
-
-    <span class="keyword">if</span> (!<span class="keyword">this</span>.wizardData[key]) {
-      <span class="keyword">this</span>.wizardData[key] = [];
-    }
-
-    <span class="keyword">if</span> (checked) {
-      <span class="keyword">this</span>.wizardData[key].push(slug);
-    } <span class="keyword">else</span> {
-      <span class="keyword">const</span> idx = <span class="keyword">this</span>.wizardData[key].indexOf(slug);
-      <span class="keyword">if</span> (idx &gt; -1) <span class="keyword">this</span>.wizardData[key].splice(idx, 1);
-    }
-  }
-}
+    <div class="conceptual-block">
+        <h4>Lógica del componente (alto nivel)</h4>
+        <p>Independientemente del framework, el componente del wizard debe implementar lo siguiente:</p>
+        <ul>
+            <li><strong>Inicialización:</strong> Al montar el componente, disparar la petición GET a <code>/api/panel/consent-purposes</code>. El componente debe exponer el listado de propósitos al template para que el selector de checkboxes pueda consumirlo.</li>
+            <li><strong>Manejo de selección:</strong> Implementar una función/handler que reciba tres parámetros: el identificador del campo (<code>fieldKey</code>), el slug del propósito, y el nuevo estado (seleccionado o no). Esta función debe agregar o remover el slug del array correspondiente en <code>wizard_data</code>.</li>
+            <li><strong>Pre-selección:</strong> Al inicializar los checkboxes, aquellos propósitos con <code>default: true</code> deben cargarse como seleccionados en <code>wizard_data</code> a menos que el usuario haya modificado previamente la selección (ej: en una edición posterior).</li>
+            <li><strong>Persistencia diferida:</strong> No enviar los propósitos al backend por separado. La selección se guarda en <code>wizard_data</code> y se envía al backend solo cuando se completa y guarda el wizard completo.</li>
+        </ul>
     </div>
 
     <div class="nota-warn">
@@ -877,14 +859,33 @@ banner.innerHTML = <span class="string">`
     </div>
 </div>
 
-<!-- ════════════════════════════════════════════ -->
-<h1 id="artefacto-c">Artefacto C &mdash; Angular: Pantalla de Registro de Consentimientos (Ledger)</h1>
-<!-- ════════════════════════════════════════════ -->
+</details>
 
-<div class="artefact-box">
-    <span class="badge">Artefacto C</span>
+<details class="caracteristica-details" id="caracteristica-c-wrapper">
+<summary><h1 id="característica-c">Característica C &mdash; Angular: Pantalla de Registro de Consentimientos (Ledger)</h1></summary>
+
+<div class="caracteristica-box">
+    <span class="badge">Característica C</span>
     <h3>Angular &mdash; Pantalla de Auditor&iacute;a de Consentimientos</h3>
     <p>Componente Angular dentro del panel de administraci&oacute;n de la Pyme. Muestra el ledger inmutable de consentimientos con filtros, paginaci&oacute;n y sellos legales.</p>
+</div>
+
+<h2 id="ledger-flujo">Flujo del ledger</h2>
+
+<div class="flow-diagram">
+    <div class="flow-step"><span class="num">1</span><span class="desc">Admin navega a <code>/panel/consentimientos</code>. Frontend verifica autenticación Sanctum y rol <code>company_admin</code>.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">2</span><span class="desc">Frontend hace <code>GET /api/panel/consent-logs</code> (page 1, sin filtros). Backend retorna registros paginados + total.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">3</span><span class="desc">Frontend renderiza tabla con los datos: identificador, fecha, canal, propósitos y sello legal con botón de copia.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">4</span><span class="desc">Badge del encabezado se actualiza con <code>pagination.total</code>. Paginación se muestra si <code>last_page &gt; 1</code>.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">5</span><span class="desc">Admin aplica filtros: método de captura, política, rango de fechas. Frontend construye query params y llama GET nuevamente.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">6</span><span class="desc">Frontend actualiza la tabla y la paginación con la respuesta filtrada. El estado de filtros se refleja en la URL.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">7</span><span class="desc">Admin navega páginas o copia proof_hash al portapapeles usando <code>navigator.clipboard.writeText()</code>.</span></div>
 </div>
 
 <h2 id="ledger-ruta">Ruta Angular y endpoint</h2>
@@ -897,7 +898,8 @@ banner.innerHTML = <span class="string">`
     <h3>Endpoint a consumir</h3>
     <div class="code-block">
 <span class="comment">// GET /api/panel/consent-logs</span>
-<span class="comment">// Autenticaci&oacute;n: Sanctum (Bearer token)</span>
+<span class="comment">// Autenticaci&oacute;n: Sanctum cookie-based (SPA)</span>
+<span class="comment">// El panel Angular debe haber completado GET /sanctum/csrf-cookie e incluir withCredentials: true</span>
 <span class="comment">// Scope: company_id del usuario autenticado</span>
 
 <span class="comment">// Query params:</span>
@@ -923,12 +925,14 @@ banner.innerHTML = <span class="string">`
         <li><strong>Badge din&aacute;mico:</strong> Contador total de registros leyendo <code>pagination.total</code> de la respuesta. Ej: &ldquo;72 registros&rdquo;. Debe actualizarse al aplicar filtros o cambiar de p&aacute;gina.</li>
     </ul>
 
-    <div class="code-block">
-<span class="comment">&lt;!-- Angular — template del encabezado --&gt;</span>
-&lt;<span class="keyword">div</span> class=<span class="string">"ledger-header"</span>&gt;
-  &lt;<span class="keyword">h1</span>&gt;Registro de Consentimientos&lt;/<span class="keyword">h1</span>&gt;
-  &lt;<span class="keyword">span</span> class=<span class="string">"badge-blue"</span>&gt;{{ pagination.total }} registros&lt;/<span class="keyword">span</span>&gt;
-&lt;/<span class="keyword">div</span>&gt;
+    <div class="conceptual-block">
+        <h4>Estructura del encabezado</h4>
+        <p>La pantalla se compone de dos elementos visuales en el encabezado:</p>
+        <ul>
+            <li><strong>Título:</strong> "Registro de Consentimientos" como encabezado principal de la vista.</li>
+            <li><strong>Badge dinámico:</strong> Un contador que muestre el total de registros leyendo <code>pagination.total</code> de cada respuesta del backend. Ej: "72 registros". Este contador debe actualizarse cada vez que se aplican filtros o se cambia de página.</li>
+        </ul>
+        <p class="nota-conceptual">El badge obtiene su valor del objeto <code>pagination</code> que retorna <code>GET /api/panel/consent-logs</code>. No hardcodear valores estáticos.</p>
     </div>
 </div>
 
@@ -968,20 +972,20 @@ banner.innerHTML = <span class="string">`
         </div>
     </div>
 
-    <div class="code-block">
-<span class="comment">// Angular — servicio de consumo</span>
-<span class="comment">// GET /api/panel/consent-logs?capture_method=live_widget&amp;policy_hash=abc&amp;from=2026-01-01&amp;to=2026-07-22&amp;page=1</span>
-
-fetchConsentLogs(filters: { ... }): Observable&lt;ConsentLogResponse&gt; {
-  <span class="keyword">const</span> params = <span class="keyword">new</span> HttpParams({ fromObject: {
-    page: filters.page ?? 1,
-    ...(filters.capture_method &amp;&amp; { capture_method: filters.capture_method }),
-    ...(filters.policy_hash &amp;&amp; { policy_hash: filters.policy_hash }),
-    ...(filters.from &amp;&amp; { from: filters.from }),
-    ...(filters.to &amp;&amp; { to: filters.to }),
-  }});
-  <span class="keyword">return</span> <span class="keyword">this</span>.http.get&lt;ConsentLogResponse&gt;(<span class="string">'/api/panel/consent-logs'</span>, { params });
-}
+    <div class="conceptual-block">
+        <h4>Llamada al backend</h4>
+        <p>Construir la URL de <code>GET /api/panel/consent-logs</code> agregando como query params solo aquellos filtros que tengan valor seleccionado. La estructura esperada:</p>
+        <div class="example-block">
+            <code>GET /api/panel/consent-logs?capture_method=live_widget&amp;policy_hash=abc123&amp;from=2026-01-01&amp;to=2026-07-22&amp;page=1</code>
+        </div>
+        <p>Reglas para construir los params:</p>
+        <ul>
+            <li><code>page</code>: siempre enviar, default 1.</li>
+            <li><code>capture_method</code>: solo si el filtro tiene un valor distinto de "Todos".</li>
+            <li><code>policy_hash</code>: solo si hay una política seleccionada.</li>
+            <li><code>from</code>, <code>to</code>: solo si la fecha está definida.</li>
+            <li>Params vacíos o nulos deben omitirse, no enviarse con valor <code>""</code>.</li>
+        </ul>
     </div>
 
     <div class="nota-warn">
@@ -1041,72 +1045,18 @@ fetchConsentLogs(filters: { ... }): Observable&lt;ConsentLogResponse&gt; {
         </tbody>
     </table>
 
-    <div class="code-block">
-<span class="comment">&lt;!-- Angular — tabla --&gt;</span>
-&lt;<span class="keyword">table</span> class=<span class="string">"resp-table"</span>&gt;
-  &lt;<span class="keyword">thead</span>&gt;
-    &lt;<span class="keyword">tr</span>&gt;
-      &lt;<span class="keyword">th</span>&gt;Identificador&lt;/<span class="keyword">th</span>&gt;
-      &lt;<span class="keyword">th</span>&gt;Fecha&lt;/<span class="keyword">th</span>&gt;
-      &lt;<span class="keyword">th</span>&gt;Canal&lt;/<span class="keyword">th</span>&gt;
-      &lt;<span class="keyword">th</span>&gt;Prop&oacute;sitos&lt;/<span class="keyword">th</span>&gt;
-      &lt;<span class="keyword">th</span>&gt;Sello Legal&lt;/<span class="keyword">th</span>&gt;
-    &lt;/<span class="keyword">tr</span>&gt;
-  &lt;/<span class="keyword">thead</span>&gt;
-  &lt;<span class="keyword">tbody</span>&gt;
-    &lt;<span class="keyword">tr</span> *ngFor=<span class="string">"let log of consentLogs"</span>&gt;
-      &lt;<span class="keyword">td</span>&gt;
-        &lt;<span class="keyword">span</span> *ngIf=<span class="string">"log.identifier; else anonymous"</span>&gt;{{ log.identifier }}&lt;/<span class="keyword">span</span>&gt;
-        &lt;<span class="keyword">ng-template</span> #anonymous&gt;
-          &lt;<span class="keyword">span</span> [title]=<span class="string">"'Visitante an&oacute;nimo'"</span>&gt;{{ log.visitor_uuid | slice:0:8 }}...&lt;/<span class="keyword">span</span>&gt;
-        &lt;/<span class="keyword">ng-template</span>&gt;
-      &lt;/<span class="keyword">td</span>&gt;
-      &lt;<span class="keyword">td</span>&gt;{{ log.consent_occurred_at | date:'dd/MM/yyyy HH:mm' }}&lt;/<span class="keyword">td</span>&gt;
-      &lt;<span class="keyword">td</span>&gt;
-        &lt;<span class="keyword">span</span> [ngClass]=<span class="string">"getBadgeClass(log.capture_method)"</span>&gt;{{ log.capture_method }}&lt;/<span class="keyword">span</span>&gt;
-      &lt;/<span class="keyword">td</span>&gt;
-      &lt;<span class="keyword">td</span>&gt;
-        &lt;<span class="keyword">span</span> *ngFor=<span class="string">"let p of log.purposes | keyvalue"</span>
-              [ngClass]=<span class="string">"p.value ? 'chip-green' : 'chip-red'"</span>&gt;
-          {{ p.key }}
-        &lt;/<span class="keyword">span</span>&gt;
-      &lt;/<span class="keyword">td</span>&gt;
-      &lt;<span class="keyword">td</span>&gt;
-        &lt;<span class="keyword">span</span> class=<span class="string">"mono-hash"</span>&gt;{{ log.proof_hash | slice:0:12 }}&lt;/<span class="keyword">span</span>&gt;
-        &lt;<span class="keyword">button</span> class=<span class="string">"copy-btn"</span> (click)=<span class="string">"copyToClipboard(log.proof_hash)"</span>&gt;
-          📋 Copiar
-        &lt;/<span class="keyword">button</span>&gt;
-      &lt;/<span class="keyword">td</span>&gt;
-    &lt;/<span class="keyword">tr</span>&gt;
-  &lt;/<span class="keyword">tbody</span>&gt;
-&lt;/<span class="keyword">table</span>&gt;
+    <div class="conceptual-block">
+        <h4>Comportamiento de la tabla</h4>
+        <p>Iterar sobre el array <code>data</code> de la respuesta siguiendo las reglas de la especificación de columnas de arriba. No hay lógica adicional fuera de lo descrito en cada columna. El helper <code>getBadgeClass</code> y <code>copyToClipboard</code> detallados abajo completan el comportamiento de la tabla.</p>
     </div>
 
-    <div class="code-block">
-<span class="comment">// Angular — l&oacute;gica del componente</span>
-
-getBadgeClass(method: string): string {
-  <span class="keyword">const</span> map: Record&lt;string, string&gt; = {
-    live_widget: <span class="string">'badge-green'</span>,
-    live_portal: <span class="string">'badge-blue'</span>,
-    bulk_import: <span class="string">'badge-gray'</span>,
-  };
-  <span class="keyword">return</span> map[method] ?? <span class="string">'badge-gray'</span>;
-}
-
-<span class="keyword">async</span> copyToClipboard(hash: string): Promise&lt;<span class="keyword">void</span>&gt; {
-  <span class="keyword">try</span> {
-    <span class="keyword">await</span> navigator.clipboard.writeText(hash);
-    <span class="comment">// Opcional: mostrar feedback visual (toast)</span>
-  } <span class="keyword">catch</span> {
-    <span class="keyword">const</span> ta = document.createElement(<span class="string">'textarea'</span>);
-    ta.value = hash;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand(<span class="string">'copy'</span>);
-    document.body.removeChild(ta);
-  }
-}
+    <div class="conceptual-block">
+        <h4>Lógica auxiliar del componente</h4>
+        <p>Dos funciones utilitarias necesarias para la tabla:</p>
+        <ul>
+            <li><strong>getBadgeClass(capture_method):</strong> Retorna la clase CSS correspondiente al método de captura. Mapeo: <code>live_widget</code> → clase verde, <code>live_portal</code> → clase azul, <code>bulk_import</code> → clase gris. Cualquier valor desconocido debe usar la clase gris por defecto.</li>
+            <li><strong>copyToClipboard(text):</strong> Intenta <code>navigator.clipboard.writeText()</code>. Si falla (navegadores sin soporte o contextos inseguros), crear un elemento <code>&lt;textarea&gt;</code> temporal, seleccionarlo y ejecutar <code>document.execCommand('copy')</code>, limpiando después. Idealmente mostrar feedback visual (toast) al copiar.</li>
+        </ul>
     </div>
 </div>
 
@@ -1126,23 +1076,16 @@ getBadgeClass(method: string): string {
         </tbody>
     </table>
 
-    <div class="code-block">
-<span class="comment">&lt;!-- Angular — paginaci&oacute;n --&gt;</span>
-&lt;<span class="keyword">div</span> class=<span class="string">"pagination"</span> *ngIf=<span class="string">"pagination.last_page &gt; 1"</span>&gt;
-  &lt;<span class="keyword">button</span> [disabled]=<span class="string">"pagination.current_page === 1"</span>
-          (click)=<span class="string">"goToPage(pagination.current_page - 1)"</span>&gt;
-    &amp;laquo; Anterior
-  &lt;/<span class="keyword">button</span>&gt;
-
-  &lt;<span class="keyword">span</span> *ngFor=<span class="string">"let p of getPageRange()"</span>
-        [class.active]=<span class="string">"p === pagination.current_page"</span>
-        (click)=<span class="string">"goToPage(p)"</span>&gt;{{ p }}&lt;/<span class="keyword">span</span>&gt;
-
-  &lt;<span class="keyword">button</span> [disabled]=<span class="string">"pagination.current_page === pagination.last_page"</span>
-          (click)=<span class="string">"goToPage(pagination.current_page + 1)"</span>&gt;
-    Siguiente &amp;raquo;
-  &lt;/<span class="keyword">button</span>&gt;
-&lt;/<span class="keyword">div</span>&gt;
+    <div class="conceptual-block">
+        <h4>Paginación</h4>
+        <p>El backend retorna 25 registros por página. La paginación debe construirse usando los campos del objeto <code>pagination</code>:</p>
+        <ul>
+            <li><code>pagination.current_page</code>: página activa actual.</li>
+            <li><code>pagination.last_page</code>: última página disponible. Si es 1, ocultar la paginación.</li>
+            <li><code>pagination.total</code>: total de registros (se muestra en el badge del encabezado).</li>
+            <li><code>pagination.per_page</code>: registros por página (25).</li>
+        </ul>
+        <p>La navegación consiste en: botón "Anterior" (deshabilitado si current_page === 1), números de página (con la página actual destacada), y botón "Siguiente" (deshabilitado si current_page === last_page). Al cambiar de página, disparar una nueva llamada a <code>GET /api/panel/consent-logs</code> con el nuevo número de página.</p>
     </div>
 
     <h3>Estado vac&iacute;o</h3>
@@ -1153,19 +1096,14 @@ getBadgeClass(method: string): string {
         <p>A&uacute;n no hay consentimientos registrados. Instala el Trust Widget en tu sitio para comenzar a capturar.</p>
     </div>
 
-    <div class="code-block">
-<span class="comment">&lt;!-- Angular — estado vac&iacute;o --&gt;</span>
-&lt;<span class="keyword">ng-container</span> *ngIf=<span class="string">"consentLogs.length === 0"</span>&gt;
-  &lt;<span class="keyword">div</span> class=<span class="string">"empty-state"</span>&gt;
-    &lt;<span class="keyword">div</span> class=<span class="string">"empty-icon"</span>&gt;&amp;#128203;&lt;/<span class="keyword">div</span>&gt;
-    &lt;<span class="keyword">p</span>&gt;A&uacute;n no hay consentimientos registrados. Instala el Trust Widget en tu sitio para comenzar a capturar.&lt;/<span class="keyword">p</span>&gt;
-  &lt;/<span class="keyword">div</span>&gt;
-&lt;/<span class="keyword">ng-container</span>&gt;
-
-<span class="comment">&lt;!-- Tabla solo cuando hay datos --&gt;</span>
-&lt;<span class="keyword">ng-container</span> *ngIf=<span class="string">"consentLogs.length &gt; 0"</span>&gt;
-  <span class="comment">&lt;!-- ... tabla ... --&gt;</span>
-&lt;/<span class="keyword">ng-container</span>&gt;
+    <div class="conceptual-block">
+        <h4>Estado vacío</h4>
+        <p>Cuando el array <code>data</code> viene vacío (sin registros o filtros sin coincidencias), la vista debe mostrar un estado vacío con:</p>
+        <ul>
+            <li>Un ícono representativo (clipboard o documento).</li>
+            <li>Texto: "Aún no hay consentimientos registrados. Instala el Trust Widget en tu sitio para comenzar a capturar."</li>
+        </ul>
+        <p>La tabla de datos solo debe renderizarse cuando hay registros (<code>data.length &gt; 0</code>). En caso contrario, mostrar el estado vacío.</p>
     </div>
 </div>
 
@@ -1217,6 +1155,328 @@ getBadgeClass(method: string): string {
         <strong>Tipos de datos:</strong> <code>purposes</code> es un objeto <code>{ &quot;slug&quot;: boolean }</code>. <code>identifier</code> es <code>null</code> hoy (Identity Stitching pendiente). <code>consent_occurred_at</code> y <code>recorded_at</code> vienen en ISO 8601 (UTC). <code>policy_hash</code> es el integrity_hash de la pol&iacute;tica vigente al momento del consentimiento. <code>proof_hash</code> es SHA-256 del payload can&oacute;nico.
     </div>
 </div>
+
+</details>
+
+<details class="caracteristica-details" id="caracteristica-d-wrapper">
+<summary><h1 id="característica-d">Característica D — Panel: Dominios Autorizados CORS</h1></summary>
+
+<div class="caracteristica-box">
+    <span class="badge">Característica D</span>
+    <h3>Panel — Dominios Autorizados CORS</h3>
+    <p>Endpoint del panel de administración que permite a la Pyme configurar la lista blanca de dominios donde está embebido el Trust Widget. El middleware cors.dynamic valida el header Origin contra esta lista en cada request del widget.</p>
+</div>
+
+<h2 id="dominios-endpoint">Endpoint</h2>
+
+<div class="card">
+    <div class="path">PATCH /api/panel/companies/domains · Auth: Sanctum</div>
+    <p>Controlador: <code>CompanyDomainController@update</code> en <code>app/Http/Controllers/Api/Panel/CompanyDomainController.php</code>.</p>
+    <p>Actualiza el array JSON <code>allowed_domains</code> en la tabla <code>companies</code>. Recibe un array de FQDN (Fully Qualified Domain Names) con máximo 10 entradas.</p>
+
+    <h3>Validación</h3>
+    <ul>
+        <li><code>domains</code>: obligatorio (<code>present</code>), array, máximo 10 elementos. Se usa <code>present</code> (no <code>required</code>) para permitir enviar <code>[]</code> y limpiar la lista.</li>
+        <li><code>domains.*</code>: string, regex FQDN. No acepta protocolos (<code>http://</code>), rutas (<code>/path</code>) ni IPs. Ej: <code>mitienda.cl</code>, <code>checkout.mitienda.cl</code>.</li>
+    </ul>
+
+    <div class="note">
+        <strong>Nota:</strong> El middleware <code>cors.dynamic</code> cachea los dominios por 12 horas. Un cambio en esta lista se refleja con el próximo miss de caché (máximo 12h). Para invalidación inmediata: borrar la clave <code>company_domains:{uuid}</code> del caché.
+    </div>
+</div>
+
+<h2 id="dominios-funcionamiento">Funcionamiento</h2>
+
+<div class="card">
+    <h3>Flujo de validación CORS</h3>
+    <div class="diagram-flow">
+        <div class="flow-step"><span class="num">1</span><span class="desc">La Pyme configura sus dominios desde el panel vía <code>PATCH /api/panel/companies/domains</code>. Los dominios se persisten en <code>companies.allowed_domains</code>.</span></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><span class="num">2</span><span class="desc">El widget JS embebido en el sitio de la Pyme envía un request al endpoint público con header <code>Origin</code>.</span></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><span class="num">3</span><span class="desc"><code>DynamicCorsMiddleware</code> resuelve la empresa por <code>public_uuid</code>, busca sus <code>allowed_domains</code> (caché 12h) y compara el host del Origin contra la lista blanca.</span></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><span class="num">4</span><span class="desc">Si coincide: agrega headers <code>Access-Control-Allow-Origin</code> (nunca <code>*</code>), <code>Allow-Methods</code>, <code>Allow-Headers</code>. Si es OPTIONS: responde 204.</span></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><span class="num">5</span><span class="desc">Si NO coincide: responde 403 con mensaje <code>origin_not_allowed</code>. El widget no puede cargar.</span></div>
+    </div>
+
+    <p><strong>Headers CORS que establece el middleware:</strong></p>
+    <ul>
+        <li><code>Access-Control-Allow-Origin</code> → el origen específico (nunca <code>*</code>)</li>
+        <li><code>Access-Control-Allow-Methods</code> → GET, POST, OPTIONS</li>
+        <li><code>Access-Control-Allow-Headers</code> → Content-Type, X-Requested-With</li>
+        <li><code>Access-Control-Max-Age</code> → 86400s (24h)</li>
+        <li><code>Vary</code> → Origin</li>
+    </ul>
+
+    <div class="nota-warn">
+        <strong>Importante:</strong> Sin esta configuración, el widget no puede comunicarse con el backend desde el sitio de la Pyme. CORS denegado por defecto. La Pyme debe configurar al menos un dominio antes de integrar el widget.
+    </div>
+</div>
+
+</details>
+
+<details class="caracteristica-details" id="caracteristica-e-wrapper">
+<summary><h1 id="característica-e">Característica E — Panel: Personalización Visual del Widget</h1></summary>
+
+<div class="caracteristica-box">
+    <span class="badge">Característica E</span>
+    <h3>Panel — Personalización Visual del Widget</h3>
+    <p>Endpoint del panel de administración que permite a la Pyme personalizar la apariencia del Trust Widget: color primario, logo, textos del banner y etiquetas de botones. Usa deep merge recursivo para preservar configuraciones existentes.</p>
+</div>
+
+<h2 id="widget-config-endpoint">Endpoint</h2>
+
+<div class="card">
+    <div class="path">PATCH /api/panel/companies/widget-config · Auth: Sanctum</div>
+    <p>Controlador: <code>CompanyWidgetConfigController@update</code> en <code>app/Http/Controllers/Api/Panel/CompanyWidgetConfigController.php</code>.</p>
+    <p>Actualiza el JSON <code>widget_config</code> en la tabla <code>companies</code>. Todos los campos son opcionales. Se envía solo lo que se quiere cambiar. El controlador usa <code>array_replace_recursive</code> para fusionar los datos nuevos con la configuración existente.</p>
+
+    <h3>Campos disponibles</h3>
+    <table class="resp-table">
+        <thead><tr><th>Campo</th><th>Tipo</th><th>Validación</th><th>Descripción</th></tr></thead>
+        <tbody>
+            <tr><td><code>primary_color</code></td><td>string</td><td>regex hex: <code>#xxx</code> o <code>#xxxxxx</code></td><td>Color primario del banner. Default: <code>#1a73e8</code></td></tr>
+            <tr><td><code>logo_url</code></td><td>string</td><td>url, max 2048</td><td>URL del logo de la Pyme en el banner</td></tr>
+            <tr><td><code>legal_texts</code></td><td>object</td><td>array</td><td>Textos legales anidados (banner_title, banner_body)</td></tr>
+            <tr><td><code>button_accept_text</code></td><td>string</td><td>max 50</td><td>Texto del botón Aceptar</td></tr>
+            <tr><td><code>button_reject_text</code></td><td>string</td><td>max 50</td><td>Texto del botón Rechazar</td></tr>
+        </tbody>
+    </table>
+
+    <div class="note">
+        <strong>Deep merge:</strong> <code>array_replace_recursive</code> preserva llaves anidadas no enviadas. Si solo envías <code>legal_texts.banner_title</code>, la llave <code>legal_texts.policy_url</code> se mantiene intacta. Los valores <code>null</code> se filtran antes del merge para no sobrescribir configuraciones existentes.
+    </div>
+</div>
+
+<h2 id="widget-config-funcionamiento">Funcionamiento</h2>
+
+<div class="card">
+    <h3>¿Qué se puede personalizar?</h3>
+    <p>La configuración visual se almacena en <code>companies.widget_config</code> como un JSON estructurado. Cuando el endpoint público <code>GET /api/widget/{uuid}/config</code> sirve la configuración, lee estos valores y los combina con defaults hardcodeados:</p>
+    <ul>
+        <li><strong>Posición:</strong> bottom-left, bottom-right, top-left, top-right (default: bottom-left)</li>
+        <li><strong>Color primario:</strong> Cualquier color hex válido (default: <code>#1a73e8</code>)</li>
+        <li><strong>Logo:</strong> URL opcional del logo de la Pyme</li>
+        <li><strong>Mostrar botón Rechazar:</strong> Boolean (default: true)</li>
+        <li><strong>Duración cookie preferencia:</strong> 365 días (fijo)</li>
+        <li><strong>Textos del banner:</strong> Título, cuerpo y URL de política completa</li>
+        <li><strong>Etiquetas de botones:</strong> Texto personalizado para Aceptar y Rechazar</li>
+    </ul>
+
+    <p><strong>Comportamiento del merge:</strong></p>
+    <div class="diagram-flow">
+        <div class="flow-step"><span class="num">1</span><span class="desc">El frontend Angular envía solo los campos que cambiaron (ej: <code>primary_color</code>).</span></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><span class="num">2</span><span class="desc">El controlador lee el JSON actual de <code>company.widget_config</code>.</span></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><span class="num">3</span><span class="desc">Filtra valores <code>null</code> del request para evitar sobrescrituras accidentales.</span></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><span class="num">4</span><span class="desc">Aplica <code>array_replace_recursive</code> entre la configuración actual y los datos validados.</span></div>
+        <div class="flow-arrow">&darr;</div>
+        <div class="flow-step"><span class="num">5</span><span class="desc">Persiste el resultado y devuelve el objeto completo de <code>widget_config</code> en la respuesta.</span></div>
+    </div>
+
+    <div class="nota-warn">
+        <strong>Nota arquitectónica:</strong> <code>widget_config</code> es un JSON con nodos anidados. Usar <code>array_replace_recursive</code> evita que un proceso que escribe <code>legal_texts.banner_title</code> destruya <code>legal_texts.policy_url</code> que otro proceso (ej: importación) haya escrito. Esto es intencional para permitir actualizaciones parciales concurrentes.
+    </div>
+</div>
+
+</details>
+
+<details class="caracteristica-details" id="caracteristica-f-wrapper">
+<summary><h1 id="característica-f">Característica F — Portal Cautivo Público</h1></summary>
+
+<div class="caracteristica-box">
+    <span class="badge">Característica F</span>
+    <h3>Angular — Portal Cautivo de Firma</h3>
+    <p>Interfaz Angular pública (sin autenticación, sin sidebar, sin menú de navegación) que permite a un destinatario firmar documentos legales mediante un enlace mágico recibido por correo transaccional.</p>
+</div>
+
+<h2 id="portal-flujo-general">Flujo del Portal Cautivo</h2>
+
+<div class="flow-diagram">
+    <div class="flow-step"><span class="num">1</span><span class="desc">Destinatario recibe enlace mágico por email. Abre <code>/portal/consent/{token}</code> en el navegador.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">2</span><span class="desc">Frontend genera/obtiene <code>visitor_uuid</code> de localStorage (misma lógica que el widget). Extrae el <code>:token</code> de la URL.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">3</span><span class="desc">Frontend hace <code>GET /api/portal/consent/{token}</code>. Backend valida existencia, expiración y estado del token.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">4</span><span class="desc">Si 200: renderiza vista de firma con datos de empresa, política, email del destinatario y toggles de propósitos. Si 404/409/410: muestra pantalla con mensaje del backend.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">5</span><span class="desc">Usuario ajusta toggles. Propósitos con <code>required: true</code> están bloqueados en ON con candado. Estado inicial = <code>purpose.default</code>.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">6</span><span class="desc">Usuario hace clic en "Firmar Documento". Frontend arma payload <code>{purposes, visitor_uuid}</code> y envía <code>POST /api/portal/consent/{token}/confirm</code>.</span></div>
+    <div class="flow-arrow">&darr;</div>
+    <div class="flow-step"><span class="num">7</span><span class="desc">Si 201: muestra pantalla de éxito con <code>proof_hash</code> y botón copiar. Si 409: éxito preventivo. Si 410: expiración. Si 422: mensaje inline.</span></div>
+</div>
+
+<h2 id="portal-ruta">Ruta Angular y layout</h2>
+
+<div class="card">
+    <div class="path">/portal/consent/:token</div>
+    <p>Ruta pública, sin guard de autenticación. Layout minimalista: contenido centrado, sin sidebar, sin menú de navegación, sin header del panel. El <code>:token</code> se extrae de la URL y se usa para invocar los endpoints GET y POST.</p>
+</div>
+
+<h2 id="portal-get">GET /api/portal/consent/{token} — Obtener datos de firma</h2>
+
+<div class="card">
+    <p>Endpoint público. Al montar la vista, extraer el <code>:token</code> de la URL y disparar la petición GET para cargar los datos de firma.</p>
+    <p>Controlador: <code>PortalConsentController@show</code> en <code>app/Http/Controllers/Api/Portal/PortalConsentController.php</code>.</p>
+
+    <div class="conceptual-block">
+        <h4>Estructura de la respuesta del GET</h4>
+        <p>El endpoint <code>GET /api/portal/consent/{token}</code> retorna un objeto con 4 secciones principales que el frontend debe consumir para renderizar la vista de firma:</p>
+        <ul>
+            <li><strong>company:</strong> <code>business_name</code> (razón social) y <code>logo_url</code> (opcional, URL del logo).</li>
+            <li><strong>policy:</strong> <code>name</code> (nombre del documento), <code>policy_hash</code> (hash de integridad), <code>url</code> (enlace al documento completo para abrir en nueva pestaña).</li>
+            <li><strong>recipient:</strong> <code>email</code> del destinatario que recibió el enlace mágico.</li>
+            <li><strong>purposes:</strong> Objeto donde cada key es un slug y cada valor es un objeto con: <code>label</code>, <code>description</code>, <code>required</code> (boolean — si true, el toggle debe estar bloqueado en ON), <code>default</code> (boolean — estado inicial del toggle), <code>legal_basis</code> (texto como "Consentimiento (Art. 15)").</li>
+        </ul>
+    </div>
+
+    <h3>Manejo de estados HTTP</h3>
+    <p>Importante: el backend retorna el mensaje exacto en el campo <code>message</code> del JSON de error. El frontend debe leerlo y mostrarlo, no hardcodear textos distintos.</p>
+    <table class="resp-table">
+        <thead><tr><th>Código</th><th>Significado</th><th>UI a renderizar</th></tr></thead>
+        <tbody>
+            <tr><td>200</td><td>Token válido</td><td>Vista de firma con datos del GET</td></tr>
+            <tr><td>404</td><td>Token no existe</td><td>Pantalla error: usar <code>response.error.message</code> (ej: "El enlace no es válido o no existe.")</td></tr>
+            <tr><td>409</td><td>Ya confirmado</td><td>Pantalla éxito preventivo: usar <code>response.error.message</code> (ej: "Este documento ya fue firmado previamente.")</td></tr>
+            <tr><td>410</td><td>Expirado</td><td>Pantalla expiración: usar <code>response.error.message</code> (ej: "El enlace ha expirado. Solicita uno nuevo.")</td></tr>
+        </tbody>
+    </table>
+
+    <h4>Estructura del JSON de error (todos los códigos)</h4>
+    <div class="code-block">
+{
+  <span class="key">"status"</span>: <span class="bool">false</span>,
+  <span class="key">"message"</span>: <span class="string">"..."</span>,
+  <span class="key">"data"</span>: <span class="null">null</span>
+}
+    </div>
+</div>
+
+<h2 id="portal-submit">POST /api/portal/consent/{token}/confirm — Confirmar firma</h2>
+
+<div class="card">
+    <p>Endpoint público. Al hacer clic en "Firmar Documento":</p>
+
+    <div class="conceptual-block">
+        <h4>Gestión del visitor_uuid</h4>
+        <p>Al igual que el Trust Widget, el Portal Cautivo debe asignar un identificador único de visitante para correlacionar la firma con el navegador del destinatario. La lógica:</p>
+        <ul>
+            <li>Al cargar el Portal Cautivo, revisar en <code>localStorage</code> si existe una key <code>nodox_visitor_uuid</code>.</li>
+            <li>Si no existe: generar un nuevo UUID v4 (usar <code>crypto.randomUUID()</code> o función equivalente con criptografía segura) y persistirlo en <code>localStorage</code>.</li>
+            <li>Si ya existe: reutilizar el valor almacenado.</li>
+            <li>Este UUID se envía en el payload del POST como <code>visitor_uuid</code>.</li>
+        </ul>
+    </div>
+
+    <div class="code-block">
+<span class="comment">// Payload POST /api/portal/consent/{token}/confirm</span>
+{
+  <span class="key">"purposes"</span>: {
+    <span class="key">"necessary_technical"</span>: <span class="bool">true</span>,
+    <span class="key">"analytics"</span>: <span class="bool">false</span>
+  },
+  <span class="key">"visitor_uuid"</span>: <span class="string">"550e8400-e29b-41d4-a716-446655440000"</span>
+}
+    </div>
+
+    <h3>Manejo de errores del POST</h3>
+    <table class="resp-table">
+        <thead><tr><th>Código</th><th>Significado</th><th>UI</th></tr></thead>
+        <tbody>
+            <tr><td>201</td><td>Firma exitosa</td><td>Pantalla de éxito con proof_hash y botón copiar</td></tr>
+            <tr><td>404</td><td>Token no existe (entre GET y POST)</td><td>Pantalla error</td></tr>
+            <tr><td>409</td><td>Ya confirmado</td><td>Pantalla éxito preventivo</td></tr>
+            <tr><td>410</td><td>Expiró entre GET y POST</td><td>Pantalla expiración</td></tr>
+            <tr><td>422</td><td>Validación falló (purposes vacío, visitor_uuid inválido)</td><td>Mensaje inline, no cambiar pantalla</td></tr>
+            <tr><td>500</td><td>Error interno</td><td>Mensaje error genérico, reintentar</td></tr>
+        </tbody>
+    </table>
+    <p>Para 404/409/410 del POST: leer <code>message</code> del JSON de error (misma estructura que GET).</p>
+</div>
+
+<h2 id="portal-flujo">Flujo completo y consideraciones técnicas</h2>
+
+<div class="card">
+    <h3>Layout de la Vista de Firma (solo si 200 OK)</h3>
+    <ul>
+        <li><strong>Encabezado:</strong> Logo si <code>company.logo_url</code> no es null. Si es null, mostrar solo <code>company.business_name</code> como texto. Centrado, fondo limpio.</li>
+        <li><strong>Título:</strong> <code>policy.name</code> (ej: "Política de Cookies").</li>
+        <li><strong>Subtítulo/email:</strong> Texto "Estás firmando este documento como: <code>{recipient.email}</code>".</li>
+        <li><strong>Link a política completa:</strong> Botón o link "Leer documento completo" que abra <code>policy.url</code> en nueva pestaña.</li>
+    </ul>
+
+    <h3>Toggles de Propósitos</h3>
+    <p>Iterar <code>Object.entries(purposes)</code>. Por cada propósito:</p>
+    <ul>
+        <li><strong>Label:</strong> <code>purpose.label</code>.</li>
+        <li><strong>Descripción:</strong> <code>purpose.description</code> (texto secundario bajo el label).</li>
+        <li><strong>Badge de base legal:</strong> Mostrar <code>purpose.legal_basis</code> como tag. Traducir: "consent" → "Consentimiento", "legitimate_interest" → "Interés legítimo".</li>
+        <li><strong>Toggle/switch:</strong> Estado inicial = <code>purpose.default</code>.</li>
+        <li><strong>Si <code>purpose.required === true</code>:</strong> Toggle bloqueado en ON, no permite deselección. Mostrar icono de candado y texto "(obligatorio)".</li>
+        <li><strong>Si <code>purpose.required === false</code>:</strong> Toggle editable, usuario puede aceptar o rechazar.</li>
+    </ul>
+
+    <h3>Botón de envío</h3>
+    <p>"Firmar Documento" al pie, destacado, color primario. Deshabilitado si la petición POST está en curso (loading spinner).</p>
+
+    <h3>Pantalla de éxito (201 Created)</h3>
+    <p>Mostrar: "¡Gracias! Has firmado exitosamente." Mostrar <code>data.proof_hash</code> como "Código de recibo de firma" con botón de copiar al portapapeles (con <code>aria-label</code>). Texto explicativo: "Guarda este código como comprobante de tu firma."</p>
+
+    <div class="conceptual-block">
+        <h4>Flujo de envío (POST) y manejo de estados</h4>
+        <p>Al hacer clic en "Firmar Documento", el frontend debe ejecutar el siguiente flujo:</p>
+        <ol>
+            <li><strong>Armar payload:</strong> Construir un objeto <code>purposes</code> incluyendo <strong>todos los slugs</strong> recibidos del GET (no solo los que el usuario modific&oacute;). Los prop&oacute;sitos con <code>required: true</code> deben enviarse siempre como <code>true</code> aunque el toggle est&eacute; bloqueado en la UI. El backend los fuerza igualmente, pero enviar el payload completo garantiza coherencia del <code>proof_hash</code>.</li>
+            <div class="code-block">
+<pre>function buildPortalPayload(purposesFromGet, toggleStates) {
+  return Object.fromEntries(
+    Object.entries(purposesFromGet).map(([slug, def]) =&gt; [
+      slug,
+      def.required ? true : (toggleStates[slug] ?? def.default)
+    ])
+  );
+}
+
+// Uso:
+const purposes = buildPortalPayload(getResponse.purposes, currentToggleStates);
+const payload = {
+  purposes,
+  visitor_uuid: getOrCreateVisitorUuid()
+};</pre>
+            </div>
+            <li><strong>Prevenir doble envío:</strong> Bloquear el botón de envío mientras la petición está en curso (estado loading).</li>
+            <li><strong>Enviar POST:</strong> Hacer la petición a <code>POST /api/portal/consent/{token}/confirm</code> con el payload.</li>
+            <li><strong>Manejar respuesta por código HTTP:</strong>
+                <ul>
+                    <li><code>201</code>: Firma exitosa. Cambiar a pantalla de éxito mostrando <code>data.proof_hash</code> como comprobante, con botón de copiar al portapapeles.</li>
+                    <li><code>409</code>: Ya confirmado previamente. Mostrar pantalla de éxito preventivo (no es error, el documento ya estaba firmado). Leer <code>message</code> del JSON de error.</li>
+                    <li><code>410</code>: Token expiró entre el GET y el POST. Mostrar pantalla de expiración. Leer <code>message</code> del error.</li>
+                    <li><code>404</code>: Token no existe (raro, pero posible si se eliminó entre GET y POST). Mostrar pantalla de error con <code>message</code>.</li>
+                    <li><code>422</code>: Error de validación (purposes vacío, visitor_uuid inválido). Mostrar mensaje inline sin cambiar de pantalla.</li>
+                    <li><code>500</code>: Error interno. Mostrar mensaje genérico y permitir reintento.</li>
+                </ul>
+            </li>
+            <li><strong>Siempre leer <code>message</code> del backend:</strong> No hardcodear textos de error. El backend retorna el mensaje exacto en <code>error.message</code>. El frontend debe mostrarlo tal cual.</li>
+        </ol>
+    </div>
+
+    <h3>Consideraciones adicionales</h3>
+    <ul>
+        <li><strong>CORS:</strong> El backend ya configura <code>Access-Control-Allow-Origin</code> para <code>http://localhost:4200</code> y <code>https://nodoxspd.cl</code>. No requiere headers especiales del frontend.</li>
+        <li><strong>Rate limiting:</strong> 60 req/min por IP. No spammear reintentos en errores 4xx/5xx.</li>
+        <li><strong>No persistir el token:</strong> El token va solo en la URL. No guardarlo en localStorage ni sessionStorage.</li>
+        <li><strong>Recarga de página post-firma:</strong> Si el usuario recarga la página después de haber firmado, el <code>GET /api/portal/consent/{token}</code> retorna <strong>409</strong>. El frontend debe interpretar el 409 del GET exactamente igual que el 201 del POST: mostrar la pantalla de éxito con el <code>proof_hash</code> (si el backend lo incluye). No mostrar error. No redirigir. La pantalla de éxito debe poder renderizarse sin haber pasado por el flujo de firma — solo con el 409 del GET es suficiente.</li>
+        <li><strong>Accesibilidad:</strong> Los toggles deben ser operables por teclado (tab + space). El botón de copiar proof_hash debe tener <code>aria-label</code>.</li>
+    </ul>
+</div>
+
+</details>
 
 </main>
 </div>

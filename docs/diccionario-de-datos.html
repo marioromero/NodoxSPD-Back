@@ -264,6 +264,7 @@
   .m1 { background: var(--gray-bg); border: 1px solid var(--gray-border); color: var(--gray); }
   .m2-new { background: var(--accent-light); border: 1px solid var(--accent-mid); color: var(--accent); }
   .m2-mod { background: var(--orange-bg); border: 1px solid var(--orange-border); color: var(--orange); }
+  .m3 { background: var(--teal-bg); border: 1px solid var(--teal-border); color: var(--teal); }
 
   .section-icon.blue   { background: var(--accent-light); }
   .section-icon.green  { background: var(--green-bg); }
@@ -298,12 +299,13 @@
 
 <div class="doc-header">
   <h1>Diccionario de Datos — SaaS Compliance Pymes</h1>
-  <p>Estructura completa de la base de datos MariaDB. Incluye el esquema existente del Módulo 1 y las nuevas tablas del Módulo 2 (Ledger de Consentimientos).</p>
+  <p>Estructura completa de la base de datos MariaDB. Incluye el esquema de todos los módulos del sistema: políticas legales, suscripciones y ledger de consentimientos.</p>
   <div class="doc-meta">
     <span>🗄️ <strong>Motor:</strong> MariaDB / InnoDB · utf8mb4_unicode_ci</span>
-    <span>🏗️ <strong>Framework:</strong> Laravel 11</span>
-    <span>📦 <strong>Módulo 1:</strong> Generador de políticas (completo)</span>
-    <span>🔐 <strong>Módulo 2:</strong> Ledger de consentimientos (en desarrollo)</span>
+    <span>🏗️ <strong>Framework:</strong> Laravel 13</span>
+    <span>📄 <strong>Módulo 1:</strong> Generador de políticas (completo)</span>
+    <span>🔐 <strong>Módulo 2:</strong> Trust Widget y consentimientos (completo)</span>
+    <span>💳 <strong>Módulo 3:</strong> Suscripciones y pagos (base)</span>
   </div>
 </div>
 
@@ -344,6 +346,12 @@
     <a href="#pending_consents" class="toc-item"><span class="toc-dot" style="background:#1e40af"></span>pending_consents ★ nuevo</a>
     <a href="#import_batches"  class="toc-item"><span class="toc-dot" style="background:#1e40af"></span>import_batches ★ nuevo</a>
     <a href="#person_visitor_uuids" class="toc-item"><span class="toc-dot" style="background:#1e40af"></span>person_visitor_uuids ★ nuevo</a>
+    <a href="#plans"           class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>plans</a>
+    <a href="#plan_prices"     class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>plan_prices</a>
+    <a href="#plan_features"   class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>plan_features</a>
+    <a href="#subscriptions"   class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>subscriptions</a>
+    <a href="#payments"        class="toc-item"><span class="toc-dot" style="background:#6b7280"></span>payments</a>
+    <a href="#consent_purposes" class="toc-item"><span class="toc-dot" style="background:#1e40af"></span>consent_purposes ★ nuevo</a>
   </div>
 </div>
 
@@ -777,8 +785,176 @@
   </div>
 </div>
 
+<!-- ════════════════════════════════════════════════
+     MÓDULO 3 — TABLAS DE SUSCRIPCIONES
+     ════════════════════════════════════════════════ -->
+
+<!-- ── plans ── -->
+<div class="section" id="plans">
+  <div class="section-header">
+    <div class="section-icon teal">📊</div>
+    <div class="section-title">
+      <h2>Planes de suscripción</h2>
+      <div class="table-name">plans</div>
+      <div class="section-desc">Catálogo de planes disponibles para las Pymes. Cada plan define un conjunto de features y precios asociados. Gestionado por el equipo de la plataforma.</div>
+    </div>
+    <span class="badge-module m3">Módulo 3</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Identificador del plan.</td></tr>
+      <tr><td class="col-name">name</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Nombre comercial del plan. Ej: "Starter", "Enterprise".</td></tr>
+      <tr><td class="col-name">slug</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-uq">UNIQUE</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Slug único del plan. Ej: <code>starter-plan</code>, <code>enterprise-plan</code>. Usado en URLs y lógica de negocio.</td></tr>
+      <tr><td class="col-name">description</td><td class="col-type">TEXT</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Texto descriptivo del plan. Se muestra en la página de precios del panel.</td></tr>
+      <tr><td class="col-name">is_active</td><td class="col-type">TINYINT(1)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Flag de activación. Solo planes activos son ofrecidos a nuevas Pymes. Permite retirar planes sin eliminar suscriptores existentes.</td></tr>
+      <tr><td class="col-name">created_at / updated_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Timestamps estándar de Eloquent.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── plan_prices ── -->
+<div class="section" id="plan_prices">
+  <div class="section-header">
+    <div class="section-icon teal">💰</div>
+    <div class="section-title">
+      <h2>Precios por plan y ciclo</h2>
+      <div class="table-name">plan_prices</div>
+      <div class="section-desc">Un plan puede tener múltiples precios según la moneda y el ciclo de facturación (mensual, anual, lifetime). Permite ofrecer descuentos por volumen sin duplicar el plan.</div>
+    </div>
+    <span class="badge-module m3">Módulo 3</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Identificador del precio.</td></tr>
+      <tr><td class="col-name">plan_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → plans</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Plan al que pertenece este precio. CASCADE DELETE.</td></tr>
+      <tr><td class="col-name">currency</td><td class="col-type">VARCHAR(3)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Moneda del precio. Código ISO 4217. Ej: <code>USD</code>, <code>CLP</code>.</td></tr>
+      <tr><td class="col-name">amount</td><td class="col-type">INT</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Monto en centavos de la moneda base. Ej: <code>1500</code> = $15.00 USD.</td></tr>
+      <tr><td class="col-name">billing_cycle</td><td class="col-type">ENUM</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-enum">monthly | yearly | lifetime</span></div></td><td class="col-desc">Ciclo de facturación. <code>lifetime</code> se usa para pagos únicos sin renovación.</td></tr>
+      <tr><td class="col-name">is_active</td><td class="col-type">TINYINT(1)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Flag de activación. Permite desactivar precios antiguos sin afectar suscripciones activas.</td></tr>
+      <tr><td class="col-name">created_at / updated_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Timestamps estándar de Eloquent.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── plan_features ── -->
+<div class="section" id="plan_features">
+  <div class="section-header">
+    <div class="section-icon teal">⭐</div>
+    <div class="section-title">
+      <h2>Features por plan</h2>
+      <div class="table-name">plan_features</div>
+      <div class="section-desc">Catálogo de características habilitadas en cada plan. Cada feature es un par clave-valor que el sistema interpreta para limitar o conceder acceso a funcionalidades. Ej: <code>max_dpo: "1"</code>, <code>custom_legal_docs: "true"</code>.</div>
+    </div>
+    <span class="badge-module m3">Módulo 3</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Identificador de la feature.</td></tr>
+      <tr><td class="col-name">plan_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → plans</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Plan al que pertenece la feature. CASCADE DELETE.</td></tr>
+      <tr><td class="col-name">feature_code</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Código identificador de la feature. Ej: <code>max_users</code>, <code>max_dpo</code>, <code>custom_legal_docs</code>. Único por plan (junto con plan_id).</td></tr>
+      <tr><td class="col-name">feature_value</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Valor de la feature. Números como string (<code>"10"</code>), booleanos (<code>"true"</code> / <code>"false"</code>), o texto libre. La interpretación depende de la lógica de negocio.</td></tr>
+      <tr><td class="col-name">created_at / updated_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Timestamps estándar de Eloquent.</td></tr>
+    </tbody>
+  </table>
+  <div class="note note-info"><span class="note-icon">ℹ️</span><span>Índice único compuesto sobre <code>(plan_id, feature_code)</code> para evitar features duplicadas en un mismo plan.</span></div>
+</div>
+
+<!-- ── subscriptions ── -->
+<div class="section" id="subscriptions">
+  <div class="section-header">
+    <div class="section-icon teal">🔄</div>
+    <div class="section-title">
+      <h2>Suscripciones activas</h2>
+      <div class="table-name">subscriptions</div>
+      <div class="section-desc">Registro de suscripciones de cada empresa. Una empresa puede tener múltiples suscripciones en el tiempo (historial de upgrades/downgrades), pero solo una activa a la vez. El estado <code>past_due</code> permite un período de gracia antes de la cancelación.</div>
+    </div>
+    <span class="badge-module m3">Módulo 3</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Identificador de la suscripción.</td></tr>
+      <tr><td class="col-name">company_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → companies</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Empresa suscrita. CASCADE DELETE.</td></tr>
+      <tr><td class="col-name">plan_price_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → plan_prices</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Precio y ciclo contratado. RESTRICT ON DELETE — no se puede eliminar un precio con suscripciones activas.</td></tr>
+      <tr><td class="col-name">status</td><td class="col-type">ENUM</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-enum">trialing | active | past_due | canceled | unpaid</span></div></td><td class="col-desc">Estado de la suscripción. <code>trialing</code>: período de prueba. <code>past_due</code>: pago vencido con gracia. <code>canceled</code>: terminada por la empresa o por falta de pago.</td></tr>
+      <tr><td class="col-name">trial_ends_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Fecha de término del período de prueba. NULL si no aplica. Pasada esta fecha, la suscripción pasa a <code>active</code> o <code>past_due</code>.</td></tr>
+      <tr><td class="col-name">starts_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Fecha de inicio de la suscripción. Coincide con la activación del plan.</td></tr>
+      <tr><td class="col-name">ends_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Fecha de término de la suscripción. NULL si es <code>lifetime</code> o aún no termina. Se pobló al cancelar o al finalizar el período contratado.</td></tr>
+      <tr><td class="col-name">canceled_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Momento exacto de la cancelación (solicitud de la empresa o automática por falta de pago). NULL si no ha sido cancelada.</td></tr>
+      <tr><td class="col-name">created_at / updated_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Timestamps estándar de Eloquent.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── payments ── -->
+<div class="section" id="payments">
+  <div class="section-header">
+    <div class="section-icon teal">💳</div>
+    <div class="section-title">
+      <h2>Pagos</h2>
+      <div class="table-name">payments</div>
+      <div class="section-desc">Registro de todas las transacciones de pago realizadas por las empresas. Cada pago puede estar vinculado a una suscripción o ser independiente (pagos únicos). Almacena la referencia del gateway de pago para conciliación.</div>
+    </div>
+    <span class="badge-module m3">Módulo 3</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Identificador del pago.</td></tr>
+      <tr><td class="col-name">company_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → companies</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Empresa que realizó el pago. CASCADE DELETE.</td></tr>
+      <tr><td class="col-name">subscription_id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-fk">FK → subscriptions</span><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Suscripción asociada al pago. NULL si es un pago único no recurrente. SET NULL ON DELETE.</td></tr>
+      <tr><td class="col-name">amount_paid</td><td class="col-type">INT</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Monto pagado en centavos. Ej: <code>1500</code> = $15.00.</td></tr>
+      <tr><td class="col-name">currency</td><td class="col-type">VARCHAR(3)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Moneda del pago. Código ISO 4217.</td></tr>
+      <tr><td class="col-name">payment_method</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Método de pago usado. Ej: <code>credit_card</code>, <code>transfer</code>, <code>stripe_checkout</code>.</td></tr>
+      <tr><td class="col-name">transaction_reference</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">ID de transacción del gateway de pago (Stripe, Flow, etc.). Usado para conciliación bancaria y reembolsos.</td></tr>
+      <tr><td class="col-name">status</td><td class="col-type">ENUM</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-enum">pending | completed | failed | refunded</span></div></td><td class="col-desc">Estado del pago. <code>pending</code>: iniciado pero no confirmado por el gateway. <code>completed</code>: pagado exitosamente. <code>failed</code>: rechazado. <code>refunded</code>: reembolsado total o parcialmente.</td></tr>
+      <tr><td class="col-name">invoice_url</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">URL de la factura o comprobante de pago. Puede ser un link al gateway o un PDF generado por el sistema.</td></tr>
+      <tr><td class="col-name">paid_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Momento en que el pago fue confirmado. NULL si aún está <code>pending</code> o <code>failed</code>.</td></tr>
+      <tr><td class="col-name">created_at / updated_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Timestamps estándar de Eloquent.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     MÓDULO 2 — TABLAS ADICIONALES
+     ════════════════════════════════════════════════ -->
+
+<!-- ── consent_purposes ── -->
+<div class="section" id="consent_purposes">
+  <div class="section-header">
+    <div class="section-icon blue">🏷️</div>
+    <div class="section-title">
+      <h2>Catálogo de propósitos de consentimiento</h2>
+      <div class="table-name">consent_purposes</div>
+      <div class="section-desc">Catálogo maestro de propósitos de tratamiento de datos para el Trust Widget. Cada propósito define su base legal, si requiere consentimiento explícito, su valor por defecto, y el orden de presentación en el banner. Sembrado inicialmente con <code>ConsentPurposesSeeder</code>.</div>
+    </div>
+    <span class="badge-module m2-new">Módulo 2 — nuevo</span>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>Columna</th><th>Tipo</th><th>Restricciones</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr class="row-pk"><td class="col-name">id</td><td class="col-type">BIGINT UNSIGNED</td><td><div class="pills"><span class="pill pill-pk">PK</span></div></td><td class="col-desc">Identificador del propósito.</td></tr>
+      <tr><td class="col-name">slug</td><td class="col-type">VARCHAR(80)</td><td><div class="pills"><span class="pill pill-uq">UNIQUE</span><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Slug único del propósito. Ej: <code>necessary_technical</code>, <code>analytics_behavior</code>, <code>marketing_profiling</code>, <code>biometric_identification</code>, <code>health_occupational</code>. Sirve como clave de referencia desde <code>company_policies.wizard_data</code> y <code>consent_logs.purposes</code>.</td></tr>
+      <tr><td class="col-name">category</td><td class="col-type">VARCHAR(60)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span><span class="pill pill-idx">INDEX</span></div></td><td class="col-desc">Categoría funcional del propósito. Ej: <code>necessary</code>, <code>analytics</code>, <code>marketing</code>, <code>functional</code>, <code>service</code>, <code>international</code>. La API pública del widget devuelve los propósitos agrupados por categoría.</td></tr>
+      <tr><td class="col-name">label</td><td class="col-type">VARCHAR(255)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Nombre legible del propósito que se muestra en el banner del widget.</td></tr>
+      <tr><td class="col-name">description</td><td class="col-type">TEXT</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Texto explicativo del propósito que se muestra en el detalle expandible del widget.</td></tr>
+      <tr><td class="col-name">legal_basis</td><td class="col-type">VARCHAR(60)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Base legal del propósito según Ley 21.719. Valores esperados: <code>legitimate_interest</code>, <code>consent</code>, <code>legal_obligation</code>, <code>contractual</code>.</td></tr>
+      <tr><td class="col-name">requires_consent</td><td class="col-type">TINYINT(1)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Indica si el propósito requiere consentimiento explícito del usuario. 0 para intereses legítimos (cookies técnicas).</td></tr>
+      <tr><td class="col-name">default_value</td><td class="col-type">TINYINT(1)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Valor por defecto del checkbox en el widget. 1 para propósitos que se presumen activos (necesarios), 0 para los que requieren acción del usuario.</td></tr>
+      <tr><td class="col-name">widget_action</td><td class="col-type">VARCHAR(60)</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Acción específica que el widget debe ejecutar al aceptar este propósito. Ej: <code>load_scripts</code>. NULL si no requiere acción especial.</td></tr>
+      <tr><td class="col-name">display_order</td><td class="col-type">SMALLINT UNSIGNED</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Orden de presentación en el widget y en el panel de preferencias. Ascendente.</td></tr>
+      <tr><td class="col-name">is_active</td><td class="col-type">TINYINT(1)</td><td><div class="pills"><span class="pill pill-nn">NOT NULL</span></div></td><td class="col-desc">Flag de activación. Permite desactivar propósitos sin eliminarlos, por ejemplo cuando cambia la legislación.</td></tr>
+      <tr><td class="col-name">created_at / updated_at</td><td class="col-type">TIMESTAMP</td><td><div class="pills"><span class="pill pill-null">NULLABLE</span></div></td><td class="col-desc">Timestamps estándar de Eloquent.</td></tr>
+    </tbody>
+  </table>
+  <div class="note note-success"><span class="note-icon">✅</span><span><strong>11 propósitos sembrados inicialmente</strong> en <code>ConsentPurposesSeeder</code>. Incluyen: necessary_technical, analytics_behavior, analytics_preferences, marketing_direct, marketing_profiling, functional_third_party, service_improvement, international_transfer, biometric_identification, contractual_execution, legal_compliance, geolocation_tracking, health_occupational.</span></div>
+</div>
+
 <div style="max-width:1200px;margin:0 auto 32px;padding:14px 18px;background:var(--surface-2);border-radius:10px;font-size:12px;color:var(--text-muted);text-align:center;border:1px solid var(--border);">
-  Diccionario generado para el proyecto SaaS Compliance Pymes · Stack: Laravel 11 · MariaDB · Angular 18 · Ley 21.719 Chile / GDPR
+  Diccionario generado para el proyecto SaaS Compliance Pymes · Stack: Laravel 13 · MariaDB · Ley 21.719 Chile / GDPR
 </div>
 
 </body>
