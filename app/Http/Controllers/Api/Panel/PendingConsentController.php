@@ -11,6 +11,7 @@ use App\Traits\ApiResponse;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -82,20 +83,17 @@ class PendingConsentController extends Controller
     }
 
     /**
-     * Crea un PendingConsent y despacha el envío del correo transaccional.
+     * Crea PendingConsents masivos y despacha los correos transaccionales.
      *
      * Flujo:
      * 1. Resuelve la empresa del usuario autenticado.
      * 2. Verifica que la política pertenezca a esa empresa y esté publicada.
-     * 3. Verifica si ya existe un enlace pendiente vigente para el mismo
-     *    email + policy (usa pii_hash indexado, no descifra PII).
-     * 4. Si existe, retorna 200 already_pending sin crear ni despachar Job.
-     * 5. Genera el token, crea el PendingConsent (mutador cifra PII).
-     * 6. Despacha SendConsentLinkJob en background.
-     * 7. Retorna 201 con confirmación.
+     * 3. Itera el array de emails con prevención de duplicados por cada uno.
+     * 4. Retorna respuesta consolidada con enviados y omitidos.
      *
-     * Race condition: si dos requests concurrentes pasan el check, el índice
-     * único pending_uniqueness_key atrapa el duplicado en BD (1062 → 200).
+     * Prevención de duplicados: usa pii_hash (SHA-256 del email, indexado) para
+     * detectar enlaces pendientes vigentes antes de crear uno nuevo. Race
+     * condition atrapada por índice único pending_uniqueness_key (1062 → omitido).
      */
     public function store(SendPortalLinkRequest $request): JsonResponse
     {
@@ -114,67 +112,74 @@ class PendingConsentController extends Controller
             );
         }
 
-        $email = $request->validated('email');
-        $piiHash = hash('sha256', $email);
+        $emails = $request->validated('emails');
+        $enviados = 0;
+        $omitidos = 0;
 
-        $existing = PendingConsent::where('pii_hash', $piiHash)
-            ->where('company_policy_id', $policy->id)
-            ->where('status', 'pending')
-            ->where('expires_at', '>', now())
-            ->first();
-
-        if ($existing) {
-            return response()->json([
-                'status' => true,
-                'message' => 'Ya existe un enlace de firma pendiente para este destinatario.',
-                'data' => [
-                    'status' => 'already_pending',
-                    'expires_at' => $existing->expires_at->toIso8601String(),
-                ],
-            ], 200);
-        }
+        DB::beginTransaction();
 
         try {
-            $pendingConsent = PendingConsent::create([
-                'company_id' => $company->id,
-                'company_policy_id' => $policy->id,
-                'token' => PendingConsent::generateToken(),
-                'pii_payload' => ['email' => $email],
-                'pii_hash' => $piiHash,
-                'status' => 'pending',
-                'source' => 'manual_panel',
-                'expires_at' => now()->addDays(7),
-            ]);
-        } catch (QueryException $e) {
-            if ($e->errorInfo[1] ?? null === 1062) {
-                return response()->json([
-                    'status' => true,
-                    'message' => 'Ya existe un enlace de firma pendiente para este destinatario.',
-                    'data' => [
-                        'status' => 'already_pending',
-                    ],
-                ], 200);
+            foreach ($emails as $email) {
+                $piiHash = hash('sha256', $email);
+
+                $existing = PendingConsent::where('pii_hash', $piiHash)
+                    ->where('company_policy_id', $policy->id)
+                    ->where('status', 'pending')
+                    ->where('expires_at', '>', now())
+                    ->first();
+
+                if ($existing) {
+                    $omitidos++;
+
+                    continue;
+                }
+
+                try {
+                    $pendingConsent = PendingConsent::create([
+                        'company_id' => $company->id,
+                        'company_policy_id' => $policy->id,
+                        'token' => PendingConsent::generateToken(),
+                        'pii_payload' => ['email' => $email],
+                        'pii_hash' => $piiHash,
+                        'status' => 'pending',
+                        'source' => 'manual_panel',
+                        'expires_at' => now()->addDays(7),
+                    ]);
+                } catch (QueryException $e) {
+                    if ($e->errorInfo[1] ?? null === 1062) {
+                        $omitidos++;
+
+                        continue;
+                    }
+
+                    throw $e;
+                }
+
+                SendConsentLinkJob::dispatch($pendingConsent);
+                $enviados++;
             }
 
-            Log::warning('PendingConsent: error al insertar', [
-                'pii_hash' => $piiHash,
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::warning('PendingConsent: error en envío masivo', [
                 'error' => $e->getMessage(),
             ]);
 
-            return $this->error('Error al crear el enlace de firma.', null, 500);
+            return $this->error('Error al procesar el envío masivo.', null, 500);
         }
 
-        SendConsentLinkJob::dispatch($pendingConsent);
+        $statusCode = $enviados > 0 ? 201 : 200;
 
-        return $this->success(
-            'Enlace de firma enviado correctamente.',
-            [
-                'id' => $pendingConsent->id,
-                'status' => $pendingConsent->status,
-                'expires_at' => $pendingConsent->expires_at->toIso8601String(),
+        return response()->json([
+            'status' => true,
+            'message' => "Proceso completado. {$enviados} enlaces enviados, {$omitidos} omitidos (ya estaban pendientes).",
+            'data' => [
+                'sent_count' => $enviados,
+                'skipped_count' => $omitidos,
             ],
-            201,
-        );
+        ], $statusCode);
     }
 
     /**
