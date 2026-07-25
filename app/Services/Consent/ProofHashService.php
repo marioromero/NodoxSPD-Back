@@ -50,11 +50,15 @@ class ProofHashService
      * Recalcula el proof_hash a partir de un modelo ConsentLog almacenado.
      * Se usa para verificar la integridad del registro: si el hash recalculado
      * no coincide con el almacenado, el registro fue alterado.
+     *
+     * Para registros anónimos (identifier null, ej: live_widget), usa
+     * visitor_uuid como identificador para el hash, consistente con cómo
+     * se calculó originalmente en WidgetConsentController.
      */
     public function computeForLog(ConsentLog $log): string
     {
         $payload = $this->buildPayload(
-            $log->identifier,
+            $log->identifier ?? $log->visitor_uuid,
             $log->policy_hash,
             $log->purposes,
             $log->consent_occurred_at->toIso8601String(),
