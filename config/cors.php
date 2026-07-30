@@ -36,8 +36,10 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
+        'https://spd.nodox.cl',
         'https://nodoxspd.cl',
         'http://localhost:4200',
+        'http://localhost:4201',
     ],
 
     'allowed_origins_patterns' => [],
