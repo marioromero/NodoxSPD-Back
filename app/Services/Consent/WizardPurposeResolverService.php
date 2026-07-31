@@ -23,9 +23,25 @@ class WizardPurposeResolverService
      */
     public function resolve(CompanyPolicy $policy): Collection
     {
-        $wizardData = $policy->wizard_data;
-        $wizardSchema = $policy->template->wizard_schema;
+        return $this->resolveFromData(
+            $policy->wizard_data,
+            $policy->template->wizard_schema,
+        );
+    }
 
+    /**
+     * Resuelve los fines legales activos a partir de respuestas del wizard
+     * sin necesidad de un modelo CompanyPolicy persistido.
+     *
+     * Usado por el endpoint de preview durante la edición del wizard en el
+     * panel administrativo, donde la política aún no se ha guardado.
+     *
+     * @param  array  $wizardData  Respuestas parciales del wizard.
+     * @param  array  $wizardSchema  Esquema del template legal.
+     * @return Collection<int, ConsentPurpose>
+     */
+    public function resolveFromData(array $wizardData, array $wizardSchema): Collection
+    {
         // El propósito técnico/necesario siempre está activo (base legal: interés legítimo).
         $activeSlugs = ['necessary_technical'];
 

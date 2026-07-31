@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Panel\CompanyWidgetConfigController;
 use App\Http\Controllers\Api\Panel\ConsentLogController;
 use App\Http\Controllers\Api\Panel\ConsentPurposeController;
 use App\Http\Controllers\Api\Panel\PendingConsentController;
+use App\Http\Controllers\Api\Panel\PurposePreviewController;
 use App\Http\Controllers\Api\Portal\PortalConsentController;
 use App\Http\Controllers\Api\Widget\IdentityStitchController;
 use App\Http\Controllers\Api\Widget\WidgetConfigController;
@@ -68,6 +69,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Panel: catálogo de fines legales para el generador de políticas (wizard)
     Route::get('/panel/consent-purposes', [ConsentPurposeController::class, 'index']);
+
+    // Panel: preview en tiempo real de fines legales activos según respuestas parciales del wizard
+    Route::post('/panel/purposes/preview', [PurposePreviewController::class, 'preview']);
 
     // Panel: auditoría de consentimientos (ledger inmutable) con filtros y paginación
     Route::get('/panel/consent-logs', [ConsentLogController::class, 'index']);
