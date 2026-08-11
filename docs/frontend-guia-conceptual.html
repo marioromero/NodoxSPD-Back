@@ -228,12 +228,6 @@
             <li><a href="#portal-flujo">Flujo completo</a></li>
         </ul>
     </div>
-    <div class="nav-section">
-        <a class="nav-section-title" href="#bitácora-de-cambios" data-toggle="bitacora-items">Bitácora de cambios</a>
-        <ul class="nav-section-items" id="bitacora-items">
-            <li><a href="#bitácora-de-cambios">Listado numerado de cambios</a></li>
-        </ul>
-    </div>
 </nav>
 
 <main class="content" id="main-content">
@@ -1492,30 +1486,6 @@ const payload = {
         <li><strong>No persistir el token:</strong> El token va solo en la URL. No guardarlo en localStorage ni sessionStorage.</li>
         <li><strong>Recarga de página post-firma:</strong> Si el usuario recarga la página después de haber firmado, el <code>GET /api/portal/consent/{token}</code> retorna <strong>409</strong>. El frontend debe interpretar el 409 del GET exactamente igual que el 201 del POST: mostrar la pantalla de éxito con el <code>proof_hash</code> (si el backend lo incluye). No mostrar error. No redirigir. La pantalla de éxito debe poder renderizarse sin haber pasado por el flujo de firma — solo con el 409 del GET es suficiente.</li>
         <li><strong>Accesibilidad:</strong> Los toggles deben ser operables por teclado (tab + space). El botón de copiar proof_hash debe tener <code>aria-label</code>.</li>
-    </ul>
-</div>
-
-</details>
-
-<details class="caracteristica-details" id="bitacora-wrapper">
-<summary><h1 id="bitácora-de-cambios">Bitácora de cambios</h1></summary>
-
-<div class="caracteristica-box">
-    <span class="badge">Bitácora</span>
-    <h3>Registro de correcciones a la documentación frontend</h3>
-    <p>Listado numerado de cambios aplicados a esta documentación. Cada entrada describe el cambio a nivel conceptual e indica qué secciones se vieron afectadas en <strong>Guía Frontend — Módulo 2</strong> y <strong>API Reference — Frontend</strong>.</p>
-</div>
-
-<div class="card">
-    <h3>Cambio 12 — Preview en tiempo real de fines legales durante el wizard</h3>
-    <p><strong>Problema:</strong> El frontend del panel estaba llamando <code>GET /api/panel/consent-purposes</code> (catálogo completo de 13 fines) y filtrando client-side los que tienen <code>requires_consent: false</code> para mostrarlos como "siempre activos". Esto hacía que 4 fines aparecieran activos desde el paso 1 del wizard sin importar qué hubiera seleccionado el usuario, incluyendo fines que no aplicaban al tipo de documento ni a las respuestas del wizard.</p>
-    <p><strong>Solución:</strong> Nuevo endpoint <code>POST /api/panel/purposes/preview</code> que resuelve en tiempo real qué fines legales están activos según las respuestas parciales del wizard, usando el mismo <code>WizardPurposeResolverService</code> del backend. El frontend debe llamar este endpoint en cada cambio de selección del wizard, enviando <code>document_type</code> y <code>wizard_data</code> acumulado.</p>
-    <p><strong>Secciones afectadas:</strong></p>
-    <ul>
-        <li>Guía Frontend: <a href="frontend-guia-conceptual.html#característica-b">Característica B — Patch de Propósitos</a> (flujo, código del patch, lógica del componente)</li>
-        <li>API Reference: <a href="frontend-api-reference.html#ep11">Endpoint 11 — POST /api/panel/purposes/preview</a> (nuevo)</li>
-        <li>API Reference: <a href="frontend-api-reference.html#ep6">Endpoint 06 — GET /api/panel/consent-purposes</a> (nota: catálogo de referencia, no usar para preview activo)</li>
-        <li>API Reference: <a href="frontend-api-reference.html#tabla-resumen">Tabla resumen</a> (actualizada a 12 endpoints)</li>
     </ul>
 </div>
 

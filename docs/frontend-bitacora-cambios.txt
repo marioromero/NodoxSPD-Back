@@ -1,0 +1,56 @@
+Bitácora de Cambios — Frontend — NodoxSPD
+
+
+&#9776;
+
+
+&#128218; Documentación
+Frontend — Bitácora
+
+&larr; Volver al índice
+
+
+
+Cambios aplicados
+
+- Cambio 12 — Preview en tiempo real
+
+
+
+
+
+Documentos relacionados
+
+- Guía Frontend — Módulo 2
+
+- API Reference Frontend
+
+
+
+
+Bitácora de Cambios — Frontend
+Registro numerado de correcciones aplicadas a la documentación frontend. Cada entrada describe el cambio a nivel conceptual, incluye la fecha y enlaces a las secciones afectadas en la Guía Frontend — Módulo 2 y la API Reference Frontend.
+
+
+Cambio 12
+10 de agosto, 2026
+
+
+Preview en tiempo real de fines legales durante el wizard
+Problema: El frontend del panel estaba llamando GET /api/panel/consent-purposes (catálogo completo de 13 fines) y filtrando client-side los que tienen requires_consent: false para mostrarlos como "siempre activos". Esto hacía que 4 fines aparecieran activos desde el paso 1 del wizard sin importar qué hubiera seleccionado el usuario, incluyendo fines que no aplicaban al tipo de documento ni a las respuestas del wizard (ej: hablar de cookies cuando se está creando una política de privacidad).
+
+Causa raíz: El campo requires_consent: false significa "este fin no necesita toggle en el Trust Widget porque es legalmente obligatorio", NO significa "está activo para toda empresa sin importar el contexto". La activación real depende del wizard_schema del template legal, que mapea cada opción del wizard a los legal_purposes correspondientes. Esa lógica vive en WizardPurposeResolverService, pero solo se usaba cuando el Trust Widget público pedía config via GET /api/widget/{uuid}/config — no durante la edición del wizard en el panel.
+
+Solución: Nuevo endpoint POST /api/panel/purposes/preview que resuelve en tiempo real qué fines legales están activos según las respuestas parciales del wizard, usando el mismo WizardPurposeResolverService del backend pero sin necesidad de una política guardada. El frontend debe llamar este endpoint en cada cambio de selección del wizard, enviando document_type y wizard_data acumulado.
+
+
+Secciones afectadas:
+
+
+- Guía Frontend Característica B — Patch de Propósitos (flujo, código del patch, lógica del componente)
+
+- API Reference Endpoint 11 — POST /api/panel/purposes/preview (nuevo)
+
+- API Reference Endpoint 06 — GET /api/panel/consent-purposes (nota: catálogo de referencia, no usar para preview activo)
+
+- API Reference Tabla resumen (actualizada a 12 endpoints)
