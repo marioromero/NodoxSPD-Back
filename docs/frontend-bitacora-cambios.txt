@@ -13,7 +13,7 @@ Frontend — Bitácora
 
 Cambios aplicados
 
-- Cambio 12 — Preview en tiempo real
+- Cambio 1 — Preview en tiempo real
 
 
 
@@ -32,7 +32,7 @@ Bitácora de Cambios — Frontend
 Registro numerado de correcciones aplicadas a la documentación frontend. Cada entrada describe el cambio a nivel conceptual, incluye la fecha y enlaces a las secciones afectadas en la Guía Frontend — Módulo 2 y la API Reference Frontend.
 
 
-Cambio 12
+Cambio 1
 10 de agosto, 2026
 
 
