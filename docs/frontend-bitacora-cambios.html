@@ -117,6 +117,7 @@
         <a class="nav-section-title" href="#cambio-12" data-toggle="cambios-items">Cambios aplicados</a>
         <ul class="nav-section-items" id="cambios-items">
             <li><a href="#cambio-1">Cambio 1 — Preview en tiempo real</a></li>
+            <li><a href="#cambio-2">Cambio 2 — Contrato batch/single + batch progress</a></li>
         </ul>
     </div>
     <div class="nav-section">
@@ -154,6 +155,24 @@
             <li><span class="badge badge-api">API Reference</span> <a href="frontend-api-reference.html#tabla-resumen">Tabla resumen</a> (actualizada a 12 endpoints)</li>
         </ul>
     </div>
+</div>
+
+<div class="card" id="cambio-2">
+    <div class="change-meta">
+        <span class="change-num">Cambio 2</span>
+        <span class="change-date">11 de agosto, 2026</span>
+    </div>
+    <h3>Contrato batch/single + sondeo de progreso de lote</h3>
+    <p><strong>Problema:</strong> El endpoint <code>POST /api/panel/pending-consents</code> ten&iacute;a un contrato &uacute;nico de respuesta (<code>sent_count</code>/<code>skipped_count</code>) que no escalaba para env&iacute;os masivos (100+ correos). La deduplicaci&oacute;n sincr&oacute;nica bloqueaba la respuesta hasta procesar todos los emails.</p>
+    <p><strong>Soluci&oacute;n:</strong> El contrato de respuesta ahora depende de la cantidad de emails. Si se env&iacute;a 1 correo: modo <strong>single</strong> (201 created o 200 already_pending). Si se env&iacute;an 2 o m&aacute;s: modo <strong>batch</strong> (202 Accepted con <code>batch_id</code>), donde la deduplicaci&oacute;n ocurre asincr&oacute;nicamente en el Job. Nuevo endpoint <code>GET /api/panel/batches/{id}</code> para sondear el progreso del lote. M&aacute;ximo de emails subido de 50 a 500. Adicionalmente, <code>GET /api/panel/pending-consents</code> ahora soporta <code>?status=bounced</code> para mostrar correos rebotados (notificaci&oacute;n de Resend v&iacute;a webhook).</p>
+    <p><strong>Secciones afectadas:</strong></p>
+    <ul>
+        <li><span class="badge badge-api">API Reference</span> <a href="frontend-api-reference.html#ep4">Endpoint 04 — POST /api/panel/pending-consents</a> (contrato single/batch, max 500, sin sent_count/skipped_count en batch)</li>
+        <li><span class="badge badge-api">API Reference</span> <a href="frontend-api-reference.html#ep12">Endpoint 13 — GET /api/panel/batches/{id}</a> (nuevo)</li>
+        <li><span class="badge badge-api">API Reference</span> <a href="frontend-api-reference.html#ep3">Endpoint 03 — GET /api/panel/pending-consents</a> (filtro bounced)</li>
+        <li><span class="badge badge-front">Guía Frontend</span> <a href="frontend-guia-conceptual.html#característica-f">Característica F — Portal Cautivo</a> (notas de envío masivo)</li>
+        <li><span class="badge badge-api">API Reference</span> <a href="frontend-api-reference.html#tabla-resumen">Tabla resumen</a> (actualizada a 13 endpoints)</li>
+    </ul>
 </div>
 
 </main>

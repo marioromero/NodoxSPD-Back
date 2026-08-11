@@ -34,6 +34,8 @@ Panel — Gestión de Envíos
 
 - POST /api/panel/pending-consents
 
+- GET /api/panel/batches/{id}
+
 
 
 
@@ -75,7 +77,7 @@ Portal Cautivo
 
 
 API Reference &mdash; Frontend Módulo 2
-Doce endpoints para la integración frontend del Trust Widget: configuración del banner, registro de consentimiento, catálogo de fines legales, preview dinámico de fines activos, generación de enlaces de firma, listado de consents pendientes, bóveda de auditoría, gestión de dominios CORS, personalización visual, Portal Cautivo (consulta + firma) y políticas publicadas.
+Trece endpoints para la integración frontend del Trust Widget: configuración del banner, registro de consentimiento, catálogo de fines legales, preview dinámico de fines activos, generación de enlaces de firma (single/batch), sondeo de progreso de lotes, listado de consents pendientes, bóveda de auditoría, gestión de dominios CORS, personalización visual, Portal Cautivo (consulta + firma) y políticas publicadas.
 
 
 Base URL: https://api.tudominio.com
@@ -96,6 +98,7 @@ Endpoints
 09GET Portal Cautivo — datos de firma/api/portal/consent/{token}
 10POST Portal Cautivo — confirmar firma/api/portal/consent/{token}/confirm
 11POST Preview de fines legales/api/panel/purposes/preview
+12GET Sondeo de progreso de lote/api/panel/batches/{id}
 
 
 
@@ -491,7 +494,7 @@ Query params
 Parámetro	Tipo	Default	Notas
 
 
-status	string|null	todos	Filtrar por estado: pending, completed, expired. Si se omite, devuelve todos.
+status	string|null	todos	Filtrar por estado: pending, confirmed, expired, bounced. Si se omite, devuelve todos. El estado bounced indica que el correo transaccional rebotó (notificación de Resend).
 
 per_page	int	20	Resultados por página. Máximo 100.
 
@@ -540,7 +543,7 @@ email	string	Email del destinatario en texto plano. El backend lo descifra en me
 
 company_policy_id	int	ID de la política asociada.
 
-status	string	pending | completed | expired.
+status	string	pending | confirmed | expired | bounced.
 
 token	string	Token criptográfico (64 chars hex). Útil para trackeo.
 
@@ -595,7 +598,7 @@ Email	item.email	Texto plano. Largo máximo visible 30 chars + tooltip.
 
 Política	item.company_policy_id	Resolver nombre desde catálogo (caché local).
 
-Estado	item.status	Badge de color: pending completed expired
+Estado	item.status	Badge de color: pending confirmed expired bounced
 
 Enviado	item.created_at | date:'short'	Formato fecha local.
 
@@ -617,7 +620,7 @@ Ejemplo ilustrativo, no vinculante a una versión específica de Angular.
 
 // Servicio de gestión de envíos
 getPendingConsents(params?: {
-status?: 'pending' | 'completed' | 'expired';
+status?: 'pending' | 'confirmed' | 'expired' | 'bounced';
 page?: number;
 perPage?: number;
 }): Observable<PaginatedResponse<PendingConsent>> {
@@ -690,7 +693,7 @@ Body params
 Campo	Tipo	Reglas de validación	Notas
 
 
-emails	array	required, array, min:1, max:50	Array de emails de destinatarios. Cada email se cifra automáticamente en el mutador del modelo vía Crypt::encryptString(). Máximo 50 por request. Requerido
+emails	array	required, array, min:1, max:500	Array de emails de destinatarios. Cada email se cifra automáticamente en el mutador del modelo vía Crypt::encryptString(). Máximo 500 por request. Requerido
 
 emails.*	string	email, max:255	Email individual válido.
 
@@ -711,7 +714,7 @@ Pertenencia	La política (company_policy_id) debe pertenecer a la empresa del us
 
 Estado de política	La política debe estar published. No se aceptan borradores (draft) ni archivadas (archived).	403
 
-Unicidad parcial	Índice pending_uniqueness_key previene duplicados activos para el mismo pii_hash + company_policy_id. Los duplicados se omiten silenciosamente y se reportan en skipped_count.	Las inserciones duplicadas se omiten (no fallan).
+Unicidad parcial	Índice pending_uniqueness_key previene duplicados activos para el mismo pii_hash + company_policy_id. En modo single, los duplicados se reportan como already_pending. En modo batch, la deduplicación ocurre asincrónicamente en el Job.	Las inserciones duplicadas se omiten (no fallan).
 
 
 
@@ -730,35 +733,57 @@ Ejemplo de request
 
 
 
-201 Created &mdash; Envíos creados (parcial o total)
+Respuesta — Modo single (1 email) 201 Created
 
-Cuando al menos un email del array se procesa exitosamente, se retorna 201 con el conteo de enviados y omitidos.
-
-
-{
-"status": true,
-"message": "Proceso completado. 2 enlaces enviados, 1 omitidos (ya estaban pendientes).",
-"data": {
-"sent_count": 2,
-"skipped_count": 1
-}
-}
-
-
-
-200 OK &mdash; Todos los emails ya estaban pendientes
-
-Cuando todos los emails del array ya tenían un PendingConsent activo, no se crea ninguno nuevo. El frontend debe mostrar el mensaje tal como llega del backend.
+Si se envía exactamente 1 correo y no existe un pending vigente, se retorna 201 con mode: "single".
 
 
 {
 "status": true,
-"message": "Proceso completado. 0 enlaces enviados, 3 omitidos (ya estaban pendientes).",
+"message": "Enlace enviado exitosamente.",
 "data": {
-"sent_count": 0,
-"skipped_count": 3
+"mode": "single",
+"status": "created",
+"message": "Enlace enviado exitosamente."
 }
 }
+
+
+
+200 OK &mdash; Modo single (ya existe vigente)
+
+Si el correo ya tiene un pending activo para esa política, se retorna 200 con status: "already_pending".
+
+
+{
+"status": true,
+"message": "Enlace ya enviado previamente, aún vigente.",
+"data": {
+"mode": "single",
+"status": "already_pending",
+"message": "Enlace ya enviado previamente, aún vigente."
+}
+}
+
+
+
+202 Accepted &mdash; Modo batch (2+ emails)
+
+Si se envían 2 o más correos, el backend crea un lote (JobBatch) y retorna 202 con el batch_id. La deduplicación y envío ocurren asincrónicamente. No hay sent_count/skipped_count en modo batch.
+
+
+{
+"status": true,
+"message": "Lote de 87 correos despachado.",
+"data": {
+"mode": "batch",
+"batch_id": "9c3f...",
+"total": 87,
+"status": "queued"
+}
+}
+El frontend debe usar batch_id para sondear el progreso vía GET /api/panel/batches/{batch_id} (ver endpoint 12).
+
 
 
 
@@ -772,7 +797,7 @@ Código	Causa	Ejemplo de mensaje
 
 403	Política no pertenece a la empresa o no está publicada	{"status":false,"message":"La política especificada no está disponible para firma.","data":null}
 
-422	Validación: emails vacío, excede 50 o algún email inválido	Errores de validación estándar de Laravel
+422	Validación: emails vacío, excede 500 o algún email inválido	Errores de validación estándar de Laravel
 
 429	Más de 10 requests POST por minuto (throttle)	{"message":"Too Many Attempts."}
 
@@ -796,15 +821,15 @@ Flujo interno
 
 &darr;
 
-4Itera cada email. Si no existe un pending activo: genera token, cifra email, crea PendingConsent y despacha SendConsentLinkJob. Si ya existe: incrementa skipped_count.
+4Si emails.length === 1: modo single &mdash; verifica duplicados sincrónicamente. Crea PendingConsent y despacha SendConsentLinkJob. Retorna 201 (created) o 200 (already_pending).
 
 &darr;
 
-5Retorna 200 (si todos omitidos) o 201 (si al menos 1 enviado) con sent_count y skipped_count.
+5Si emails.length >= 2: modo batch &mdash; crea un JobBatch y despacha un Job por email. La deduplicación ocurre async en el Job. Retorna 202 con batch_id.
 
 &darr;
 
-6[Background — Queue Workers] Cada SendConsentLinkJob descifra el email en memoria, construye URL mágica y despacha ConsentLinkMail.
+6[Background — Queue Workers] Cada Job descifra el email, verifica duplicados via pii_hash, crea PendingConsent y despacha ConsentLinkMail.
 
 
 
@@ -815,28 +840,51 @@ El 201 confirma que al menos un registro se creó y su Job se encoló, no que lo
 
 Ejemplo de código (servicio Angular)
 
-El input de correo en el modal de "Nuevo Envío" debe permitir múltiples correos (separados por coma o usando un componente de chips/tags). El frontend transforma ese input en un array de strings antes de enviarlo.
+El input de correo en el modal de "Nuevo Envío" debe permitir múltiples correos (separados por coma o usando un componente de chips/tags). El frontend transforma ese input en un array de strings antes de enviarlo. Si el array tiene 1 email, la respuesta es modo single (201/200). Si tiene 2+, la respuesta es modo batch (202) con batch_id.
 
-sendPortalLinks(emails: string[], companyPolicyId: number): Observable<BulkSendResponse> {
-return this.http.post<BulkSendResponse>(
+sendPortalLinks(emails: string[], companyPolicyId: number): Observable<any> {
+return this.http.post(
 `${environment.apiUrl}/panel/pending-consents`,
-{ emails, company_policy_id: companyPolicyId }
+{ emails, company_policy_id: companyPolicyId },
+{ observe: 'response' }
 );
 }
 
-// Manejo de respuesta
+// Manejo de respuesta — discriminar por mode
 this.sendPortalLinks(emails, policyId).subscribe({
 next: (res) => {
-const msg = res.data.sent_count > 0
-? `${res.data.sent_count} enlaces enviados`
-: &grave;Todos los correos ya estaban pendientes&grave;;
-if (res.data.skipped_count > 0) {
-msg += &grave;, ${res.data.skipped_count} omitidos&grave;;
-}
+const data = res.body.data;
+
+if (data.mode === 'single') {
+// 201 created o 200 already_pending
+const msg = data.status === 'created'
+? 'Enlace enviado exitosamente'
+: 'Enlace ya enviado previamente, aún vigente';
 this.showToast(msg);
+} else if (data.mode === 'batch') {
+// 202 Accepted — sondear progreso con batch_id
+this.showToast(`Lote de ${data.total} correos despachado`);
+this.pollBatchProgress(data.batch_id);
+}
 },
-error: (err) => this.showToast(err.error?.message || &grave;Error al enviar&grave;)
+error: (err) => this.showToast(err.error?.message || 'Error al enviar')
 });
+
+// Sondeo de progreso del lote
+pollBatchProgress(batchId: string) {
+const poll = setInterval(() => {
+this.http.get(`${environment.apiUrl}/panel/batches/${batchId}`)
+.subscribe({
+next: (res: any) => {
+const p = res.data;
+if (p.finished) {
+clearInterval(poll);
+this.showToast(`Lote completado: ${p.processed_jobs}/${p.total_jobs} procesados, ${p.failed_jobs} fallidos`);
+}
+}
+});
+}, 3000);
+}
 
 
 
@@ -847,7 +895,9 @@ Notas de implementación
 
 - El company_policy_id debe obtenerse del listado de políticas publicadas (GET /api/company/policies?status=published). Solo políticas publicadas son elegibles.
 
-- Mostrar mensaje de confirmación con sent_count y skipped_count tras la respuesta (ej: "2 enlaces enviados, 1 ya estaba pendiente").
+- El contrato de respuesta depende de la cantidad de emails: 1 correo &rarr; modo single (201/200), 2+ correos &rarr; modo batch (202 con batch_id).
+
+- En modo batch, usar GET /api/panel/batches/{batch_id} para sondear el progreso del lote. No hay sent_count/skipped_count &mdash; la deduplicación ocurre async en el Job.
 
 - Los emails duplicados dentro del mismo array no se procesan dos veces.
 
@@ -1904,7 +1954,155 @@ Notas de implementación
 
 
 
-Tabla resumen — Doce endpoints
+
+GET
+
+Sondeo de progreso de lote
+
+/api/panel/batches/{id}
+
+
+
+
+
+
+Propósito / Cuándo se usa
+
+
+Sondea el progreso de un lote de enlaces de firma despachado en modo batch (ver endpoint 4). Cuando POST /api/panel/pending-consents recibe 2 o más emails, retorna 202 con un batch_id. El frontend usa este endpoint para monitorear cuántos Jobs se han procesado, si hay fallidos y si el lote terminó.
+
+
+
+
+
+
+GET
+/api/panel/batches/{batch_id}
+
+
+
+Headers requeridos
+
+
+Header	Valor	Notas
+
+
+Content-Type	string	application/json Requerido
+
+Accept	string	application/json Requerido
+
+Cookie	string	Session cookie (Sanctum SPA). Requiere withCredentials: true. Requerido
+
+
+
+
+
+
+URL params
+
+
+Parámetro	Tipo	Descripción
+
+
+batch_id	string	ID del lote retornado por POST /api/panel/pending-consents en modo batch.
+
+
+
+
+
+
+Respuesta exitosa 200 OK
+
+{
+"status": true,
+"message": "Progreso del lote.",
+"data": {
+"id": "9c3f...",
+"name": "Consent links: ...",
+"total_jobs": 87,
+"pending_jobs": 42,
+"processed_jobs": 45,
+"failed_jobs": 0,
+"progress": 51.72,
+"cancelled": false,
+"finished": false,
+"created_at": "2026-08-11T10:00:00+00:00",
+"finished_at": null
+}
+}
+
+
+
+Campos de la respuesta
+
+
+Campo	Tipo	Descripción
+
+
+id	string	Identificador único del lote.
+
+name	string	Nombre descriptivo del lote.
+
+total_jobs	int	Total de Jobs en el lote.
+
+pending_jobs	int	Jobs aún no procesados.
+
+processed_jobs	int	Jobs completados exitosamente.
+
+failed_jobs	int	Jobs que fallaron (revisar logs del worker).
+
+progress	float	Porcentaje de progreso (0&ndash;100).
+
+cancelled	bool	Si el lote fue cancelado.
+
+finished	bool	Si el lote terminó (todos los Jobs procesados o fallidos).
+
+created_at	datetime	Timestamp de creación.
+
+finished_at	datetime|null	Timestamp de finalización. null si aún en curso.
+
+
+
+
+
+
+Respuestas de error
+
+
+Código	Causa	Ejemplo de mensaje
+
+
+401	No autenticado (falta cookie de sesión)	{"message":"Unauthenticated."}
+
+404	El lote no existe o no pertenece a la empresa	{"status":false,"message":"Lote no encontrado.","data":null}
+
+
+
+
+
+
+Notas de implementación
+
+
+- El sondeo debe hacerse con setInterval (ej: cada 3s) y detenerse cuando finished === true.
+
+- Mostrar una barra de progreso visual usando progress (0&ndash;100%).
+
+- Si failed_jobs > 0, mostrar conteo de fallidos y opción de reintentar los fallidos.
+
+- El batch_id se obtiene de la respuesta 202 del POST /api/panel/pending-consents en modo batch.
+
+- Scoped al tenant: solo devuelve lotes de la empresa del usuario autenticado.
+
+
+
+
+
+
+
+
+
+Tabla resumen — Trece endpoints
 
 
 #	Endpoint	Método	Auth	Módulo	Descripción
@@ -1933,3 +2131,5 @@ Tabla resumen — Doce endpoints
 11	/api/company/policies	GET	Público	Configuración	Políticas publicadas (dropdown)
 
 12	/api/panel/purposes/preview	POST	Sanctum	Configuración	Preview de fines legales activos según wizard
+
+13	/api/panel/batches/{id}	GET	Sanctum	Gestión de Envíos	Sondeo de progreso de lote

@@ -15,6 +15,8 @@ Cambios aplicados
 
 - Cambio 1 — Preview en tiempo real
 
+- Cambio 2 — Contrato batch/single + batch progress
+
 
 
 
@@ -54,3 +56,29 @@ Secciones afectadas:
 - API Reference Endpoint 06 — GET /api/panel/consent-purposes (nota: catálogo de referencia, no usar para preview activo)
 
 - API Reference Tabla resumen (actualizada a 12 endpoints)
+
+
+
+
+
+Cambio 2
+11 de agosto, 2026
+
+
+Contrato batch/single + sondeo de progreso de lote
+Problema: El endpoint POST /api/panel/pending-consents tenía un contrato único de respuesta (sent_count/skipped_count) que no escalaba para envíos masivos (100+ correos). La deduplicación sincrónica bloqueaba la respuesta hasta procesar todos los emails.
+
+Solución: El contrato de respuesta ahora depende de la cantidad de emails. Si se envía 1 correo: modo single (201 created o 200 already_pending). Si se envían 2 o más: modo batch (202 Accepted con batch_id), donde la deduplicación ocurre asincrónicamente en el Job. Nuevo endpoint GET /api/panel/batches/{id} para sondear el progreso del lote. Máximo de emails subido de 50 a 500. Adicionalmente, GET /api/panel/pending-consents ahora soporta ?status=bounced para mostrar correos rebotados (notificación de Resend vía webhook).
+
+Secciones afectadas:
+
+
+- API Reference Endpoint 04 — POST /api/panel/pending-consents (contrato single/batch, max 500, sin sent_count/skipped_count en batch)
+
+- API Reference Endpoint 13 — GET /api/panel/batches/{id} (nuevo)
+
+- API Reference Endpoint 03 — GET /api/panel/pending-consents (filtro bounced)
+
+- Guía Frontend Característica F — Portal Cautivo (notas de envío masivo)
+
+- API Reference Tabla resumen (actualizada a 13 endpoints)
