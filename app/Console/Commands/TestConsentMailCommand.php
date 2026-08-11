@@ -65,7 +65,13 @@ class TestConsentMailCommand extends Command
         $this->info('Token: '.$pendingConsent->token);
         $this->info('Mailer: '.config('mail.default'));
 
-        SendConsentLinkJob::dispatchSync($pendingConsent);
+        SendConsentLinkJob::dispatchSync(
+            companyId: $pendingConsent->company_id,
+            companyPolicyId: $pendingConsent->company_policy_id,
+            email: $pendingConsent->decrypted_pii['email'] ?? $email,
+            pendingUniquenessKey: $pendingConsent->pii_hash.':'.$pendingConsent->company_policy_id,
+            pendingConsent: $pendingConsent,
+        );
 
         $this->info("\n--- HTML del correo renderizado ---\n");
 
