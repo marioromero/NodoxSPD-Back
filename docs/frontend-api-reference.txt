@@ -50,6 +50,8 @@ Panel — Configuración
 
 - GET /api/panel/consent-purposes
 
+- POST /api/panel/purposes/preview
+
 - PATCH /api/panel/companies/domains
 
 - PATCH /api/panel/companies/widget-config
@@ -73,7 +75,7 @@ Portal Cautivo
 
 
 API Reference &mdash; Frontend Módulo 2
-Diez endpoints para la integración frontend del Trust Widget: configuración del banner, registro de consentimiento, catálogo de fines legales, generación de enlaces de firma, listado de consents pendientes, bóveda de auditoría, gestión de dominios CORS, personalización visual y Portal Cautivo (consulta + firma).
+Doce endpoints para la integración frontend del Trust Widget: configuración del banner, registro de consentimiento, catálogo de fines legales, preview dinámico de fines activos, generación de enlaces de firma, listado de consents pendientes, bóveda de auditoría, gestión de dominios CORS, personalización visual, Portal Cautivo (consulta + firma) y políticas publicadas.
 
 
 Base URL: https://api.tudominio.com
@@ -93,6 +95,7 @@ Endpoints
 08PATCH Personalizar widget visual/api/panel/companies/widget-config
 09GET Portal Cautivo — datos de firma/api/portal/consent/{token}
 10POST Portal Cautivo — confirmar firma/api/portal/consent/{token}/confirm
+11POST Preview de fines legales/api/panel/purposes/preview
 
 
 
@@ -1757,7 +1760,151 @@ Notas de implementación
 
 
 
-Tabla resumen — Once endpoints
+
+POST
+
+Preview de fines legales activos
+
+/api/panel/purposes/preview
+
+
+
+
+
+
+Propósito / Cuándo se usa
+
+
+Resuelve en tiempo real qué fines legales están activos según las respuestas parciales del wizard, usando el mismo WizardPurposeResolverService del backend pero sin necesidad de una política guardada. Reemplaza el patrón anterior de llamar a GET /api/panel/consent-purposes y filtrar client-side, que mostraba fines irrelevantes (ej: cookies en una política de privacidad).
+
+
+
+
+
+
+POST
+/api/panel/purposes/preview
+
+
+
+Headers requeridos
+
+
+Header	Valor	Notas
+
+
+Content-Type	string	application/json Requerido
+
+Accept	string	application/json Requerido
+
+Cookie	string	Session cookie (Sanctum SPA). Requiere withCredentials: true. Requerido
+
+
+
+
+
+
+Autenticación
+
+
+Autenticación: Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con GET /sanctum/csrf-cookie antes de llamar a este endpoint. Incluir withCredentials: true en todas las llamadas HTTP del panel. No usar Bearer token &mdash; las cookies de sesión se envían automáticamente.
+
+
+
+
+
+Body params
+
+
+Parámetro	Tipo	Reglas	Descripción
+
+
+document_type	string	required, in: privacy_policy, cookie_policy, workers_policy	Tipo de documento del wizard. Requerido
+
+wizard_data	object	required, array	Respuestas parciales del wizard hasta el momento. Estructura libre (key-value por step). Puede estar parcialmente vacío. Requerido
+
+
+
+
+
+
+Ejemplo de request
+
+{
+"document_type": "privacy_policy",
+"wizard_data": {
+"step_1_website_functions": ["informativa"]
+}
+}
+
+
+
+Respuesta exitosa 200 OK
+
+{
+"status": true,
+"message": "Fines legales activos según las respuestas del wizard.",
+"data": [
+{
+"slug": "necessary_technical",
+"label": "Funcionamiento del sitio",
+"description": "Permite el funcionamiento básico del sitio...",
+"requires_consent": false,
+"legal_basis": "legitimate_interest"
+},
+{
+"slug": "contractual_execution",
+"label": "Prestación del servicio que solicitaste",
+"description": "Tratamos tus datos para entregarte el servicio que pediste...",
+"requires_consent": false,
+"legal_basis": "contractual"
+}
+]
+}
+
+
+
+Respuestas de error
+
+
+Código	Causa	Ejemplo de mensaje
+
+
+401	No autenticado (falta cookie de sesión)	{"message":"Unauthenticated."}
+
+404	No existe template activo para el document_type solicitado	{"status":false,"message":"No existe template activo para este tipo de documento.","data":null}
+
+422	document_type inválido o wizard_data ausente	Errores de validación estándar de Laravel
+
+
+
+
+
+
+Notas de implementación
+
+
+- Reemplaza el filtrado client-side: No usar GET /api/panel/consent-purposes + filtrado por requires_consent. El catálogo sigue existiendo pero solo debe usarse para vistas de referencia, no para determinar qué está "activo".
+
+- Llamar en cada cambio del wizard: Cada vez que el usuario seleccione/desseleccione una opción en cualquier step, enviar el wizard_data acumulado. El preview mostrará únicamente los purposes que aplican según las selecciones hasta ese momento.
+
+- necessary_technical siempre aparece: El resolver agrega automáticamente necessary_technical (funcionamiento del sitio) a toda política, sin importar las respuestas del wizard. La base legal es interés legítimo y no requiere selección del usuario.
+
+- wizard_data puede estar parcialmente vacío: Si el usuario solo ha respondido el step 1, basta con enviar las keys del step 1. El endpoint tolera keys faltantes (las trata como no respondidas).
+
+- Misma estructura de respuesta que el catálogo: slug, label, description, requires_consent, legal_basis &mdash; mismos campos que GET /api/panel/consent-purposes, así que el mismo componente Angular puede renderizar ambos.
+
+- Más detalle en Característica B de la Guía Conceptual.
+
+
+
+
+
+
+
+
+
+Tabla resumen — Doce endpoints
 
 
 #	Endpoint	Método	Auth	Módulo	Descripción
@@ -1784,3 +1931,5 @@ Tabla resumen — Once endpoints
 10	/api/portal/consent/{token}/confirm	POST	Público	Portal Cautivo	Portal Cautivo — confirmar firma
 
 11	/api/company/policies	GET	Público	Configuración	Políticas publicadas (dropdown)
+
+12	/api/panel/purposes/preview	POST	Sanctum	Configuración	Preview de fines legales activos según wizard

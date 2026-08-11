@@ -191,6 +191,7 @@
         <a class="nav-section-title" href="#ep6">Panel — Configuraci&oacute;n</a>
         <ul class="nav-section-items">
             <li><a href="#ep6">GET /api/panel/consent-purposes</a></li>
+            <li><a href="#ep11">POST /api/panel/purposes/preview</a></li>
             <li><a href="#ep7">PATCH /api/panel/companies/domains</a></li>
             <li><a href="#ep8">PATCH /api/panel/companies/widget-config</a></li>
         </ul>
@@ -208,7 +209,7 @@
 
 <div class="doc-header">
   <h1>API Reference &mdash; Frontend M&oacute;dulo 2</h1>
-  <p>Diez endpoints para la integraci&oacute;n frontend del Trust Widget: configuraci&oacute;n del banner, registro de consentimiento, cat&aacute;logo de fines legales, generaci&oacute;n de enlaces de firma, listado de consents pendientes, b&oacute;veda de auditor&iacute;a, gesti&oacute;n de dominios CORS, personalizaci&oacute;n visual y Portal Cautivo (consulta + firma).</p>
+  <p>Doce endpoints para la integraci&oacute;n frontend del Trust Widget: configuraci&oacute;n del banner, registro de consentimiento, cat&aacute;logo de fines legales, preview din&aacute;mico de fines activos, generaci&oacute;n de enlaces de firma, listado de consents pendientes, b&oacute;veda de auditor&iacute;a, gesti&oacute;n de dominios CORS, personalizaci&oacute;n visual, Portal Cautivo (consulta + firma) y pol&iacute;ticas publicadas.</p>
   <div class="doc-meta">
     <span><strong>Base URL:</strong> <code style="font-family:var(--font-mono);font-size:12px">https://api.tudominio.com</code></span>
     <span><strong>Formato:</strong> JSON &middot; UTF-8</span>
@@ -229,6 +230,7 @@
     <a href="#ep8" class="toc-item"><span class="toc-num">08</span><span class="verb verb-patch">PATCH</span> Personalizar widget visual<span class="toc-path">/api/panel/companies/widget-config</span></a>
     <a href="#ep9" class="toc-item"><span class="toc-num">09</span><span class="verb verb-get">GET</span> Portal Cautivo — datos de firma<span class="toc-path">/api/portal/consent/{token}</span></a>
     <a href="#ep10" class="toc-item"><span class="toc-num">10</span><span class="verb verb-post">POST</span> Portal Cautivo — confirmar firma<span class="toc-path">/api/portal/consent/{token}/confirm</span></a>
+    <a href="#ep11" class="toc-item"><span class="toc-num">11</span><span class="verb verb-post">POST</span> Preview de fines legales<span class="toc-path">/api/panel/purposes/preview</span></a>
   </div>
 </div>
 
@@ -1405,8 +1407,111 @@ provideHttpClient(withFetch(), withInterceptors([...])),
 </div>
 </details>
 
-<div class="ep-section" style="max-width:980px;margin:0 auto 20px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px;">
-  <div class="ep-section-title"><span class="dot"></span>Tabla resumen — Once endpoints</div>
+<details class="ep-details" id="ep11">
+<summary>
+  <span class="verb verb-post">POST</span>
+  <div>
+    <div class="ep-summary-title">Preview de fines legales activos</div>
+    <div class="ep-summary-desc">/api/panel/purposes/preview</div>
+  </div>
+</summary>
+<div class="ep-body">
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Prop&oacute;sito / Cu&aacute;ndo se usa</div>
+    <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.65;">
+      Resuelve en tiempo real qu&eacute; fines legales est&aacute;n activos seg&uacute;n las respuestas parciales del wizard, usando el mismo <code class="inline">WizardPurposeResolverService</code> del backend pero sin necesidad de una pol&iacute;tica guardada. Reemplaza el patr&oacute;n anterior de llamar a <code class="inline">GET /api/panel/consent-purposes</code> y filtrar client-side, que mostraba fines irrelevantes (ej: cookies en una pol&iacute;tica de privacidad).
+    </p>
+  </div>
+  <div class="ep-route">
+    <span class="verb verb-post">POST</span>
+    <span class="ep-path">/api/panel/purposes/preview</span>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Headers requeridos</div>
+    <table class="param-table">
+      <thead><tr><th>Header</th><th>Valor</th><th>Notas</th></tr></thead>
+      <tbody>
+        <tr><td>Content-Type</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Accept</td><td>string</td><td><code class="inline">application/json</code> <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>Cookie</td><td>string</td><td>Session cookie (Sanctum SPA). Requiere <code class="inline">withCredentials: true</code>. <span class="pill pill-req">Requerido</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Autenticaci&oacute;n</div>
+    <div class="note note-info">
+      <strong>Autenticaci&oacute;n:</strong> Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con <code class="inline">GET /sanctum/csrf-cookie</code> antes de llamar a este endpoint. Incluir <code class="inline">withCredentials: true</code> en todas las llamadas HTTP del panel. No usar Bearer token &mdash; las cookies de sesi&oacute;n se env&iacute;an autom&aacute;ticamente.
+    </div>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Body params</div>
+    <table class="param-table">
+      <thead><tr><th>Par&aacute;metro</th><th>Tipo</th><th>Reglas</th><th>Descripci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td>document_type</td><td>string</td><td>required, in: privacy_policy, cookie_policy, workers_policy</td><td>Tipo de documento del wizard. <span class="pill pill-req">Requerido</span></td></tr>
+        <tr><td>wizard_data</td><td>object</td><td>required, array</td><td>Respuestas parciales del wizard hasta el momento. Estructura libre (key-value por step). Puede estar parcialmente vac&iacute;o. <span class="pill pill-req">Requerido</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Ejemplo de request</div>
+    <pre>{
+  <span class="hl-key">&quot;document_type&quot;</span>: <span class="hl-str">&quot;privacy_policy&quot;</span>,
+  <span class="hl-key">&quot;wizard_data&quot;</span>: {
+    <span class="hl-key">&quot;step_1_website_functions&quot;</span>: [<span class="hl-str">&quot;informativa&quot;</span>]
+  }
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuesta exitosa <span class="pill pill-200">200 OK</span></div>
+    <pre>{
+  <span class="hl-key">&quot;status&quot;</span>: <span class="hl-bool">true</span>,
+  <span class="hl-key">&quot;message&quot;</span>: <span class="hl-str">&quot;Fines legales activos seg&uacute;n las respuestas del wizard.&quot;</span>,
+  <span class="hl-key">&quot;data&quot;</span>: [
+    {
+      <span class="hl-key">&quot;slug&quot;</span>: <span class="hl-str">&quot;necessary_technical&quot;</span>,
+      <span class="hl-key">&quot;label&quot;</span>: <span class="hl-str">&quot;Funcionamiento del sitio&quot;</span>,
+      <span class="hl-key">&quot;description&quot;</span>: <span class="hl-str">&quot;Permite el funcionamiento b&aacute;sico del sitio...&quot;</span>,
+      <span class="hl-key">&quot;requires_consent&quot;</span>: <span class="hl-bool">false</span>,
+      <span class="hl-key">&quot;legal_basis&quot;</span>: <span class="hl-str">&quot;legitimate_interest&quot;</span>
+    },
+    {
+      <span class="hl-key">&quot;slug&quot;</span>: <span class="hl-str">&quot;contractual_execution&quot;</span>,
+      <span class="hl-key">&quot;label&quot;</span>: <span class="hl-str">&quot;Prestaci&oacute;n del servicio que solicitaste&quot;</span>,
+      <span class="hl-key">&quot;description&quot;</span>: <span class="hl-str">&quot;Tratamos tus datos para entregarte el servicio que pediste...&quot;</span>,
+      <span class="hl-key">&quot;requires_consent&quot;</span>: <span class="hl-bool">false</span>,
+      <span class="hl-key">&quot;legal_basis&quot;</span>: <span class="hl-str">&quot;contractual&quot;</span>
+    }
+  ]
+}</pre>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Respuestas de error</div>
+    <table class="err-table">
+      <thead><tr><th>C&oacute;digo</th><th>Causa</th><th>Ejemplo de mensaje</th></tr></thead>
+      <tbody>
+        <tr><td>401</td><td>No autenticado (falta cookie de sesi&oacute;n)</td><td><code class="inline">{&quot;message&quot;:&quot;Unauthenticated.&quot;}</code></td></tr>
+        <tr><td>404</td><td>No existe template activo para el document_type solicitado</td><td><code class="inline">{&quot;status&quot;:false,&quot;message&quot;:&quot;No existe template activo para este tipo de documento.&quot;,&quot;data&quot;:null}</code></td></tr>
+        <tr><td>422</td><td>document_type inv&aacute;lido o wizard_data ausente</td><td>Errores de validaci&oacute;n est&aacute;ndar de Laravel</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="ep-section">
+    <div class="ep-section-title"><span class="dot"></span>Notas de implementaci&oacute;n</div>
+    <ul class="sec-list">
+      <li><strong>Reemplaza el filtrado client-side:</strong> No usar <code class="inline">GET /api/panel/consent-purposes</code> + filtrado por <code class="inline">requires_consent</code>. El cat&aacute;logo sigue existiendo pero solo debe usarse para vistas de referencia, no para determinar qu&eacute; est&aacute; "activo".</li>
+      <li><strong>Llamar en cada cambio del wizard:</strong> Cada vez que el usuario seleccione/desseleccione una opci&oacute;n en cualquier step, enviar el <code class="inline">wizard_data</code> acumulado. El preview mostrar&aacute; &uacute;nicamente los purposes que aplican seg&uacute;n las selecciones hasta ese momento.</li>
+      <li><strong>necessary_technical siempre aparece:</strong> El resolver agrega autom&aacute;ticamente <code class="inline">necessary_technical</code> (funcionamiento del sitio) a toda pol&iacute;tica, sin importar las respuestas del wizard. La base legal es inter&eacute;s leg&iacute;timo y no requiere selecci&oacute;n del usuario.</li>
+      <li><strong>wizard_data puede estar parcialmente vac&iacute;o:</strong> Si el usuario solo ha respondido el step 1, basta con enviar las keys del step 1. El endpoint tolera keys faltantes (las trata como no respondidas).</li>
+      <li><strong>Misma estructura de respuesta que el cat&aacute;logo:</strong> slug, label, description, requires_consent, legal_basis &mdash; mismos campos que <code class="inline">GET /api/panel/consent-purposes</code>, as&iacute; que el mismo componente Angular puede renderizar ambos.</li>
+      <li>M&aacute;s detalle en <a class="doc-link" href="frontend-guia-conceptual.html#caracter&iacute;stica-b">Caracter&iacute;stica B de la Gu&iacute;a Conceptual</a>.</li>
+    </ul>
+  </div>
+</div>
+</details>
+
+<div class="ep-section" id="tabla-resumen" style="max-width:980px;margin:0 auto 20px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px;">
+  <div class="ep-section-title"><span class="dot"></span>Tabla resumen — Doce endpoints</div>
   <table class="param-table">
     <thead><tr><th>#</th><th>Endpoint</th><th>M&eacute;todo</th><th>Auth</th><th>M&oacute;dulo</th><th>Descripci&oacute;n</th></tr></thead>
     <tbody>
@@ -1421,6 +1526,7 @@ provideHttpClient(withFetch(), withInterceptors([...])),
       <tr><td>09</td><td>/api/portal/consent/{token}</td><td><span class="verb verb-get">GET</span></td><td><span class="auth-badge auth-public">P&uacute;blico</span></td><td>Portal Cautivo</td><td>Portal Cautivo — datos de firma</td></tr>
       <tr><td>10</td><td>/api/portal/consent/{token}/confirm</td><td><span class="verb verb-post">POST</span></td><td><span class="auth-badge auth-public">P&uacute;blico</span></td><td>Portal Cautivo</td><td>Portal Cautivo — confirmar firma</td></tr>
       <tr><td>11</td><td>/api/company/policies</td><td><span class="verb verb-get">GET</span></td><td><span class="auth-badge auth-public">P&uacute;blico</span></td><td>Configuraci&oacute;n</td><td>Pol&iacute;ticas publicadas (dropdown)</td></tr>
+      <tr><td>12</td><td>/api/panel/purposes/preview</td><td><span class="verb verb-post">POST</span></td><td><span class="auth-badge auth-private">Sanctum</span></td><td>Configuraci&oacute;n</td><td>Preview de fines legales activos seg&uacute;n wizard</td></tr>
     </tbody>
   </table>
 </div>

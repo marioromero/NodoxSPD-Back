@@ -129,6 +129,14 @@ Característica F
 
 
 
+Bitácora de cambios
+
+- Listado numerado de cambios
+
+
+
+
+
 
 
 
@@ -798,11 +806,11 @@ Flujo del patch
 
 &darr;
 
-3Frontend hace GET /api/panel/consent-purposes. Backend retorna el catálogo completo de propósitos legales (9 slugs con label, legal_basis, etc.).
+3Frontend hace POST /api/panel/purposes/preview enviando document_type y el wizard_data acumulado. Backend usa WizardPurposeResolverService para resolver qué fines aplican según las respuestas parciales.
 
 &darr;
 
-4Se renderizan checkboxes. Los que tienen purpose.default === true aparecen pre-seleccionados. Cada checkbox muestra purpose.label y su base legal.
+4Se renderizan los fines legales activos. Los que tienen requires_consent: false aparecen como "siempre activos". Cada item muestra label y su base legal. El preview se actualiza en cada cambio de selección del wizard.
 
 &darr;
 
@@ -831,29 +839,41 @@ Campos afectados: Típicamente input type="text" con show_if = "otros" en un mul
 
 
 
-El endpoint GET /api/panel/consent-purposes devuelve el catálogo completo de propósitos (9 slugs) ordenados por display_order. El frontend usa esta lista para mostrar checkboxes.
+El frontend obtiene los fines legales activos en tiempo real vía POST /api/panel/purposes/preview, enviando el document_type y el wizard_data acumulado en cada cambio de selección. Esto garantiza que solo se muestren los purposes que realmente aplican según las respuestas, no todo el catálogo. El catálogo completo (GET /api/panel/consent-purposes) sigue disponible pero solo debe usarse para vistas de referencia.
 
 
 
 
-// Angular — servicio que obtiene el catálogo de propósitos
-// GET /api/panel/consent-purposes
+// Angular — servicio que obtiene el preview de fines activos
+// POST /api/panel/purposes/preview
 
-// Respuesta esperada:
+// Request body:
 {
-"status": "success",
-"message": "Catálogo de propósitos de consentimiento",
+"document_type": "privacy_policy",
+"wizard_data": {
+"step_1_website_functions": ["informativa"]
+}
+}
+
+// Respuesta esperada (200 OK):
+{
+"status": true,
+"message": "Fines legales activos según las respuestas del wizard.",
 "data": [
 {
-"slug": "analytics_behavior",
-"label": "Analítica de comportamiento",
-"description": "... utilizado para medir el comportamiento del usuario...",
-"required": false,
-"default": true,
-"legal_basis": "Consentimiento (Art. 15)",
-"display_order": 2
+"slug": "necessary_technical",
+"label": "Funcionamiento del sitio",
+"description": "Permite el funcionamiento básico del sitio...",
+"requires_consent": false,
+"legal_basis": "legitimate_interest"
+},
+{
+"slug": "contractual_execution",
+"label": "Prestación del servicio que solicitaste",
+"description": "Tratamos tus datos para entregarte el servicio...",
+"requires_consent": false,
+"legal_basis": "contractual"
 }
-// ... 8 más
 ]
 }
 
@@ -870,9 +890,9 @@ El formulario del wizard debe inspeccionar cada campo de wizard_schema y, para a
 
 
 
-- Cargar catálogo: Al iniciar, hacer GET /api/panel/consent-purposes. La respuesta contiene el listado completo de propósitos legales (slug, label, description, required, default, legal_basis, display_order). Guardar en estado local para usar como fuente del selector.
+- Preview en tiempo real: Al iniciar y en cada cambio de selección del wizard, hacer POST /api/panel/purposes/preview enviando document_type y el wizard_data acumulado. La respuesta contiene solo los fines legales activos según las respuestas (slug, label, description, requires_consent, legal_basis). Renderizar el listado actualizado.
 
-- Renderizar checkboxes: Debajo del input de texto del campo marcado, mostrar un grupo de checkboxes — uno por propósito del catálogo. Cada checkbox debe mostrar purpose.label y, entre paréntesis, purpose.legal_basis. Aquellos con purpose.default === true deben aparecer pre-seleccionados.
+- Renderizar fines activos: Debajo del input de texto del campo marcado, mostrar el listado de fines devuelto por el preview. Cada item debe mostrar label y, entre paréntesis, su legal_basis. Los fines con requires_consent: false se muestran como "siempre activos" (no seleccionables por el usuario).
 
 - Persistir selección: El estado de los checkboxes se almacena en wizard_data bajo la clave {fieldKey}_purposes como un array de slugs. Ej: un campo campo_legal tendrá su selección en wizard_data.campo_legal_purposes = ["analytics", "marketing"].
 
@@ -891,11 +911,11 @@ Independientemente del framework, el componente del wizard debe implementar lo s
 
 
 
-- Inicialización: Al montar el componente, disparar la petición GET a /api/panel/consent-purposes. El componente debe exponer el listado de propósitos al template para que el selector de checkboxes pueda consumirlo.
+- Inicialización: Al montar el componente, disparar POST /api/panel/purposes/preview con el document_type actual y el wizard_data inicial (puede estar vacío). El componente debe exponer el listado de fines activos al template.
 
 - Manejo de selección: Implementar una función/handler que reciba tres parámetros: el identificador del campo (fieldKey), el slug del propósito, y el nuevo estado (seleccionado o no). Esta función debe agregar o remover el slug del array correspondiente en wizard_data.
 
-- Pre-selección: Al inicializar los checkboxes, aquellos propósitos con default: true deben cargarse como seleccionados en wizard_data a menos que el usuario haya modificado previamente la selección (ej: en una edición posterior).
+- Actualización en tiempo real: En cada cambio del wizard (selección/desselección de cualquier step), reenviar POST /api/panel/purposes/preview con el wizard_data actualizado. El preview reflejará qué fines aplican según las nuevas respuestas.
 
 - Persistencia diferida: No enviar los propósitos al backend por separado. La selección se guarda en wizard_data y se envía al backend solo cuando se completa y guarda el wizard completo.
 
@@ -1802,3 +1822,41 @@ Consideraciones adicionales
 - Recarga de página post-firma: Si el usuario recarga la página después de haber firmado, el GET /api/portal/consent/{token} retorna 409. El frontend debe interpretar el 409 del GET exactamente igual que el 201 del POST: mostrar la pantalla de éxito con el proof_hash (si el backend lo incluye). No mostrar error. No redirigir. La pantalla de éxito debe poder renderizarse sin haber pasado por el flujo de firma — solo con el 409 del GET es suficiente.
 
 - Accesibilidad: Los toggles deben ser operables por teclado (tab + space). El botón de copiar proof_hash debe tener aria-label.
+
+
+
+
+
+
+
+
+Bitácora de cambios
+
+
+Bitácora
+Registro de correcciones a la documentación frontend
+Listado numerado de cambios aplicados a esta documentación. Cada entrada describe el cambio a nivel conceptual e indica qué secciones se vieron afectadas en Guía Frontend — Módulo 2 y API Reference — Frontend.
+
+
+
+
+
+
+Cambio 12 — Preview en tiempo real de fines legales durante el wizard
+Problema: El frontend del panel estaba llamando GET /api/panel/consent-purposes (catálogo completo de 13 fines) y filtrando client-side los que tienen requires_consent: false para mostrarlos como "siempre activos". Esto hacía que 4 fines aparecieran activos desde el paso 1 del wizard sin importar qué hubiera seleccionado el usuario, incluyendo fines que no aplicaban al tipo de documento ni a las respuestas del wizard.
+
+
+Solución: Nuevo endpoint POST /api/panel/purposes/preview que resuelve en tiempo real qué fines legales están activos según las respuestas parciales del wizard, usando el mismo WizardPurposeResolverService del backend. El frontend debe llamar este endpoint en cada cambio de selección del wizard, enviando document_type y wizard_data acumulado.
+
+
+Secciones afectadas:
+
+
+
+- Guía Frontend: Característica B — Patch de Propósitos (flujo, código del patch, lógica del componente)
+
+- API Reference: Endpoint 11 — POST /api/panel/purposes/preview (nuevo)
+
+- API Reference: Endpoint 06 — GET /api/panel/consent-purposes (nota: catálogo de referencia, no usar para preview activo)
+
+- API Reference: Tabla resumen (actualizada a 12 endpoints)

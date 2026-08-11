@@ -228,6 +228,12 @@
             <li><a href="#portal-flujo">Flujo completo</a></li>
         </ul>
     </div>
+    <div class="nav-section">
+        <a class="nav-section-title" href="#bitácora-de-cambios" data-toggle="bitacora-items">Bitácora de cambios</a>
+        <ul class="nav-section-items" id="bitacora-items">
+            <li><a href="#bitácora-de-cambios">Listado numerado de cambios</a></li>
+        </ul>
+    </div>
 </nav>
 
 <main class="content" id="main-content">
@@ -782,9 +788,9 @@ banner.innerHTML = <span class="string">`
     <div class="flow-arrow">&darr;</div>
     <div class="flow-step"><span class="num">2</span><span class="desc">Frontend itera los campos del schema. Si encuentra <code>field.requires_purpose_selection === true</code>, prepara un selector de checkboxes debajo de ese campo.</span></div>
     <div class="flow-arrow">&darr;</div>
-    <div class="flow-step"><span class="num">3</span><span class="desc">Frontend hace <code>GET /api/panel/consent-purposes</code>. Backend retorna el catálogo completo de propósitos legales (9 slugs con label, legal_basis, etc.).</span></div>
+    <div class="flow-step"><span class="num">3</span><span class="desc">Frontend hace <code>POST /api/panel/purposes/preview</code> enviando <code>document_type</code> y el <code>wizard_data</code> acumulado. Backend usa <code>WizardPurposeResolverService</code> para resolver qué fines aplican según las respuestas parciales.</span></div>
     <div class="flow-arrow">&darr;</div>
-    <div class="flow-step"><span class="num">4</span><span class="desc">Se renderizan checkboxes. Los que tienen <code>purpose.default === true</code> aparecen pre-seleccionados. Cada checkbox muestra <code>purpose.label</code> y su base legal.</span></div>
+    <div class="flow-step"><span class="num">4</span><span class="desc">Se renderizan los fines legales activos. Los que tienen <code>requires_consent: false</code> aparecen como "siempre activos". Cada item muestra <code>label</code> y su base legal. El preview se actualiza en cada cambio de selección del wizard.</span></div>
     <div class="flow-arrow">&darr;</div>
     <div class="flow-step"><span class="num">5</span><span class="desc">Admin marca/desmarca propósitos. La selección se almacena temporalmente en <code>wizard_data.{fieldKey}_purposes</code> como array de slugs.</span></div>
     <div class="flow-arrow">&darr;</div>
@@ -802,27 +808,39 @@ banner.innerHTML = <span class="string">`
         <strong>Campos afectados:</strong> Típicamente input type="text" con show_if = "otros" en un multiselect. Ej: <code>step_2_analytics_other_provider</code>, <code>step_3_marketing_other_provider</code>, <code>step_4_functionality_other_provider</code>, <code>step_3_sharing_hr_software_names</code>, etc.
     </div>
 
-    <p>El endpoint <code>GET /api/panel/consent-purposes</code> devuelve el catálogo completo de propósitos (9 slugs) ordenados por <code>display_order</code>. El frontend usa esta lista para mostrar checkboxes.</p>
+    <p>El frontend obtiene los fines legales activos en tiempo real vía <code>POST /api/panel/purposes/preview</code>, enviando el <code>document_type</code> y el <code>wizard_data</code> acumulado en cada cambio de selección. Esto garantiza que solo se muestren los purposes que realmente aplican según las respuestas, no todo el catálogo. El catálogo completo (<code>GET /api/panel/consent-purposes</code>) sigue disponible pero solo debe usarse para vistas de referencia.</p>
 
     <div class="code-block">
-<span class="comment">// Angular — servicio que obtiene el catálogo de propósitos</span>
-<span class="comment">// GET /api/panel/consent-purposes</span>
+<span class="comment">// Angular — servicio que obtiene el preview de fines activos</span>
+<span class="comment">// POST /api/panel/purposes/preview</span>
 
-<span class="comment">// Respuesta esperada:</span>
+<span class="comment">// Request body:</span>
 {
-  <span class="string">"status"</span>: <span class="string">"success"</span>,
-  <span class="string">"message"</span>: <span class="string">"Catálogo de propósitos de consentimiento"</span>,
+  <span class="string">"document_type"</span>: <span class="string">"privacy_policy"</span>,
+  <span class="string">"wizard_data"</span>: {
+    <span class="string">"step_1_website_functions"</span>: [<span class="string">"informativa"</span>]
+  }
+}
+
+<span class="comment">// Respuesta esperada (200 OK):</span>
+{
+  <span class="string">"status"</span>: <span class="keyword">true</span>,
+  <span class="string">"message"</span>: <span class="string">"Fines legales activos según las respuestas del wizard."</span>,
   <span class="string">"data"</span>: [
     {
-      <span class="string">"slug"</span>: <span class="string">"analytics_behavior"</span>,
-      <span class="string">"label"</span>: <span class="string">"Analítica de comportamiento"</span>,
-      <span class="string">"description"</span>: <span class="string">"... utilizado para medir el comportamiento del usuario..."</span>,
-      <span class="string">"required"</span>: <span class="keyword">false</span>,
-      <span class="string">"default"</span>: <span class="keyword">true</span>,
-      <span class="string">"legal_basis"</span>: <span class="string">"Consentimiento (Art. 15)"</span>,
-      <span class="string">"display_order"</span>: <span class="keyword">2</span>
+      <span class="string">"slug"</span>: <span class="string">"necessary_technical"</span>,
+      <span class="string">"label"</span>: <span class="string">"Funcionamiento del sitio"</span>,
+      <span class="string">"description"</span>: <span class="string">"Permite el funcionamiento básico del sitio..."</span>,
+      <span class="string">"requires_consent"</span>: <span class="keyword">false</span>,
+      <span class="string">"legal_basis"</span>: <span class="string">"legitimate_interest"</span>
+    },
+    {
+      <span class="string">"slug"</span>: <span class="string">"contractual_execution"</span>,
+      <span class="string">"label"</span>: <span class="string">"Prestación del servicio que solicitaste"</span>,
+      <span class="string">"description"</span>: <span class="string">"Tratamos tus datos para entregarte el servicio..."</span>,
+      <span class="string">"requires_consent"</span>: <span class="keyword">false</span>,
+      <span class="string">"legal_basis"</span>: <span class="string">"contractual"</span>
     }
-    <span class="comment">// ... 8 más</span>
   ]
 }
     </div>
@@ -835,8 +853,8 @@ banner.innerHTML = <span class="string">`
         <h4>Comportamiento esperado del patch en el wizard</h4>
         <p>El formulario del wizard debe inspeccionar cada campo de <code>wizard_schema</code> y, para aquellos con <code>requires_purpose_selection: true</code>, inyectar un selector de propósitos debajo del input correspondiente. La lógica debe ser:</p>
         <ol>
-            <li><strong>Cargar catálogo:</strong> Al iniciar, hacer <code>GET /api/panel/consent-purposes</code>. La respuesta contiene el listado completo de propósitos legales (slug, label, description, required, default, legal_basis, display_order). Guardar en estado local para usar como fuente del selector.</li>
-            <li><strong>Renderizar checkboxes:</strong> Debajo del input de texto del campo marcado, mostrar un grupo de checkboxes — uno por propósito del catálogo. Cada checkbox debe mostrar <code>purpose.label</code> y, entre paréntesis, <code>purpose.legal_basis</code>. Aquellos con <code>purpose.default === true</code> deben aparecer pre-seleccionados.</li>
+            <li><strong>Preview en tiempo real:</strong> Al iniciar y en cada cambio de selección del wizard, hacer <code>POST /api/panel/purposes/preview</code> enviando <code>document_type</code> y el <code>wizard_data</code> acumulado. La respuesta contiene solo los fines legales activos según las respuestas (slug, label, description, requires_consent, legal_basis). Renderizar el listado actualizado.</li>
+            <li><strong>Renderizar fines activos:</strong> Debajo del input de texto del campo marcado, mostrar el listado de fines devuelto por el preview. Cada item debe mostrar <code>label</code> y, entre paréntesis, su <code>legal_basis</code>. Los fines con <code>requires_consent: false</code> se muestran como "siempre activos" (no seleccionables por el usuario).</li>
             <li><strong>Persistir selección:</strong> El estado de los checkboxes se almacena en <code>wizard_data</code> bajo la clave <code>{fieldKey}_purposes</code> como un array de slugs. Ej: un campo <code>campo_legal</code> tendrá su selección en <code>wizard_data.campo_legal_purposes = ["analytics", "marketing"]</code>.</li>
             <li><strong>Tooltip:</strong> Incluir un texto informativo que indique: "Estos propósitos se agregarán a la política al publicarla. Los que aparecen pre-seleccionados son los que vienen por defecto."</li>
         </ol>
@@ -847,9 +865,9 @@ banner.innerHTML = <span class="string">`
         <h4>Lógica del componente (alto nivel)</h4>
         <p>Independientemente del framework, el componente del wizard debe implementar lo siguiente:</p>
         <ul>
-            <li><strong>Inicialización:</strong> Al montar el componente, disparar la petición GET a <code>/api/panel/consent-purposes</code>. El componente debe exponer el listado de propósitos al template para que el selector de checkboxes pueda consumirlo.</li>
+            <li><strong>Inicialización:</strong> Al montar el componente, disparar <code>POST /api/panel/purposes/preview</code> con el <code>document_type</code> actual y el <code>wizard_data</code> inicial (puede estar vacío). El componente debe exponer el listado de fines activos al template.</li>
             <li><strong>Manejo de selección:</strong> Implementar una función/handler que reciba tres parámetros: el identificador del campo (<code>fieldKey</code>), el slug del propósito, y el nuevo estado (seleccionado o no). Esta función debe agregar o remover el slug del array correspondiente en <code>wizard_data</code>.</li>
-            <li><strong>Pre-selección:</strong> Al inicializar los checkboxes, aquellos propósitos con <code>default: true</code> deben cargarse como seleccionados en <code>wizard_data</code> a menos que el usuario haya modificado previamente la selección (ej: en una edición posterior).</li>
+            <li><strong>Actualización en tiempo real:</strong> En cada cambio del wizard (selección/desselección de cualquier step), reenviar <code>POST /api/panel/purposes/preview</code> con el <code>wizard_data</code> actualizado. El preview reflejará qué fines aplican según las nuevas respuestas.</li>
             <li><strong>Persistencia diferida:</strong> No enviar los propósitos al backend por separado. La selección se guarda en <code>wizard_data</code> y se envía al backend solo cuando se completa y guarda el wizard completo.</li>
         </ul>
     </div>
@@ -1474,6 +1492,30 @@ const payload = {
         <li><strong>No persistir el token:</strong> El token va solo en la URL. No guardarlo en localStorage ni sessionStorage.</li>
         <li><strong>Recarga de página post-firma:</strong> Si el usuario recarga la página después de haber firmado, el <code>GET /api/portal/consent/{token}</code> retorna <strong>409</strong>. El frontend debe interpretar el 409 del GET exactamente igual que el 201 del POST: mostrar la pantalla de éxito con el <code>proof_hash</code> (si el backend lo incluye). No mostrar error. No redirigir. La pantalla de éxito debe poder renderizarse sin haber pasado por el flujo de firma — solo con el 409 del GET es suficiente.</li>
         <li><strong>Accesibilidad:</strong> Los toggles deben ser operables por teclado (tab + space). El botón de copiar proof_hash debe tener <code>aria-label</code>.</li>
+    </ul>
+</div>
+
+</details>
+
+<details class="caracteristica-details" id="bitacora-wrapper">
+<summary><h1 id="bitácora-de-cambios">Bitácora de cambios</h1></summary>
+
+<div class="caracteristica-box">
+    <span class="badge">Bitácora</span>
+    <h3>Registro de correcciones a la documentación frontend</h3>
+    <p>Listado numerado de cambios aplicados a esta documentación. Cada entrada describe el cambio a nivel conceptual e indica qué secciones se vieron afectadas en <strong>Guía Frontend — Módulo 2</strong> y <strong>API Reference — Frontend</strong>.</p>
+</div>
+
+<div class="card">
+    <h3>Cambio 12 — Preview en tiempo real de fines legales durante el wizard</h3>
+    <p><strong>Problema:</strong> El frontend del panel estaba llamando <code>GET /api/panel/consent-purposes</code> (catálogo completo de 13 fines) y filtrando client-side los que tienen <code>requires_consent: false</code> para mostrarlos como "siempre activos". Esto hacía que 4 fines aparecieran activos desde el paso 1 del wizard sin importar qué hubiera seleccionado el usuario, incluyendo fines que no aplicaban al tipo de documento ni a las respuestas del wizard.</p>
+    <p><strong>Solución:</strong> Nuevo endpoint <code>POST /api/panel/purposes/preview</code> que resuelve en tiempo real qué fines legales están activos según las respuestas parciales del wizard, usando el mismo <code>WizardPurposeResolverService</code> del backend. El frontend debe llamar este endpoint en cada cambio de selección del wizard, enviando <code>document_type</code> y <code>wizard_data</code> acumulado.</p>
+    <p><strong>Secciones afectadas:</strong></p>
+    <ul>
+        <li>Guía Frontend: <a href="frontend-guia-conceptual.html#característica-b">Característica B — Patch de Propósitos</a> (flujo, código del patch, lógica del componente)</li>
+        <li>API Reference: <a href="frontend-api-reference.html#ep11">Endpoint 11 — POST /api/panel/purposes/preview</a> (nuevo)</li>
+        <li>API Reference: <a href="frontend-api-reference.html#ep6">Endpoint 06 — GET /api/panel/consent-purposes</a> (nota: catálogo de referencia, no usar para preview activo)</li>
+        <li>API Reference: <a href="frontend-api-reference.html#tabla-resumen">Tabla resumen</a> (actualizada a 12 endpoints)</li>
     </ul>
 </div>
 
