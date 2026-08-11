@@ -29,7 +29,7 @@ class PreviewPurposesRequest extends FormRequest
     {
         return [
             'document_type' => ['required', 'string', 'in:privacy_policy,cookie_policy,workers_policy'],
-            'wizard_data' => ['required', 'array'],
+            'wizard_data' => ['present', 'array'],
         ];
     }
 }
