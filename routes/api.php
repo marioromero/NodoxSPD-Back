@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Panel\BatchProgressController;
 use App\Http\Controllers\Api\Panel\CompanyDomainController;
 use App\Http\Controllers\Api\Panel\CompanyWidgetConfigController;
 use App\Http\Controllers\Api\Panel\ConsentLogController;
@@ -7,6 +8,7 @@ use App\Http\Controllers\Api\Panel\ConsentPurposeController;
 use App\Http\Controllers\Api\Panel\PendingConsentController;
 use App\Http\Controllers\Api\Panel\PurposePreviewController;
 use App\Http\Controllers\Api\Portal\PortalConsentController;
+use App\Http\Controllers\Api\Webhook\ResendWebhookController;
 use App\Http\Controllers\Api\Widget\IdentityStitchController;
 use App\Http\Controllers\Api\Widget\WidgetConfigController;
 use App\Http\Controllers\Api\Widget\WidgetConsentController;
@@ -60,6 +62,11 @@ Route::middleware(['throttle:60,1'])
 Route::middleware(['throttle:60,1'])
     ->match(['post', 'options'], '/portal/consent/{token}/confirm', [PortalConsentController::class, 'confirm']);
 
+// Webhook público: notificaciones de eventos de email de Resend (rebotes, entregas).
+// Sin autenticación Sanctum; valida firma HMAC propia con RESEND_WEBHOOK_SECRET.
+Route::post('/webhook/resend', ResendWebhookController::class)
+    ->middleware('throttle:60,1');
+
 // 2. Rutas Protegidas (Cualquier usuario autenticado)
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -86,6 +93,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/panel/pending-consents', [PendingConsentController::class, 'store'])
         ->middleware('throttle:10,1');
     Route::get('/panel/pending-consents', [PendingConsentController::class, 'index']);
+
+    // Panel: monitoreo de progreso de lotes (Bus::batch) con aislamiento multitenant
+    Route::get('/panel/batches/{id}', [BatchProgressController::class, 'show']);
 
     // 3. Módulo de Empresa (Solo Admins de Empresa)
     Route::middleware('role:company_admin')->prefix('company')->group(function () {

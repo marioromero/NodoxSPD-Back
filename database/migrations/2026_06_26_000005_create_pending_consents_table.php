@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('pii_hash', 64)->index();
 
             // Estado del consentimiento pendiente y origen de la captura
-            $table->enum('status', ['pending', 'confirmed', 'expired'])->default('pending')->index();
+            $table->enum('status', ['pending', 'confirmed', 'expired', 'bounced'])->default('pending')->index();
             $table->enum('source', ['zapier', 'make', 'manual_panel', 'webhook_generic'])->index();
 
             // Control de expiración del token y confirmación

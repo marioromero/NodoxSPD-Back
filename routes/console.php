@@ -38,3 +38,17 @@ Schedule::call(function (): void {
 })->hourly()
     ->name('purge-pending-consents')
     ->withoutOverlapping();
+
+/*
+|--------------------------------------------------------------------------
+| Cronjob: Poda de job_batches (Laravel nativo)
+|--------------------------------------------------------------------------
+|
+| Elimina lotes completados hace >48h y lotes sin finalizar hace >72h.
+| Previene crecimiento descontrolado de la tabla job_batches.
+| Los registros de company_batches quedan huérfanos (nullOnDelete) para
+| preservar la pista de auditoría.
+|
+*/
+Schedule::command('queue:prune-batches --hours=48')->daily();
+Schedule::command('queue:prune-batches --hours=48 --unfinished=72')->daily();

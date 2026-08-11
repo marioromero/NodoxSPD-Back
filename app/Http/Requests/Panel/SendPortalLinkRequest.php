@@ -8,9 +8,9 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * Validación del envío masivo de enlaces de firma desde el panel.
  *
- * La Pyme envía un array de emails (máximo 50) y el ID de la política a firmar.
+ * La Pyme envía un array de emails (máximo 500) y el ID de la política a firmar.
  * El controlador verifica que la política pertenezca a la empresa del usuario
- * autenticado antes de iterar y crear los registros PendingConsent.
+ * autenticado antes de despachar el batch de Jobs.
  */
 class SendPortalLinkRequest extends FormRequest
 {
@@ -31,7 +31,7 @@ class SendPortalLinkRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'emails' => ['required', 'array', 'min:1', 'max:50'],
+            'emails' => ['required', 'array', 'min:1', 'max:500'],
             'emails.*' => ['required', 'email', 'max:255'],
             'company_policy_id' => ['required', 'integer', 'exists:company_policies,id'],
         ];

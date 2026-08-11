@@ -49,5 +49,15 @@ class AppServiceProvider extends ServiceProvider
                     ->by('ip:'.$request->ip()),
             ];
         });
+
+        /*
+         * Rate Limiter "consent-emails": controla el throughput de envío
+         * de correos transaccionales por empresa. Limita a 30 emails/min
+         * para no saturar el proveedor SMTP (Resend) y respetar los límites
+         * del plan. Usado por el middleware RateLimited en SendConsentLinkJob.
+         */
+        RateLimiter::for('consent-emails', function (object $job) {
+            return Limit::perMinute(30)->by('company:'.$job->companyId);
+        });
     }
 }
