@@ -59,6 +59,15 @@ return Application::configure(basePath: dirname(__DIR__))
         // 2. Habilitar sesiones para el panel Admin (Sanctum)
         $middleware->statefulApi();
 
+        // Excluir rutas públicas (portal cautivo, webhook) de la verificación CSRF.
+        // Estos endpoints no usan autenticación Sanctum y reciben POST desde
+        // dominios stateful (spd.nodox.cl), por lo que Sanctum les exige
+        // CSRF token. Al excluirlos, funcionan sin sesión ni cookie.
+        $middleware->validateCsrfTokens(except: [
+            'api/portal/*',
+            'api/webhook/*',
+        ]);
+
         // 3. Alias básicos del sistema de autenticación de Laravel
         $middleware->alias([
             'auth' => Authenticate::class,
