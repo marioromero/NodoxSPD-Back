@@ -114,10 +114,14 @@
         <a class="sidebar-back" href="index.html">&larr; Volver al índice</a>
     </div>
     <div class="nav-section">
-        <a class="nav-section-title" href="#cambio-12" data-toggle="cambios-items">Cambios aplicados</a>
+        <a class="nav-section-title" href="#cambio-1" data-toggle="cambios-items">Cambios aplicados</a>
         <ul class="nav-section-items" id="cambios-items">
             <li><a href="#cambio-1">Cambio 1 — Preview en tiempo real</a></li>
             <li><a href="#cambio-2">Cambio 2 — Contrato batch/single + batch progress</a></li>
+            <li><a href="#cambio-3">Cambio 3 — Identity Stitching implementado</a></li>
+            <li><a href="#cambio-4">Cambio 4 — CORS de producción</a></li>
+            <li><a href="#cambio-5">Cambio 5 — Labels de fines legales reescritos</a></li>
+            <li><a href="#cambio-6">Cambio 6 — Rutas públicas sin CSRF</a></li>
         </ul>
     </div>
     <div class="nav-section">
@@ -173,6 +177,79 @@
         <li><span class="badge badge-front">Guía Frontend</span> <a href="frontend-guia-conceptual.html#característica-f">Característica F — Portal Cautivo</a> (notas de envío masivo)</li>
         <li><span class="badge badge-api">API Reference</span> <a href="frontend-api-reference.html#tabla-resumen">Tabla resumen</a> (actualizada a 13 endpoints)</li>
     </ul>
+</div>
+
+<div class="card" id="cambio-3">
+    <div class="change-meta">
+        <span class="change-num">Cambio 3</span>
+        <span class="change-date">25 de julio, 2026</span>
+    </div>
+    <h3>Identity Stitching implementado (integración backend, sin acción Angular)</h3>
+    <p><strong>Cambio en el backend:</strong> Se implement&oacute; la tabla <code>person_visitor_uuids</code> y el endpoint <code>POST /api/widget/{uuid}/identity-sync</code>, que permite al backend de cada Pyme vincular su <code>visitor_uuid</code> con su usuario interno (firma HMAC-SHA256 usando el <code>integration_secret</code> de la empresa, con bloques de tiempo de 5 minutos para evitar replay).</p>
+    <p><strong>Correcci&oacute;n en la documentaci&oacute;n:</strong> La Gu&iacute;a Conceptual describ&iacute;a Identity Stitching como &ldquo;pendiente&rdquo; y afirmaba que <code>identifier</code> llegaba <code>null</code> para capturas <code>live_widget</code>. La realidad actual: <code>identifier</code> llega como el <code>visitor_uuid</code> seudonimizado en capturas <code>live_widget</code>, y como el email del destinatario en capturas <code>live_portal</code>. La resoluci&oacute;n del <code>identifier</code> a la identidad real de la Pyme a&uacute;n no est&aacute; conectada al flujo de captura (la tabla se popula, pero el ledger no la consulta).</p>
+    <p><strong>Acci&oacute;n frontend:</strong> Ninguna. El endpoint <code>identity-sync</code> es de integraci&oacute;n backend (HMAC con secreto); el frontend Angular nunca lo llama. La regla de UI de la tabla del ledger se ajust&oacute;: truncar el identificador para capturas <code>live_widget</code> (visitante an&oacute;nimo), mostrar completo si es email.</p>
+
+    <div class="secciones-afectadas">
+        <p><strong>Secciones afectadas:</strong></p>
+        <ul>
+            <li><span class="badge badge-front">Guía Frontend</span> <a href="frontend-guia-conceptual.html#caracter&iacute;stica-c">Caracter&iacute;stica C — Ledger</a> (regla de UI del identificador y nota de tipos de datos del contrato JSON)</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card" id="cambio-4">
+    <div class="change-meta">
+        <span class="change-num">Cambio 4</span>
+        <span class="change-date">30 de julio, 2026</span>
+    </div>
+    <h3>CORS de producción: spd.nodox.cl y localhost:4201 habilitados</h3>
+    <p><strong>Cambio en el backend:</strong> Se agregaron <code>https://spd.nodox.cl</code> y <code>http://localhost:4201</code> a los <code>allowed_origins</code> de CORS. El dominio de producci&oacute;n del panel (<code>spd.nodox.cl</code>) qued&oacute; habilitado para llamar a la API sin errores de CORS.</p>
+    <p><strong>Acci&oacute;n frontend:</strong> Ninguna (configuraci&oacute;n backend). La nota de CORS de la Gu&iacute;a Conceptual fue actualizada para listar los 4 or&iacute;genes vigentes: <code>http://localhost:4200</code>, <code>http://localhost:4201</code>, <code>https://nodoxspd.cl</code> y <code>https://spd.nodox.cl</code>.</p>
+
+    <div class="secciones-afectadas">
+        <p><strong>Secciones afectadas:</strong></p>
+        <ul>
+            <li><span class="badge badge-front">Guía Frontend</span> <a href="frontend-guia-conceptual.html#caracter&iacute;stica-f">Caracter&iacute;stica F — Portal Cautivo</a> (consideraciones adicionales: nota CORS)</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card" id="cambio-5">
+    <div class="change-meta">
+        <span class="change-num">Cambio 5</span>
+        <span class="change-date">31 de julio, 2026</span>
+    </div>
+    <h3>Labels y descripciones de los 13 fines legales reescritos</h3>
+    <p><strong>Cambio en el backend:</strong> Los 13 fines legales del cat&aacute;logo (<code>consent_purposes</code>) tienen labels y descripciones reescritas para claridad del usuario final: labels user-centric sin jerga legal y descripciones en segunda persona que explican qu&eacute; dato se trata y por qu&eacute;. Ejemplos: &ldquo;Cookies t&eacute;cnicas y necesarias&rdquo; &rarr; <strong>&ldquo;Funcionamiento del sitio&rdquo;</strong>; &ldquo;An&aacute;lisis de visitas y comportamiento&rdquo; &rarr; <strong>&ldquo;Estad&iacute;sticas de visitas&rdquo;</strong>; &ldquo;Publicidad y marketing directo&rdquo; &rarr; <strong>&ldquo;Publicidad y promociones&rdquo;</strong>.</p>
+    <p><strong>Acci&oacute;n frontend:</strong> Ninguna. Los textos llegan siempre desde la API (cat&aacute;logo del panel, <code>/config</code> del Trust Widget, portal cautivo). Regla: nunca hardcodear labels de fines en el frontend. Los ejemplos de respuesta de la API Reference fueron actualizados a los textos vigentes.</p>
+
+    <div class="secciones-afectadas">
+        <p><strong>Secciones afectadas:</strong></p>
+        <ul>
+            <li><span class="badge badge-api">API Reference</span> <a href="frontend-api-reference.html#ep1">Endpoint 01 — GET /api/widget/{uuid}/config</a> (ejemplo de purposes)</li>
+            <li><span class="badge badge-api">API Reference</span> <a href="frontend-api-reference.html#ep6">Endpoint 06 — GET /api/panel/consent-purposes</a> (ejemplo del cat&aacute;logo)</li>
+            <li><span class="badge badge-api">API Reference</span> <a href="frontend-api-reference.html#ep9">Endpoint 09 — GET /api/portal/consent/{token}</a> (ejemplo de purposes del portal)</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card" id="cambio-6">
+    <div class="change-meta">
+        <span class="change-num">Cambio 6</span>
+        <span class="change-date">11 de agosto, 2026</span>
+    </div>
+    <h3>Rutas públicas (portal cautivo, webhook) excluidas de CSRF</h3>
+    <p><strong>Problema:</strong> El middleware <code>statefulApi()</code> aplicaba verificaci&oacute;n CSRF a todas las rutas API cuando el request proven&iacute;a de un dominio stateful (<code>spd.nodox.cl</code> en <code>SANCTUM_STATEFUL_DOMAINS</code>). El POST p&uacute;blico del Portal Cautivo (<code>/api/portal/consent/{token}/confirm</code>) no usa autenticaci&oacute;n Sanctum y pod&iacute;a recibir 419 por falta de token CSRF.</p>
+    <p><strong>Soluci&oacute;n:</strong> El backend excluy&oacute; <code>api/portal/*</code> y <code>api/webhook/*</code> de la verificaci&oacute;n CSRF. El POST de firma funciona sin sesi&oacute;n, sin cookie <code>XSRF-TOKEN</code> y sin header <code>X-CSRF-TOKEN</code>: bastan <code>Content-Type</code> y <code>Accept</code> en <code>application/json</code>.</p>
+    <p><strong>Acci&oacute;n frontend:</strong> Eliminar cualquier l&oacute;gica que intente obtener o inyectar token CSRF para el portal cautivo. No confundir: las rutas del Panel (<code>/api/panel/*</code>) s&iacute; siguen exigiendo CSRF (flujo Sanctum con <code>GET /sanctum/csrf-cookie</code>).</p>
+
+    <div class="secciones-afectadas">
+        <p><strong>Secciones afectadas:</strong></p>
+        <ul>
+            <li><span class="badge badge-api">API Reference</span> <a href="frontend-api-reference.html#ep10">Endpoint 10 — POST /api/portal/consent/{token}/confirm</a> (nota de implementación: sin CSRF)</li>
+            <li><span class="badge badge-front">Guía Frontend</span> <a href="frontend-guia-conceptual.html#caracter&iacute;stica-f">Caracter&iacute;stica F — Portal Cautivo</a> (nota CSRF en la sección POST)</li>
+        </ul>
+    </div>
 </div>
 
 </main>

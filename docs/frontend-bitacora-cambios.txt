@@ -5,32 +5,47 @@ Bitácora de Cambios — Frontend — NodoxSPD
 
 
 &#128218; Documentación
+
+
 Frontend — Bitácora
+
 
 &larr; Volver al índice
 
 
-
 Cambios aplicados
 
+
 - Cambio 1 — Preview en tiempo real
+
 
 - Cambio 2 — Contrato batch/single + batch progress
 
 
+- Cambio 3 — Identity Stitching implementado
 
+
+- Cambio 4 — CORS de producción
+
+
+- Cambio 5 — Labels de fines legales reescritos
+
+
+- Cambio 6 — Rutas públicas sin CSRF
 
 
 Documentos relacionados
 
+
 - Guía Frontend — Módulo 2
+
 
 - API Reference Frontend
 
 
-
-
 Bitácora de Cambios — Frontend
+
+
 Registro numerado de correcciones aplicadas a la documentación frontend. Cada entrada describe el cambio a nivel conceptual, incluye la fecha y enlaces a las secciones afectadas en la Guía Frontend — Módulo 2 y la API Reference Frontend.
 
 
@@ -39,9 +54,13 @@ Cambio 1
 
 
 Preview en tiempo real de fines legales durante el wizard
+
+
 Problema: El frontend del panel estaba llamando GET /api/panel/consent-purposes (catálogo completo de 13 fines) y filtrando client-side los que tienen requires_consent: false para mostrarlos como "siempre activos". Esto hacía que 4 fines aparecieran activos desde el paso 1 del wizard sin importar qué hubiera seleccionado el usuario, incluyendo fines que no aplicaban al tipo de documento ni a las respuestas del wizard (ej: hablar de cookies cuando se está creando una política de privacidad).
 
+
 Causa raíz: El campo requires_consent: false significa "este fin no necesita toggle en el Trust Widget porque es legalmente obligatorio", NO significa "está activo para toda empresa sin importar el contexto". La activación real depende del wizard_schema del template legal, que mapea cada opción del wizard a los legal_purposes correspondientes. Esa lógica vive en WizardPurposeResolverService, pero solo se usaba cuando el Trust Widget público pedía config via GET /api/widget/{uuid}/config — no durante la edición del wizard en el panel.
+
 
 Solución: Nuevo endpoint POST /api/panel/purposes/preview que resuelve en tiempo real qué fines legales están activos según las respuestas parciales del wizard, usando el mismo WizardPurposeResolverService del backend pero sin necesidad de una política guardada. El frontend debe llamar este endpoint en cada cambio de selección del wizard, enviando document_type y wizard_data acumulado.
 
@@ -51,14 +70,14 @@ Secciones afectadas:
 
 - Guía Frontend Característica B — Patch de Propósitos (flujo, código del patch, lógica del componente)
 
+
 - API Reference Endpoint 11 — POST /api/panel/purposes/preview (nuevo)
+
 
 - API Reference Endpoint 06 — GET /api/panel/consent-purposes (nota: catálogo de referencia, no usar para preview activo)
 
+
 - API Reference Tabla resumen (actualizada a 12 endpoints)
-
-
-
 
 
 Cambio 2
@@ -66,19 +85,118 @@ Cambio 2
 
 
 Contrato batch/single + sondeo de progreso de lote
+
+
 Problema: El endpoint POST /api/panel/pending-consents tenía un contrato único de respuesta (sent_count/skipped_count) que no escalaba para envíos masivos (100+ correos). La deduplicación sincrónica bloqueaba la respuesta hasta procesar todos los emails.
 
+
 Solución: El contrato de respuesta ahora depende de la cantidad de emails. Si se envía 1 correo: modo single (201 created o 200 already_pending). Si se envían 2 o más: modo batch (202 Accepted con batch_id), donde la deduplicación ocurre asincrónicamente en el Job. Nuevo endpoint GET /api/panel/batches/{id} para sondear el progreso del lote. Máximo de emails subido de 50 a 500. Adicionalmente, GET /api/panel/pending-consents ahora soporta ?status=bounced para mostrar correos rebotados (notificación de Resend vía webhook).
+
 
 Secciones afectadas:
 
 
 - API Reference Endpoint 04 — POST /api/panel/pending-consents (contrato single/batch, max 500, sin sent_count/skipped_count en batch)
 
+
 - API Reference Endpoint 13 — GET /api/panel/batches/{id} (nuevo)
+
 
 - API Reference Endpoint 03 — GET /api/panel/pending-consents (filtro bounced)
 
+
 - Guía Frontend Característica F — Portal Cautivo (notas de envío masivo)
 
+
 - API Reference Tabla resumen (actualizada a 13 endpoints)
+
+
+Cambio 3
+25 de julio, 2026
+
+
+Identity Stitching implementado (integración backend, sin acción Angular)
+
+
+Cambio en el backend: Se implementó la tabla person_visitor_uuids y el endpoint POST /api/widget/{uuid}/identity-sync, que permite al backend de cada Pyme vincular su visitor_uuid con su usuario interno (firma HMAC-SHA256 usando el integration_secret de la empresa, con bloques de tiempo de 5 minutos para evitar replay).
+
+
+Corrección en la documentación: La Guía Conceptual describía Identity Stitching como &ldquo;pendiente&rdquo; y afirmaba que identifier llegaba null para capturas live_widget. La realidad actual: identifier llega como el visitor_uuid seudonimizado en capturas live_widget, y como el email del destinatario en capturas live_portal. La resolución del identifier a la identidad real de la Pyme aún no está conectada al flujo de captura (la tabla se popula, pero el ledger no la consulta).
+
+
+Acción frontend: Ninguna. El endpoint identity-sync es de integración backend (HMAC con secreto); el frontend Angular nunca lo llama. La regla de UI de la tabla del ledger se ajustó: truncar el identificador para capturas live_widget (visitante anónimo), mostrar completo si es email.
+
+
+Secciones afectadas:
+
+
+- Guía Frontend Característica C — Ledger (regla de UI del identificador y nota de tipos de datos del contrato JSON)
+
+
+Cambio 4
+30 de julio, 2026
+
+
+CORS de producción: spd.nodox.cl y localhost:4201 habilitados
+
+
+Cambio en el backend: Se agregaron https://spd.nodox.cl y http://localhost:4201 a los allowed_origins de CORS. El dominio de producción del panel (spd.nodox.cl) quedó habilitado para llamar a la API sin errores de CORS.
+
+
+Acción frontend: Ninguna (configuración backend). La nota de CORS de la Guía Conceptual fue actualizada para listar los 4 orígenes vigentes: http://localhost:4200, http://localhost:4201, https://nodoxspd.cl y https://spd.nodox.cl.
+
+
+Secciones afectadas:
+
+
+- Guía Frontend Característica F — Portal Cautivo (consideraciones adicionales: nota CORS)
+
+
+Cambio 5
+31 de julio, 2026
+
+
+Labels y descripciones de los 13 fines legales reescritos
+
+
+Cambio en el backend: Los 13 fines legales del catálogo (consent_purposes) tienen labels y descripciones reescritas para claridad del usuario final: labels user-centric sin jerga legal y descripciones en segunda persona que explican qué dato se trata y por qué. Ejemplos: &ldquo;Cookies técnicas y necesarias&rdquo; &rarr; &ldquo;Funcionamiento del sitio&rdquo;; &ldquo;Análisis de visitas y comportamiento&rdquo; &rarr; &ldquo;Estadísticas de visitas&rdquo;; &ldquo;Publicidad y marketing directo&rdquo; &rarr; &ldquo;Publicidad y promociones&rdquo;.
+
+
+Acción frontend: Ninguna. Los textos llegan siempre desde la API (catálogo del panel, /config del Trust Widget, portal cautivo). Regla: nunca hardcodear labels de fines en el frontend. Los ejemplos de respuesta de la API Reference fueron actualizados a los textos vigentes.
+
+
+Secciones afectadas:
+
+
+- API Reference Endpoint 01 — GET /api/widget/{uuid}/config (ejemplo de purposes)
+
+
+- API Reference Endpoint 06 — GET /api/panel/consent-purposes (ejemplo del catálogo)
+
+
+- API Reference Endpoint 09 — GET /api/portal/consent/{token} (ejemplo de purposes del portal)
+
+
+Cambio 6
+11 de agosto, 2026
+
+
+Rutas públicas (portal cautivo, webhook) excluidas de CSRF
+
+
+Problema: El middleware statefulApi() aplicaba verificación CSRF a todas las rutas API cuando el request provenía de un dominio stateful (spd.nodox.cl en SANCTUM_STATEFUL_DOMAINS). El POST público del Portal Cautivo (/api/portal/consent/{token}/confirm) no usa autenticación Sanctum y podía recibir 419 por falta de token CSRF.
+
+
+Solución: El backend excluyó api/portal/* y api/webhook/* de la verificación CSRF. El POST de firma funciona sin sesión, sin cookie XSRF-TOKEN y sin header X-CSRF-TOKEN: bastan Content-Type y Accept en application/json.
+
+
+Acción frontend: Eliminar cualquier lógica que intente obtener o inyectar token CSRF para el portal cautivo. No confundir: las rutas del Panel (/api/panel/*) sí siguen exigiendo CSRF (flujo Sanctum con GET /sanctum/csrf-cookie).
+
+
+Secciones afectadas:
+
+
+- API Reference Endpoint 10 — POST /api/portal/consent/{token}/confirm (nota de implementación: sin CSRF)
+
+
+- Guía Frontend Característica F — Portal Cautivo (nota CSRF en la sección POST)

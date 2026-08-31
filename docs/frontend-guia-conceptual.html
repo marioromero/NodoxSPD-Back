@@ -1017,9 +1017,9 @@ banner.innerHTML = <span class="string">`
                 <td><strong>Identificador</strong></td>
                 <td><code>identifier</code> o <code>visitor_uuid</code></td>
                 <td>
-                    Si <code>identifier</code> no es nulo, mostrar el valor completo.<br>
-                    Si es nulo (actualmente siempre ocurre), mostrar los primeros 8 caracteres de <code>visitor_uuid</code> seguido de &ldquo;...&rdquo; con un tooltip que diga &ldquo;Visitante an&oacute;nimo&rdquo;.<br>
-                    <span class="tag art-a">Identity Stitching pendiente</span> El backend fuerza <code>identifier = null</code> hasta que se implemente la tabla <code>person_visitor_uuids</code>. El frontend debe dejar la l&oacute;gica de UI preparada para cuando llegue el valor real.
+                    Si <code>identifier</code> contiene un email (capturas <code>live_portal</code>), mostrar el valor completo.<br>
+                    Para capturas <code>live_widget</code>, <code>identifier</code> llega como el <code>visitor_uuid</code> seudonimizado: mostrar los primeros 8 caracteres seguido de &ldquo;...&rdquo; con un tooltip que diga &ldquo;Visitante an&oacute;nimo&rdquo;.<br>
+                    <span class="tag art-a">Identity Stitching implementado</span> La vinculaci&oacute;n <code>visitor_uuid</code> &harr; usuario de la Pyme se registra v&iacute;a <code>POST /api/widget/{uuid}/identity-sync</code> (HMAC-SHA256 con <code>integration_secret</code>, integraci&oacute;n backend: el frontend Angular no llama este endpoint). La resoluci&oacute;n del <code>identifier</code> a la identidad real en el ledger a&uacute;n no est&aacute; conectada al flujo de captura: mantener la l&oacute;gica de UI preparada para cuando llegue el valor real.
                 </td>
             </tr>
             <tr>
@@ -1164,7 +1164,7 @@ banner.innerHTML = <span class="string">`
     </div>
 
     <div class="nota">
-        <strong>Tipos de datos:</strong> <code>purposes</code> es un objeto <code>{ &quot;slug&quot;: boolean }</code>. <code>identifier</code> es <code>null</code> hoy (Identity Stitching pendiente). <code>consent_occurred_at</code> y <code>recorded_at</code> vienen en ISO 8601 (UTC). <code>policy_hash</code> es el integrity_hash de la pol&iacute;tica vigente al momento del consentimiento. <code>proof_hash</code> es SHA-256 del payload can&oacute;nico.
+        <strong>Tipos de datos:</strong> <code>purposes</code> es un objeto <code>{ &quot;slug&quot;: boolean }</code>. <code>identifier</code> trae el <code>visitor_uuid</code> seudonimizado en capturas <code>live_widget</code> y el email del destinatario en capturas <code>live_portal</code> (Identity Stitching implementado como endpoint de integraci&oacute;n backend; la resoluci&oacute;n a identidad real en el ledger est&aacute; pendiente de conexi&oacute;n). <code>consent_occurred_at</code> y <code>recorded_at</code> vienen en ISO 8601 (UTC). <code>policy_hash</code> es el integrity_hash de la pol&iacute;tica vigente al momento del consentimiento. <code>proof_hash</code> es SHA-256 del payload can&oacute;nico.
     </div>
 </div>
 
@@ -1410,6 +1410,7 @@ banner.innerHTML = <span class="string">`
         </tbody>
     </table>
     <p>Para 404/409/410 del POST: leer <code>message</code> del JSON de error (misma estructura que GET).</p>
+    <div class="nota">Este POST es una ruta p&uacute;blica excluida de la verificaci&oacute;n CSRF del backend (<code>api/portal/*</code>): no requiere token <code>X-CSRF-TOKEN</code> ni cookie <code>XSRF-TOKEN</code>. Solo bastan <code>Content-Type</code> y <code>Accept</code> en <code>application/json</code>.</div>
 </div>
 
 <h2 id="portal-flujo">Flujo completo y consideraciones técnicas</h2>
@@ -1480,7 +1481,7 @@ const payload = {
 
     <h3>Consideraciones adicionales</h3>
     <ul>
-        <li><strong>CORS:</strong> El backend ya configura <code>Access-Control-Allow-Origin</code> para <code>http://localhost:4200</code> y <code>https://nodoxspd.cl</code>. No requiere headers especiales del frontend.</li>
+        <li><strong>CORS:</strong> El backend ya configura <code>Access-Control-Allow-Origin</code> para <code>http://localhost:4200</code>, <code>http://localhost:4201</code>, <code>https://nodoxspd.cl</code> y <code>https://spd.nodox.cl</code>. No requiere headers especiales del frontend.</li>
         <li><strong>Rate limiting:</strong> 60 req/min por IP. No spammear reintentos en errores 4xx/5xx.</li>
         <li><strong>Correo transaccional:</strong> Los correos del Portal Cautivo son transaccionales (no marketing). Configurar remitente verificado y prioridad alta en el proveedor de email (Resend, SES, etc.).</li>
         <li><strong>No persistir el token:</strong> El token va solo en la URL. No guardarlo en localStorage ni sessionStorage.</li>

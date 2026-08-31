@@ -1,82 +1,72 @@
 API Reference Frontend — Módulo 2 — NodoxSPD
 
 
-
 &#9776;
 
 
-
-
-
-
 &#128218; Documentación
+
+
 Frontend — API Reference
 
 
 &larr; Volver al índice
 
 
-
-
 Widget Público
 
+
 - GET /api/widget/{uuid}/config
+
 
 - POST /api/widget/{uuid}/consent
 
 
-
-
-
 Panel — Gestión de Envíos
+
 
 - GET /api/panel/pending-consents
 
+
 - POST /api/panel/pending-consents
+
 
 - GET /api/panel/batches/{id}
 
 
-
-
-
 Panel — Bóveda de Auditoría
+
 
 - GET /api/panel/consent-logs
 
 
-
-
-
 Panel — Configuración
+
 
 - GET /api/panel/consent-purposes
 
+
 - POST /api/panel/purposes/preview
 
+
 - PATCH /api/panel/companies/domains
+
 
 - PATCH /api/panel/companies/widget-config
 
 
-
-
-
 Portal Cautivo
 
+
 - GET /api/portal/consent/{token}
+
 
 - POST /api/portal/consent/{token}/confirm
 
 
-
-
-
-
-
-
-
 API Reference &mdash; Frontend Módulo 2
+
+
 Trece endpoints para la integración frontend del Trust Widget: configuración del banner, registro de consentimiento, catálogo de fines legales, preview dinámico de fines activos, generación de enlaces de firma (single/batch), sondeo de progreso de lotes, listado de consents pendientes, bóveda de auditoría, gestión de dominios CORS, personalización visual, Portal Cautivo (consulta + firma) y políticas publicadas.
 
 
@@ -86,6 +76,7 @@ Widget: Público (sin auth) &middot; Panel: Sanctum
 
 
 Endpoints
+
 
 01GET Configuración del widget/api/widget/{company_public_uuid}/config
 02POST Registrar consentimiento/api/widget/{company_public_uuid}/consent
@@ -101,10 +92,8 @@ Endpoints
 12GET Sondeo de progreso de lote/api/panel/batches/{id}
 
 
-
-
-
 Widget Público
+
 
 GET
 
@@ -113,20 +102,14 @@ Configuración del widget
 /api/widget/{company_public_uuid}/config
 
 
-
-
 Propósito / Cuándo se usa
 
 
 Es el punto de partida del flujo del widget. Se llama una sola vez al cargar la página del sitio de la Pyme, inmediatamente después de que el script widget.js se inicializa. Devuelve toda la configuración necesaria para renderizar el banner de cookies: propósitos activos, colores, posición, textos legales y el hash de la política para vincular el consentimiento posterior.
 
 
-
-
-
 GET
 /api/widget/{company_public_uuid}/config
-
 
 
 Headers requeridos
@@ -140,10 +123,6 @@ Accept	string	application/json Requerido
 Origin	string	Dominio del sitio cliente. Validado por DynamicCorsMiddleware. Requerido
 
 
-
-
-
-
 Path parameters
 
 
@@ -151,10 +130,6 @@ Parámetro	Tipo	Descripción
 
 
 company_public_uuid	UUID v4	Identificador público de la empresa. Se resuelve siempre por este campo, nunca por ID numérico interno. Requerido
-
-
-
-
 
 
 Respuesta exitosa 200 OK
@@ -170,7 +145,6 @@ Cache-Control	public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400	
 ETag	"{public_uuid}-{policy_hash}"	Invalidación automática si cambia la política
 
 Vary	Accept-Encoding	Variación por codificación (gzip, br)
-
 
 
 {
@@ -189,16 +163,16 @@ Vary	Accept-Encoding	Variación por codificación (gzip, br)
 },
 "purposes": {
 "necessary_technical": {
-"label": "Cookies técnicas y necesarias",
-"description": "Indispensables para el funcionamiento básico del sitio...",
+"label": "Funcionamiento del sitio",
+"description": "Permite el funcionamiento básico del sitio: mantener tu sesión activa, recordar el contenido de tu carrito y proteger contra fraudes...",
 "required": true,
 "default": true,
 "legal_basis": "legitimate_interest",
 "widget_action": null
 },
 "analytics_behavior": {
-"label": "Análisis de visitas y comportamiento",
-"description": "Nos permiten entender cómo navegas por el sitio...",
+"label": "Estadísticas de visitas",
+"description": "Recopilamos información anónima sobre cómo navegas por el sitio...",
 "required": false,
 "default": false,
 "legal_basis": "consent",
@@ -211,6 +185,7 @@ Vary	Accept-Encoding	Variación por codificación (gzip, br)
 "policy_url": "https://cdn.tudominio.com/policies/a1b2c3...html"
 }
 }
+
 Campos de la respuesta
 
 
@@ -238,10 +213,6 @@ purposes.{slug}.widget_action	string | null	Acción técnica que el widget debe 
 legal_texts	object	banner_title, banner_body, policy_url.
 
 
-
-
-
-
 Respuestas de error
 
 
@@ -257,24 +228,19 @@ Código	Causa	Ejemplo de mensaje
 429	Rate limit excedido (5 IP, 60 empresa, 10 visitor req/min)	{"message":"Too Many Attempts."}
 
 
-
-
-
-
 Notas de seguridad
 
 
 - La respuesta nunca incluye IDs internos (id, company_id, user_id). Solo datos públicos.
 
+
 - No se envía Set-Cookie para no romper el caché de Cloudflare.
+
 
 - El widget debe usar el policy_hash recibido al construir el payload del consentimiento.
 
+
 - Si la respuesta es 404, el widget no debe renderizar el banner.
-
-
-
-
 
 
 POST
@@ -284,20 +250,14 @@ Registrar consentimiento
 /api/widget/{company_public_uuid}/consent
 
 
-
-
 Propósito / Cuándo se usa
 
 
 Se invoca cuando el visitante hace clic en Aceptar, Rechazar o Guardar preferencias. El widget envía los fines aceptados como booleans + timestamp + policy_hash. El ledger consent_logs es inmutable. El endpoint es idempotente: reenvíos del mismo payload retornan 200.
 
 
-
-
-
 POST
 /api/widget/{company_public_uuid}/consent
-
 
 
 Headers requeridos
@@ -313,10 +273,6 @@ Accept	string	application/json Requerido
 Origin	string	Dominio del sitio. Validado por DynamicCorsMiddleware. Requerido
 
 
-
-
-
-
 Path parameters
 
 
@@ -324,10 +280,6 @@ Parámetro	Tipo	Descripción
 
 
 company_public_uuid	UUID v4	Va en la URL para que el middleware CORS resuelva la empresa en preflight OPTIONS (sin body). Requerido
-
-
-
-
 
 
 Body params
@@ -345,10 +297,7 @@ timestamp	string (ISO-8601)	required, date_format:Y-m-d\TH:i:s\Z	UTC estricto. V
 purposes	object	required, array; slugs: sometimes, boolean	Mapa dinámico según fines activos de /config. necessary_technical se fuerza a true en backend.
 
 
-
 El timestamp se valida contra ventana de &plusmn;5 min futuro / &minus;1 h pasado (StoreConsentRequest withValidator).
-
-
 
 
 Ejemplo de request
@@ -366,7 +315,6 @@ Ejemplo de request
 }
 
 
-
 Respuesta exitosa 201 Created
 
 {
@@ -379,10 +327,10 @@ Respuesta exitosa 201 Created
 }
 
 
-
 Idempotencia 200 OK
 
 Mismo proof_hash = UNIQUE en BD = 200 con already_recorded. Comportamiento esperado para reenvíos.
+
 
 {
 "status": true,
@@ -391,7 +339,6 @@ Mismo proof_hash = UNIQUE en BD = 200 con already_recorded. Comportamiento esper
 "status": "already_recorded"
 }
 }
-
 
 
 Respuestas de error
@@ -411,31 +358,25 @@ Código	Causa	Ejemplo de mensaje
 500	Error interno BD (no confundir con duplicado)	{"status":false,"message":"Error al registrar el consentimiento.","data":null}
 
 
-
-
-
-
 Notas de seguridad
 
 
 - proof_hash = SHA-256 del payload canonizado (ksort + JSON_UNESCAPED_SLASHES). Determinista.
 
+
 - 200 + already_recorded no es error. El widget puede tratarlo como consentimiento exitoso.
+
 
 - necessary_technical siempre true en backend, incluso si el cliente envía false.
 
+
 - Slugs no activos se ignoran silenciosamente.
+
 
 - No exponer proof_hash en URL ni en console.log en producción.
 
 
-
-
-
-
 Panel — Gestión de Envíos
-
-
 
 
 GET
@@ -445,23 +386,14 @@ Listar consents pendientes
 /api/panel/pending-consents
 
 
-
-
-
-
 Propósito / Cuándo se usa
 
 
 Lista los envíos de firma pendientes de la empresa autenticada, ordenados por created_at descendente. Se usa en el panel Angular en la vista "Gestión de Envíos" para mostrar una tabla con todos los PendingConsent registrados, su estado actual y acciones disponibles (re-enviar, ver detalle). El email se descifra en memoria vía un accessor del modelo.
 
 
-
-
-
-
 GET
 /api/panel/pending-consents
-
 
 
 Headers requeridos
@@ -477,15 +409,12 @@ Accept	string	application/json Requerido
 Cookie	string	Session cookie enviada automáticamente por el navegador. Requiere withCredentials: true en el HttpClient. Requerido
 
 
-
-
 Autenticación: Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con GET /sanctum/csrf-cookie antes de llamar a este endpoint. Incluir withCredentials: true en todas las llamadas HTTP del panel. No usar Bearer token — las cookies de sesión se envían automáticamente.
 
 
 // En app.config.ts o el interceptor HTTP:
 provideHttpClient(withFetch(), withInterceptors([...])),
 // Y asegurarse de enviar credenciales (o configurarlo globalmente en el interceptor)
-
 
 
 Query params
@@ -499,10 +428,6 @@ status	string|null	todos	Filtrar por estado: pending, confirmed, expired, bounce
 per_page	int	20	Resultados por página. Máximo 100.
 
 page	int	1	Número de página.
-
-
-
-
 
 
 Respuesta exitosa 200 OK
@@ -530,7 +455,6 @@ Respuesta exitosa 200 OK
 }
 
 
-
 Campos de la respuesta
 
 
@@ -552,10 +476,6 @@ expires_at	datetime	Fecha de expiración del enlace (7 días desde creación).
 created_at	datetime	Fecha de creación.
 
 
-
-
-
-
 Respuestas de error
 
 
@@ -567,25 +487,22 @@ Código	Causa	Ejemplo de mensaje
 422	Parámetro status inválido	{"message":"El campo status seleccionado no es válido."}
 
 
-
-
-
-
 Notas de implementación
 
 
 - El email viaja en texto plano en la respuesta. El backend lo descifra con Crypt::decryptString() en el accessor del modelo.
 
+
 - Ordenación fija: created_at DESC. No se aceptan parámetros de ordenamiento.
+
 
 - Resultados paginados (20 por defecto, máx. 100).
 
+
 - Scoped al tenant: solo devuelve registros de la empresa del usuario autenticado.
 
+
 - Más detalle en Característica C de la Guía Conceptual.
-
-
-
 
 
 UI — Tabla de envíos
@@ -607,11 +524,7 @@ Expira	item.expires_at | date:'short'	Resaltar en rojo si faltan < 24h. Mostrar 
 Acciones	Botones	"Re-enviar" (solo si pending), "Ver detalle".
 
 
-
 Estado vacío: Mostrar "No hay envíos pendientes" con ilustración simple y botón "Nuevo envío" que abre el wizard de firma (ep4).
-
-
-
 
 
 Ejemplo de código (servicio Angular)
@@ -631,21 +544,11 @@ return this.http.get&ltPaginatedResponse&ltPendingConsent>>(
 }
 
 
-
-
-
-
-
-
 POST
 
 Generar enlace de firma
 
 /api/panel/pending-consents
-
-
-
-
 
 
 Propósito / Cuándo se usa
@@ -654,13 +557,8 @@ Propósito / Cuándo se usa
 Crea un registro PendingConsent con el email del destinatario cifrado (AES-256-CBC mediante Crypt::encryptString()) y despacha un Job en cola que envía el correo transaccional con la URL mágica del Portal Cautivo. El enlace expira en 7 días. Se usa desde el panel Angular cuando el admin quiere enviar un documento a un trabajador o lead para su firma digital.
 
 
-
-
-
-
 POST
 /api/panel/pending-consents
-
 
 
 Headers requeridos
@@ -676,15 +574,12 @@ Accept	string	application/json Requerido
 Cookie	string	Session cookie enviada automáticamente por el navegador. Requiere withCredentials: true en el HttpClient. Requerido
 
 
-
-
 Autenticación: Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con GET /sanctum/csrf-cookie antes de llamar a este endpoint. Incluir withCredentials: true en todas las llamadas HTTP del panel. No usar Bearer token — las cookies de sesión se envían automáticamente.
 
 
 // En app.config.ts o el interceptor HTTP:
 provideHttpClient(withFetch(), withInterceptors([...])),
 // Y asegurarse de enviar credenciales (o configurarlo globalmente en el interceptor)
-
 
 
 Body params
@@ -700,10 +595,6 @@ emails.*	string	email, max:255	Email individual válido.
 company_policy_id	integer	required, integer, exists:company_policies,id	ID autoincremental de la política a firmar. Debe obtenerse del listado de políticas publicadas (GET /api/company/policies?status=published). Requerido
 
 
-
-
-
-
 Validaciones de seguridad
 
 
@@ -717,10 +608,6 @@ Estado de política	La política debe estar published. No se aceptan borradores 
 Unicidad parcial	Índice pending_uniqueness_key previene duplicados activos para el mismo pii_hash + company_policy_id. En modo single, los duplicados se reportan como already_pending. En modo batch, la deduplicación ocurre asincrónicamente en el Job.	Las inserciones duplicadas se omiten (no fallan).
 
 
-
-
-
-
 Ejemplo de request
 
 {
@@ -730,7 +617,6 @@ Ejemplo de request
 ],
 "company_policy_id": 20
 }
-
 
 
 Respuesta — Modo single (1 email) 201 Created
@@ -749,7 +635,6 @@ Si se envía exactamente 1 correo y no existe un pending vigente, se retorna 201
 }
 
 
-
 200 OK &mdash; Modo single (ya existe vigente)
 
 Si el correo ya tiene un pending activo para esa política, se retorna 200 con status: "already_pending".
@@ -764,7 +649,6 @@ Si el correo ya tiene un pending activo para esa política, se retorna 200 con s
 "message": "Enlace ya enviado previamente, aún vigente."
 }
 }
-
 
 
 202 Accepted &mdash; Modo batch (2+ emails)
@@ -782,9 +666,8 @@ Si se envían 2 o más correos, el backend crea un lote (JobBatch) y retorna 202
 "status": "queued"
 }
 }
+
 El frontend debe usar batch_id para sondear el progreso vía GET /api/panel/batches/{batch_id} (ver endpoint 12).
-
-
 
 
 Respuestas de error
@@ -800,10 +683,6 @@ Código	Causa	Ejemplo de mensaje
 422	Validación: emails vacío, excede 500 o algún email inválido	Errores de validación estándar de Laravel
 
 429	Más de 10 requests POST por minuto (throttle)	{"message":"Too Many Attempts."}
-
-
-
-
 
 
 Flujo interno
@@ -832,10 +711,7 @@ Flujo interno
 6[Background — Queue Workers] Cada Job descifra el email, verifica duplicados via pii_hash, crea PendingConsent y despacha ConsentLinkMail.
 
 
-
 El 201 confirma que al menos un registro se creó y su Job se encoló, no que los correos ya llegaron. El envío es asincrónico vía la cola de base de datos.
-
-
 
 
 Ejemplo de código (servicio Angular)
@@ -887,32 +763,28 @@ this.showToast(`Lote completado: ${p.processed_jobs}/${p.total_jobs} procesados,
 }
 
 
-
 Notas de implementación
 
 
 - Throttle: máximo 10 requests POST por minuto por usuario.
 
+
 - El company_policy_id debe obtenerse del listado de políticas publicadas (GET /api/company/policies?status=published). Solo políticas publicadas son elegibles.
+
 
 - El contrato de respuesta depende de la cantidad de emails: 1 correo &rarr; modo single (201/200), 2+ correos &rarr; modo batch (202 con batch_id).
 
+
 - En modo batch, usar GET /api/panel/batches/{batch_id} para sondear el progreso del lote. No hay sent_count/skipped_count &mdash; la deduplicación ocurre async en el Job.
 
+
 - Los emails duplicados dentro del mismo array no se procesan dos veces.
+
 
 - Más detalle en Característica F de la Guía Conceptual.
 
 
-
-
-
-
-
-
 Panel — Bóveda de Auditoría
-
-
 
 
 GET
@@ -922,27 +794,17 @@ Bóveda de auditoría
 /api/panel/consent-logs
 
 
-
-
-
-
 Propósito / Cuándo se usa
 
 
 Registro inmutable de toda acción de consentimiento realizada por trabajadores y leads: firma (aceptar/rechazar), expiración automática, revocación. Cada registro incluye un proof hash (SHA-256 de 64 caracteres hex) que encadena cada entrada con su predecesora (previous_hash), formando una cadena de integridad tipo blockchain. Se usa en el panel Angular en la vista "Bóveda de Auditoría" para consulta, exportación y verificación forense.
 
 
-
-
 Inmutabilidad: Los registros en consent_logs no pueden ser modificados ni eliminados, ni por el frontend ni por el backend. Solo lectura (GET). Cualquier intento de DELETE/PUT/PATCH devuelve 405 Method Not Allowed.
-
-
-
 
 
 GET
 /api/panel/consent-logs
-
 
 
 Headers requeridos
@@ -958,15 +820,12 @@ Accept	string	application/json Requerido
 Cookie	string	Session cookie enviada automáticamente por el navegador. Requiere withCredentials: true en el HttpClient. Requerido
 
 
-
-
 Autenticación: Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con GET /sanctum/csrf-cookie antes de llamar a este endpoint. Incluir withCredentials: true en todas las llamadas HTTP del panel. No usar Bearer token — las cookies de sesión se envían automáticamente.
 
 
 // En app.config.ts o el interceptor HTTP:
 provideHttpClient(withFetch(), withInterceptors([...])),
 // Y asegurarse de enviar credenciales (o configurarlo globalmente en el interceptor)
-
 
 
 Query params
@@ -988,10 +847,6 @@ search	string|null	ninguno	Búsqueda global en email del titular (parcial, case-
 per_page	int	15	Resultados por página. Máximo 100.
 
 page	int	1	Número de página.
-
-
-
-
 
 
 Respuesta exitosa 200 OK
@@ -1024,7 +879,6 @@ Respuesta exitosa 200 OK
 }
 
 
-
 Campos de la respuesta
 
 
@@ -1050,10 +904,6 @@ metadata	object	Metadatos contextuales: IP, user-agent, etc.
 created_at	datetime	Timestamp de la acción.
 
 
-
-
-
-
 Respuestas de error
 
 
@@ -1065,27 +915,25 @@ Código	Causa	Ejemplo de mensaje
 422	Parámetro de filtro inválido	{"message":"El campo date_from no es una fecha válida."}
 
 
-
-
-
-
 Notas de implementación
 
 
 - Inmutabilidad: consent_logs es solo lectura. No expone DELETE, PUT ni PATCH. El frontend no debe ofrecer acciones de edición/eliminación.
 
+
 - El proof hash se genera en el backend con hash('sha256', ...) sobre los campos del registro concatenados.
+
 
 - La cadena de integridad se verifica comparando previous_hash de cada registro con el proof_hash del registro anterior.
 
+
 - Paginación estándar (15 por defecto, máx. 100). Orden fijo: created_at DESC.
+
 
 - Scoped al tenant: solo devuelve registros de la empresa del usuario autenticado.
 
+
 - Más detalle en Característica G de la Guía Conceptual.
-
-
-
 
 
 UI — Tabla de auditoría
@@ -1107,22 +955,13 @@ Proof Hash	item.proof_hash	Mostrar truncado (abc123...def) + botón copiar. Tool
 Fecha	item.created_at | date:'medium'	Formato fecha local con hora.
 
 
-
 Filtros: Input de fecha desde/hasta, campo de búsqueda por email, selector de estado. Los filtros se aplican vía query params y actualizan la tabla vía nueva petición HTTP (no filtro en cliente).
 
 
 Estado vacío: Mostrar "No se encontraron registros de auditoría" con ilustración simple. Si hay filtros activos, mostrar botón "Limpiar filtros".
 
 
-
-
-
-
-
-
 Panel — Configuración
-
-
 
 
 GET
@@ -1132,23 +971,14 @@ Catálogo de fines legales
 /api/panel/consent-purposes
 
 
-
-
-
-
 Propósito / Cuándo se usa
 
 
 Se usa en el panel Angular cuando el usuario llena campos "Otro" con requires_purpose_selection: true en el wizard. Muestra un selector de checkboxes con los fines activos. La selección se guarda en wizard_data[{field_key}_purposes] y el backend los resuelve con WizardPurposeResolverService (regla 3).
 
 
-
-
-
-
 GET
 /api/panel/consent-purposes
-
 
 
 Headers requeridos
@@ -1162,15 +992,12 @@ Accept	string	application/json Requerido
 Cookie	string	Session cookie enviada automáticamente por el navegador. Requiere withCredentials: true en el HttpClient. Requerido
 
 
-
-
 Autenticación: Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con GET /sanctum/csrf-cookie antes de llamar a este endpoint. Incluir withCredentials: true en todas las llamadas HTTP del panel. No usar Bearer token — las cookies de sesión se envían automáticamente.
 
 
 // En app.config.ts o el interceptor HTTP:
 provideHttpClient(withFetch(), withInterceptors([...])),
 // Y asegurarse de enviar credenciales (o configurarlo globalmente en el interceptor)
-
 
 
 Respuesta exitosa 200 OK
@@ -1183,21 +1010,20 @@ Respuesta exitosa 200 OK
 "id": 1,
 "slug": "necessary_technical",
 "category": "gestion_general",
-"label": "Cookies técnicas y necesarias",
-"description": "Indispensables para el funcionamiento básico del sitio...",
+"label": "Funcionamiento del sitio",
+"description": "Permite el funcionamiento básico del sitio: mantener tu sesión activa, recordar el contenido de tu carrito y proteger contra fraudes...",
 "requires_consent": false
 },
 {
 "id": 2,
 "slug": "analytics_behavior",
 "category": "analisis_comportamiento",
-"label": "Análisis de visitas y comportamiento",
-"description": "Nos permiten entender cómo navegas por el sitio...",
+"label": "Estadísticas de visitas",
+"description": "Recopilamos información anónima sobre cómo navegas por el sitio...",
 "requires_consent": true
 }
 ]
 }
-
 
 
 Campos de la respuesta
@@ -1219,10 +1045,6 @@ description	string	Texto explicativo.
 requires_consent	bool	true = toggle editable. false = obligatorio, deshabilitado.
 
 
-
-
-
-
 Respuestas de error
 
 
@@ -1232,28 +1054,19 @@ Código	Causa	Ejemplo de mensaje
 401	No autenticado (falta Authorization o token inválido)	{"message":"Unauthenticated."}
 
 
-
-
-
-
 Notas de implementación
 
 
 - Solo se usa en el panel Angular, no en el widget público.
 
+
 - Devuelve todos los fines activos del catálogo global (13 slugs), no solo los que aplican a la empresa.
+
 
 - Para el widget, los fines activos se resuelven dinámicamente con WizardPurposeResolverService (3 reglas).
 
+
 - Más detalle en Característica B de la Guía Conceptual.
-
-
-
-
-
-
-
-
 
 
 PATCH
@@ -1263,23 +1076,14 @@ Dominios autorizados CORS
 /api/panel/companies/domains
 
 
-
-
-
-
 Propósito / Cuándo se usa
 
 
 Actualiza la lista blanca de dominios donde la Pyme tiene embebido el Trust Widget. El middleware cors.dynamic valida el header Origin de cada request del widget contra esta lista. Sin esta configuración, el widget no puede comunicarse con el backend desde el sitio de la Pyme (CORS denegado).
 
 
-
-
-
-
 PATCH
 /api/panel/companies/domains
-
 
 
 Headers requeridos
@@ -1295,10 +1099,6 @@ Accept	string	application/json Requerido
 Cookie	string	Session cookie (Sanctum SPA). Requiere withCredentials: true. Requerido
 
 
-
-
-
-
 Body params
 
 
@@ -1310,10 +1110,6 @@ domains	array	present, array, max:10	Array de dominios FQDN. Enviar [] para limp
 domains.*	string	regex FQDN válido	Sin http://, sin rutas, sin IPs. Ej: mitienda.cl.
 
 
-
-
-
-
 Ejemplo de request
 
 {
@@ -1322,7 +1118,6 @@ Ejemplo de request
 "checkout.mitienda.cl"
 ]
 }
-
 
 
 Respuesta exitosa 200 OK
@@ -1339,7 +1134,6 @@ Respuesta exitosa 200 OK
 }
 
 
-
 Respuestas de error
 
 
@@ -1351,28 +1145,19 @@ Código	Causa	Ejemplo de mensaje
 422	Validación: dominio inválido, más de 10 dominios	{"message":"El campo domains.0 no es un dominio válido."}
 
 
-
-
-
-
 Notas de implementación
 
 
 - Los dominios se cachean en el middleware cors.dynamic por 12h. El cambio se refleja con el próximo miss de caché.
 
+
 - Máximo 10 dominios por empresa. Para limpiar la lista, enviar {"domains": []}.
+
 
 - Validación FQDN: no acepta protocolos (http://), rutas (/path) ni direcciones IP.
 
+
 - Más detalle en Característica D de la Guía Conceptual.
-
-
-
-
-
-
-
-
 
 
 PATCH
@@ -1382,23 +1167,14 @@ Personalizar widget visual
 /api/panel/companies/widget-config
 
 
-
-
-
-
 Propósito / Cuándo se usa
 
 
 Actualiza la configuración visual del Trust Widget de la Pyme: color primario, logo, textos del banner y etiquetas de botones. Usa deep merge recursivo (array_replace_recursive) para preservar llaves anidadas existentes (ej: legal_texts.policy_url) que no se envíen en el request.
 
 
-
-
-
-
 PATCH
 /api/panel/companies/widget-config
-
 
 
 Headers requeridos
@@ -1412,10 +1188,6 @@ Content-Type	string	application/json Requerido
 Accept	string	application/json Requerido
 
 Cookie	string	Session cookie (Sanctum SPA). Requiere withCredentials: true. Requerido
-
-
-
-
 
 
 Body params (todos opcionales)
@@ -1439,10 +1211,6 @@ button_accept_text	string|null	string, max:50	Texto del botón "Aceptar".
 button_reject_text	string|null	string, max:50	Texto del botón "Rechazar".
 
 
-
-
-
-
 Ejemplo de request
 
 {
@@ -1455,7 +1223,6 @@ Ejemplo de request
 "button_accept_text": "Aceptar todas",
 "button_reject_text": "Solo necesarias"
 }
-
 
 
 Respuesta exitosa 200 OK
@@ -1482,7 +1249,6 @@ Devuelve el objeto completo de widget_config después del merge, incluyendo llav
 }
 
 
-
 Respuestas de error
 
 
@@ -1494,31 +1260,22 @@ Código	Causa	Ejemplo de mensaje
 422	Validación: color inválido, URL mal formada	{"message":"El campo primary_color no es un color hex válido."}
 
 
-
-
-
-
 Notas de implementación
 
 
 - Todos los campos son opcionales. Se envía solo lo que se quiere cambiar.
 
+
 - Deep merge: array_replace_recursive preserva llaves anidadas no enviadas (ej: legal_texts.policy_url).
 
+
 - Valores null se filtran antes del merge para no sobrescribir configuraciones existentes.
+
 
 - Más detalle en Característica E de la Guía Conceptual.
 
 
-
-
-
-
-
-
 Portal Cautivo
-
-
 
 
 GET
@@ -1528,23 +1285,14 @@ Portal Cautivo — datos de firma
 /api/portal/consent/{token}
 
 
-
-
-
-
 Propósito / Cuándo se usa
 
 
 Punto de entrada del Portal Cautivo. Se invoca cuando el destinatario hace clic en el enlace mágico de su correo transaccional. Devuelve los datos de la empresa, la política legal, el email del destinatario y los propósitos activos para renderizar la pantalla de firma. Sin autenticación.
 
 
-
-
-
-
 GET
 /api/portal/consent/{token}
-
 
 
 Path parameters
@@ -1556,10 +1304,7 @@ Parámetro	Tipo	Descripción
 token	string (hex 64)	Token criptográfico aleatorio de 64 caracteres hexadecimales. Identifica la empresa + política + destinatario. No enumerable. Requerido
 
 
-
 El token va solo en la URL. No debe persistirse en localStorage ni sessionStorage por seguridad.
-
-
 
 
 Respuesta exitosa 200 OK
@@ -1579,16 +1324,16 @@ Respuesta exitosa 200 OK
 },
 "purposes": {
 "necessary_technical": {
-"label": "Cookies técnicas y necesarias",
-"description": "Indispensables para el funcionamiento...",
+"label": "Funcionamiento del sitio",
+"description": "Permite el funcionamiento básico del sitio...",
 "required": true,
 "default": true,
 "legal_basis": "legitimate_interest",
 "widget_action": null
 },
 "analytics_behavior": {
-"label": "Análisis de visitas y comportamiento",
-"description": "Nos permiten entender cómo navegas...",
+"label": "Estadísticas de visitas",
+"description": "Recopilamos información anónima sobre tu navegación...",
 "required": false,
 "default": false,
 "legal_basis": "consent",
@@ -1596,6 +1341,7 @@ Respuesta exitosa 200 OK
 }
 }
 }
+
 
 Nota: La estructura de cada propósito en el Portal Cautivo es idéntica a la del endpoint GET /api/widget/{company_public_uuid}/config. El mismo código que renderiza los toggles del Trust Widget puede reutilizarse en el Portal Cautivo.
 
@@ -1623,10 +1369,6 @@ recipient.email	string | null	Email del destinatario (PII descifrado en memoria,
 purposes	object	Diccionario slug &rarr; {label, description, required, default, legal_basis}. No es un array, iterar con Object.entries().
 
 
-
-
-
-
 Manejo de estados HTTP (errores)
 
 
@@ -1640,10 +1382,7 @@ Código	Significado	Mensaje JSON
 410	Token expirado	{"status":false,"message":"El enlace ha expirado. Solicita uno nuevo.","data":null}
 
 
-
 El frontend debe leer y mostrar el campo message del JSON de error, no hardcodear textos. Cada código HTTP tiene su propia UI (error, éxito preventivo, expiración).
-
-
 
 
 Notas de seguridad
@@ -1651,19 +1390,14 @@ Notas de seguridad
 
 - El token es criptográficamente aleatorio (64 chars hex), no enumerable ni predecible.
 
+
 - El PII del destinatario se descifra en memoria, nunca se loggea ni se expone en URLs.
+
 
 - No guardar el token en localStorage ni sessionStorage.
 
+
 - Rate limiting: 60 req/min por IP.
-
-
-
-
-
-
-
-
 
 
 POST
@@ -1673,23 +1407,14 @@ Portal Cautivo — confirmar firma
 /api/portal/consent/{token}/confirm
 
 
-
-
-
-
 Propósito / Cuándo se usa
 
 
 Procesa la firma del destinatario. Crea un registro inmutable en consent_logs (capture_method = live_portal), marca el token como confirmado y devuelve un proof_hash como recibo criptográfico. Idempotente: reenvíos retornan 409.
 
 
-
-
-
-
 POST
 /api/portal/consent/{token}/confirm
-
 
 
 Headers requeridos
@@ -1703,10 +1428,6 @@ Content-Type	string	application/json Requerido
 Accept	string	application/json Requerido
 
 
-
-
-
-
 Path parameters
 
 
@@ -1714,10 +1435,6 @@ Parámetro	Tipo	Descripción
 
 
 token	string (hex 64)	Mismo token recibido en el GET. Identifica la sesión de firma. Requerido
-
-
-
-
 
 
 Body params
@@ -1731,10 +1448,6 @@ purposes	object	required, array; slugs: boolean	Diccionario slug &rarr; booleano
 visitor_uuid	UUID v4	required, uuid	UUID anónimo del dispositivo, persistido en localStorage. Generado con crypto.randomUUID().
 
 
-
-
-
-
 Ejemplo de request
 
 {
@@ -1744,7 +1457,6 @@ Ejemplo de request
 },
 "visitor_uuid": "550e8400-e29b-41d4-a716-446655440000"
 }
-
 
 
 Respuesta exitosa 201 Created
@@ -1757,7 +1469,6 @@ Respuesta exitosa 201 Created
 "proof_hash": "ee76856e57b8ecd5eca0f6d22fa7311cc33398440921f7af8142e1c966747320"
 }
 }
-
 
 
 Manejo de estados HTTP
@@ -1777,10 +1488,7 @@ Código	Significado	UI / Mensaje
 500	Error interno BD	Mensaje genérico, reintentar
 
 
-
 El backend retorna el mensaje exacto en message. El frontend debe leerlo y mostrarlo, no hardcodear textos distintos.
-
-
 
 
 Notas de implementación
@@ -1788,27 +1496,29 @@ Notas de implementación
 
 - Idempotencia: si el token ya fue confirmado, retorna 409 (no 200). El frontend muestra pantalla de "ya firmado".
 
+
 - Recarga de página: si el usuario recarga después de firmar, el GET retorna 409. El frontend debe mostrar pantalla de éxito preventivo.
+
 
 - Fines con required=true se fuerzan a true en backend aunque el frontend envíe false (defensa en profundidad).
 
+
 - Slugs no activos se ignoran silenciosamente.
+
 
 - El proof_hash debe mostrarse al usuario como "Código de recibo de firma" con botón de copiar al portapapeles.
 
+
 - Rate limiting: 60 req/min por IP. No spammear reintentos.
+
+
+- Rutas públicas sin CSRF: el backend excluye api/portal/* y api/webhook/* de la verificación CSRF. El POST de firma no requiere token X-CSRF-TOKEN ni cookie XSRF-TOKEN.
+
 
 - Los correos enviados desde el Portal Cautivo son transaccionales (no marketing). Deben configurarse con un remitente verificado y prioridad alta en el proveedor de email transactional (Resend, SES, etc.).
 
+
 - Más detalle en Característica F de la Guía Conceptual.
-
-
-
-
-
-
-
-
 
 
 POST
@@ -1818,23 +1528,14 @@ Preview de fines legales activos
 /api/panel/purposes/preview
 
 
-
-
-
-
 Propósito / Cuándo se usa
 
 
 Resuelve en tiempo real qué fines legales están activos según las respuestas parciales del wizard, usando el mismo WizardPurposeResolverService del backend pero sin necesidad de una política guardada. Reemplaza el patrón anterior de llamar a GET /api/panel/consent-purposes y filtrar client-side, que mostraba fines irrelevantes (ej: cookies en una política de privacidad).
 
 
-
-
-
-
 POST
 /api/panel/purposes/preview
-
 
 
 Headers requeridos
@@ -1850,17 +1551,10 @@ Accept	string	application/json Requerido
 Cookie	string	Session cookie (Sanctum SPA). Requiere withCredentials: true. Requerido
 
 
-
-
-
-
 Autenticación
 
 
 Autenticación: Sanctum cookie-based (SPA). El panel Angular debe haber completado el flujo de login con GET /sanctum/csrf-cookie antes de llamar a este endpoint. Incluir withCredentials: true en todas las llamadas HTTP del panel. No usar Bearer token &mdash; las cookies de sesión se envían automáticamente.
-
-
-
 
 
 Body params
@@ -1874,10 +1568,6 @@ document_type	string	required, in: privacy_policy, cookie_policy, workers_policy
 wizard_data	object	required, array	Respuestas parciales del wizard hasta el momento. Estructura libre (key-value por step). Puede estar parcialmente vacío. Requerido
 
 
-
-
-
-
 Ejemplo de request
 
 {
@@ -1886,7 +1576,6 @@ Ejemplo de request
 "step_1_website_functions": ["informativa"]
 }
 }
-
 
 
 Respuesta exitosa 200 OK
@@ -1913,7 +1602,6 @@ Respuesta exitosa 200 OK
 }
 
 
-
 Respuestas de error
 
 
@@ -1927,32 +1615,25 @@ Código	Causa	Ejemplo de mensaje
 422	document_type inválido o wizard_data ausente	Errores de validación estándar de Laravel
 
 
-
-
-
-
 Notas de implementación
 
 
 - Reemplaza el filtrado client-side: No usar GET /api/panel/consent-purposes + filtrado por requires_consent. El catálogo sigue existiendo pero solo debe usarse para vistas de referencia, no para determinar qué está "activo".
 
+
 - Llamar en cada cambio del wizard: Cada vez que el usuario seleccione/desseleccione una opción en cualquier step, enviar el wizard_data acumulado. El preview mostrará únicamente los purposes que aplican según las selecciones hasta ese momento.
+
 
 - necessary_technical siempre aparece: El resolver agrega automáticamente necessary_technical (funcionamiento del sitio) a toda política, sin importar las respuestas del wizard. La base legal es interés legítimo y no requiere selección del usuario.
 
+
 - wizard_data puede estar parcialmente vacío: Si el usuario solo ha respondido el step 1, basta con enviar las keys del step 1. El endpoint tolera keys faltantes (las trata como no respondidas).
+
 
 - Misma estructura de respuesta que el catálogo: slug, label, description, requires_consent, legal_basis &mdash; mismos campos que GET /api/panel/consent-purposes, así que el mismo componente Angular puede renderizar ambos.
 
+
 - Más detalle en Característica B de la Guía Conceptual.
-
-
-
-
-
-
-
-
 
 
 GET
@@ -1962,23 +1643,14 @@ Sondeo de progreso de lote
 /api/panel/batches/{id}
 
 
-
-
-
-
 Propósito / Cuándo se usa
 
 
 Sondea el progreso de un lote de enlaces de firma despachado en modo batch (ver endpoint 4). Cuando POST /api/panel/pending-consents recibe 2 o más emails, retorna 202 con un batch_id. El frontend usa este endpoint para monitorear cuántos Jobs se han procesado, si hay fallidos y si el lote terminó.
 
 
-
-
-
-
 GET
 /api/panel/batches/{batch_id}
-
 
 
 Headers requeridos
@@ -1994,10 +1666,6 @@ Accept	string	application/json Requerido
 Cookie	string	Session cookie (Sanctum SPA). Requiere withCredentials: true. Requerido
 
 
-
-
-
-
 URL params
 
 
@@ -2005,10 +1673,6 @@ Parámetro	Tipo	Descripción
 
 
 batch_id	string	ID del lote retornado por POST /api/panel/pending-consents en modo batch.
-
-
-
-
 
 
 Respuesta exitosa 200 OK
@@ -2030,7 +1694,6 @@ Respuesta exitosa 200 OK
 "finished_at": null
 }
 }
-
 
 
 Campos de la respuesta
@@ -2062,10 +1725,6 @@ created_at	datetime	Timestamp de creación.
 finished_at	datetime|null	Timestamp de finalización. null si aún en curso.
 
 
-
-
-
-
 Respuestas de error
 
 
@@ -2077,29 +1736,22 @@ Código	Causa	Ejemplo de mensaje
 404	El lote no existe o no pertenece a la empresa	{"status":false,"message":"Lote no encontrado.","data":null}
 
 
-
-
-
-
 Notas de implementación
 
 
 - El sondeo debe hacerse con setInterval (ej: cada 3s) y detenerse cuando finished === true.
 
+
 - Mostrar una barra de progreso visual usando progress (0&ndash;100%).
+
 
 - Si failed_jobs > 0, mostrar conteo de fallidos y opción de reintentar los fallidos.
 
+
 - El batch_id se obtiene de la respuesta 202 del POST /api/panel/pending-consents en modo batch.
 
+
 - Scoped al tenant: solo devuelve lotes de la empresa del usuario autenticado.
-
-
-
-
-
-
-
 
 
 Tabla resumen — Trece endpoints
