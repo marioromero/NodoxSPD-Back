@@ -88,7 +88,7 @@ class WidgetConfigController extends Controller
         // 7. Ensamblar la respuesta final. Regla estricta: sin IDs internos, sin datos de empresa.
         //    Los propósitos se resuelven dinámicamente desde el wizard via WizardPurposeResolverService.
         //    La empresa puede sobrescribir label y description en widget_config, pero required,
-        //    default y legal_basis son inmutables (provienen del catálogo ConsentPurpose).
+        //    default, legal_basis y widget_action son inmutables (provienen del catálogo ConsentPurpose).
         $widgetConfig = $company->widget_config ?? [];
         $response = [
             'policy_hash' => $policy->integrity_hash,
@@ -110,6 +110,7 @@ class WidgetConfigController extends Controller
                         'required' => ! $purpose->requires_consent,
                         'default' => $purpose->default_value,
                         'legal_basis' => $purpose->legal_basis,
+                        'widget_action' => $purpose->widget_action,
                     ],
                 ];
             })->toArray(),

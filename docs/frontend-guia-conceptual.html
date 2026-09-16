@@ -350,16 +350,20 @@
 <h2 id="widget-inicializacion">Inicializaci&oacute;n</h2>
 
 <div class="card">
-    <p>El widget se instancia con un <code>data-widget-uuid</code> en un <code>&lt;script&gt;</code> tag embebido. No usa DOMContentLoaded si se carga con <code>defer</code> o al final del body.</p>
+    <p>El widget se instancia con el atributo <code>data-company</code> (el <code>public_uuid</code> de la empresa) en el mismo <code>&lt;script&gt;</code> tag del Bloque 2. No usa DOMContentLoaded si se carga con <code>defer</code> o al final del body.</p>
     <div class="code-block">
 <span class="comment">&lt;!-- Código que la Pyme pega en su sitio web --&gt;</span>
-&lt;<span class="keyword">script</span> src=<span class="string">"https://cdn.nodoxspd.com/widget.js"</span>
-        data-widget-uuid=<span class="string">"a1b2c3d4-e5f6-7890-abcd-ef1234567890"</span>
-        data-position=<span class="string">"bottom-left"</span>
-        data-primary-color=<span class="string">"#1a73e8"</span>
+&lt;<span class="keyword">script</span> src=<span class="string">"https://cdn.tudominio.com/widget/v1/widget.js"</span>
+        data-company=<span class="string">"a1b2c3d4-e5f6-7890-abcd-ef1234567890"</span>
         defer&gt;&lt;/<span class="keyword">script</span>&gt;
     </div>
-    <p>El script construye la URL de configuración dinámicamente y llama al endpoint público.</p>
+    <p>El script lee <code>data-company</code>, construye la URL de configuración dinámicamente y llama al endpoint público. La posición y el color <strong>no</strong> se configuran en el snippet: llegan desde el backend en <code>widget_config</code> (la Pyme los define en el panel).</p>
+    <div class="nota">
+        <strong>Origen del public_uuid:</strong> El valor de <code>data-company</code> es el <code>public_uuid</code> de la empresa. El panel lo obtiene autenticado v&iacute;a <code>GET /api/me</code> (<code>data.company.public_uuid</code>) y la pantalla de instalación del widget genera el snippet final listo para copiar y pegar. La Pyme nunca escribe este UUID a mano.
+    </div>
+    <div class="nota-warn">
+        <strong>Hosting de widget.js pendiente:</strong> El dominio <code>cdn.tudominio.com</code> del snippet es un placeholder. El hosting definitivo del archivo (CDN propio o Cloudflare) es decisi&oacute;n de infraestructura pendiente. No apuntar el snippet a la API (<code>spd-service.nodox.cl</code>): <code>widget.js</code> es un asset estático cacheable, no un endpoint.
+    </div>
 </div>
 
 <h2 id="widget-visitor-uuid">Gestión del visitor_uuid</h2>
@@ -390,11 +394,11 @@
     <p>El widget invoca el endpoint de configuración para obtener los propósitos activos y la personalización visual de la Pyme.</p>
     <div class="code-block">
 <span class="comment">// widget.js — obtener configuración</span>
-<span class="keyword">const</span> uuid = <span class="keyword">document</span>.currentScript
-    .getAttribute(<span class="string">'data-widget-uuid'</span>);
+<span class="keyword">const</span> companyUuid = <span class="keyword">document</span>.currentScript
+    .getAttribute(<span class="string">'data-company'</span>);
 
 <span class="keyword">const</span> res = <span class="keyword">await</span> fetch(
-    <span class="string">`https://api.nodoxspd.com/api/widget/<span class="function">${uuid}</span>/config`</span>,
+    <span class="string">`https://spd-service.nodox.cl/api/widget/<span class="function">${companyUuid}</span>/config`</span>,
     {
         headers: { <span class="string">'Accept'</span>: <span class="string">'application/json'</span> },
         signal: AbortSignal.timeout(<span class="keyword">5000</span>),
@@ -406,8 +410,10 @@
     <span class="keyword">return</span>;
 }
 
+<span class="comment">// La respuesta es top-level: NO usa el envoltorio {status, message, data}</span>
+<span class="comment">// de los endpoints autenticados. purposes es un objeto {slug: {...}}, no un array.</span>
 <span class="keyword">const</span> config = <span class="keyword">await</span> res.json();
-<span class="keyword">const</span> { purposes, widget_config, policy_hash } = config.data;
+<span class="keyword">const</span> { purposes, widget_config, policy_hash } = config;
     </div>
     <div class="nota-warn">
         <strong>Timeout:</strong> Usar <code>AbortSignal.timeout(5000)</code>. Si el CDN (Cloudflare) responde desde cache edge, la latencia será &lt;100ms. El widget no debe bloquear la carga del sitio.
@@ -487,11 +493,11 @@ banner.style.cssText = <span class="string">`
     font-size: 14px;
 `</span>;
 
-<span class="comment">// Listar propósitos con toggle</span>
-<span class="keyword">const</span> togglesHtml = purposes.map(p =&gt; <span class="string">`
+<span class="comment">// Listar propósitos con toggle (purposes es un objeto {slug: {...}}: iterar con Object.entries)</span>
+<span class="keyword">const</span> togglesHtml = Object.entries(purposes).map(([slug, p]) =&gt; <span class="string">`
     &lt;label style="display:flex;align-items:center;gap:8px;margin:6px 0;"&gt;
-        &lt;input type="checkbox" value="<span class="function">${p.slug}</span>"
-               ${p.slug === 'necessary_technical' ? 'checked disabled' : ''}&gt;
+        &lt;input type="checkbox" value="<span class="function">${slug}</span>"
+               ${p.required ? 'checked disabled' : ''}&gt;
         &lt;strong&gt;<span class="function">${p.label}</span>&lt;/strong&gt;
     &lt;/label&gt;
 `</span>).join(<span class="string">''</span>);
@@ -517,21 +523,19 @@ banner.innerHTML = <span class="string">`
 <h2 id="widget-consent">Envío de consentimiento</h2>
 
 <div class="card">
-    <p>Cuando el visitante hace clic en "Aceptar", "Rechazar" o "Guardar preferencias", el widget recolecta los slugs seleccionados y los envía al backend.</p>
+    <p>Cuando el visitante hace clic en "Aceptar", "Rechazar" o "Guardar preferencias", el widget construye el objeto <code>purposes</code> (<code>{ slug: true | false }</code>, ver construcci&oacute;n del payload abajo) y lo envía al backend.</p>
     <div class="code-block">
 <span class="comment">// widget.js — enviar consentimiento</span>
-<span class="keyword">async function</span> sendConsent(acceptedSlugs, policyHash) {
+<span class="keyword">async function</span> sendConsent(purposesObject, companyUuid, policyHash) {
     <span class="keyword">const</span> payload = {
-        purposes: acceptedSlugs,
-        policy_hash: policyHash,
-        visitor_uuid: getVisitorUuid(),     <span class="comment">// cookie/localStorage del visitante</span>
-        timestamp: new Date().toISOString(),
-        user_agent: navigator.userAgent,
-        screen_resolution: `${screen.width}x${screen.height}`,
+        visitor_uuid: getOrCreateVisitorUuid(),  <span class="comment">// localStorage del visitante (ver arriba)</span>
+        company_public_uuid: companyUuid,        <span class="comment">// mismo public_uuid del snippet</span>
+        timestamp: new Date().toISOString().slice(<span class="keyword">0</span>, <span class="keyword">19</span>) + <span class="string">'Z'</span>,  <span class="comment">// ISO-8601 estricto, SIN milisegundos</span>
+        purposes: purposesObject,                <span class="comment">// { "slug": true|false }</span>
     };
 
     <span class="keyword">const</span> res = <span class="keyword">await</span> fetch(
-        <span class="string">`https://api.nodoxspd.com/api/widget/<span class="function">${companyUuid}</span>/consent`</span>,
+        <span class="string">`https://spd-service.nodox.cl/api/widget/<span class="function">${companyUuid}</span>/consent`</span>,
         {
             method: <span class="string">'POST'</span>,
             headers: {
@@ -543,14 +547,15 @@ banner.innerHTML = <span class="string">`
     );
 
     <span class="keyword">if</span> (res.ok) {
+        <span class="comment">// 201 (recorded) o 200 (already_recorded): ambos son éxito</span>
         <span class="comment">// Guardar proof_hash localmente para futura auditoría</span>
         <span class="keyword">const</span> { data } = <span class="keyword">await</span> res.json();
         localStorage.setItem(
             <span class="string">'nodox_consent_proof'</span>,
             <span class="keyword">JSON</span>.stringify({
-                proof_hash: data.hash,
-                timestamp: data.timestamp,
+                proof_hash: data.proof_hash,
                 policy_hash: policyHash,
+                saved_at: Date.now(),
             })
         );
         banner.remove(); <span class="comment">// Ocultar banner tras consentir</span>
@@ -559,6 +564,9 @@ banner.innerHTML = <span class="string">`
     </div>
     <div class="nota">
         <strong>Visitor UUID:</strong> El widget genera un UUID anónimo en el navegador (localStorage o cookie) para tracking de sesión. No contiene PII. Se envía como <code>visitor_uuid</code> para identity stitching posterior.
+    </div>
+    <div class="nota-warn">
+        <strong>Timestamp estricto:</strong> El backend valida <code>date_format:Y-m-d\TH:i:s\Z</code> &mdash;ISO-8601 <strong>sin milisegundos</strong>&mdash; y una ventana anti-replay: máximo 5 minutos en el futuro, máximo 1 hora en el pasado. <code>new Date().toISOString()</code> crudo incluye milisegundos (<code>.123Z</code>) y recibe <strong>422</strong>. Siempre recortar: <code>.slice(0, 19) + 'Z'</code>. Un 422 en <code>timestamp</code> casi siempre es esto.
     </div>
 
     <h3 id="widget-payload">Construcci&oacute;n del payload seg&uacute;n acci&oacute;n del usuario</h3>

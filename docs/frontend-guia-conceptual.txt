@@ -266,18 +266,22 @@ Consecuencia legal: Si el Bloque 1 no está presente o los scripts de terceros s
 Inicialización
 
 
-El widget se instancia con un data-widget-uuid en un <script> tag embebido. No usa DOMContentLoaded si se carga con defer o al final del body.
+El widget se instancia con el atributo data-company (el public_uuid de la empresa) en el mismo <script> tag del Bloque 2. No usa DOMContentLoaded si se carga con defer o al final del body.
 
 
 <!-- Código que la Pyme pega en su sitio web -->
-<script src="https://cdn.nodoxspd.com/widget.js"
-data-widget-uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-data-position="bottom-left"
-data-primary-color="#1a73e8"
+<script src="https://cdn.tudominio.com/widget/v1/widget.js"
+data-company="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 defer></script>
 
 
-El script construye la URL de configuración dinámicamente y llama al endpoint público.
+El script lee data-company, construye la URL de configuración dinámicamente y llama al endpoint público. La posición y el color no se configuran en el snippet: llegan desde el backend en widget_config (la Pyme los define en el panel).
+
+
+Origen del public_uuid: El valor de data-company es el public_uuid de la empresa. El panel lo obtiene autenticado vía GET /api/me (data.company.public_uuid) y la pantalla de instalación del widget genera el snippet final listo para copiar y pegar. La Pyme nunca escribe este UUID a mano.
+
+
+Hosting de widget.js pendiente: El dominio cdn.tudominio.com del snippet es un placeholder. El hosting definitivo del archivo (CDN propio o Cloudflare) es decisión de infraestructura pendiente. No apuntar el snippet a la API (spd-service.nodox.cl): widget.js es un asset estático cacheable, no un endpoint.
 
 
 Gestión del visitor_uuid
@@ -307,11 +311,11 @@ El widget invoca el endpoint de configuración para obtener los propósitos acti
 
 
 // widget.js — obtener configuración
-const uuid = document.currentScript
-.getAttribute('data-widget-uuid');
+const companyUuid = document.currentScript
+.getAttribute('data-company');
 
 const res = await fetch(
-`https://api.nodoxspd.com/api/widget/${uuid}/config`,
+`https://spd-service.nodox.cl/api/widget/${companyUuid}/config`,
 {
 headers: { 'Accept': 'application/json' },
 signal: AbortSignal.timeout(5000),
@@ -323,8 +327,10 @@ if (!res.ok) {
 return;
 }
 
+// La respuesta es top-level: NO usa el envoltorio {status, message, data}
+// de los endpoints autenticados. purposes es un objeto {slug: {...}}, no un array.
 const config = await res.json();
-const { purposes, widget_config, policy_hash } = config.data;
+const { purposes, widget_config, policy_hash } = config;
 
 
 Timeout: Usar AbortSignal.timeout(5000). Si el CDN (Cloudflare) responde desde cache edge, la latencia será <100ms. El widget no debe bloquear la carga del sitio.
@@ -402,11 +408,11 @@ font-family: system-ui, sans-serif;
 font-size: 14px;
 `;
 
-// Listar propósitos con toggle
-const togglesHtml = purposes.map(p => `
+// Listar propósitos con toggle (purposes es un objeto {slug: {...}}: iterar con Object.entries)
+const togglesHtml = Object.entries(purposes).map(([slug, p]) => `
 <label style="display:flex;align-items:center;gap:8px;margin:6px 0;">
-<input type="checkbox" value="${p.slug}"
-${p.slug === 'necessary_technical' ? 'checked disabled' : ''}>
+<input type="checkbox" value="${slug}"
+${p.required ? 'checked disabled' : ''}>
 <strong>${p.label}</strong>
 </label>
 `).join('');
@@ -431,22 +437,20 @@ document.body.appendChild(banner);
 Envío de consentimiento
 
 
-Cuando el visitante hace clic en "Aceptar", "Rechazar" o "Guardar preferencias", el widget recolecta los slugs seleccionados y los envía al backend.
+Cuando el visitante hace clic en "Aceptar", "Rechazar" o "Guardar preferencias", el widget construye el objeto purposes ({ slug: true | false }, ver construcción del payload abajo) y lo envía al backend.
 
 
 // widget.js — enviar consentimiento
-async function sendConsent(acceptedSlugs, policyHash) {
+async function sendConsent(purposesObject, companyUuid, policyHash) {
 const payload = {
-purposes: acceptedSlugs,
-policy_hash: policyHash,
-visitor_uuid: getVisitorUuid(),     // cookie/localStorage del visitante
-timestamp: new Date().toISOString(),
-user_agent: navigator.userAgent,
-screen_resolution: `${screen.width}x${screen.height}`,
+visitor_uuid: getOrCreateVisitorUuid(),  // localStorage del visitante (ver arriba)
+company_public_uuid: companyUuid,        // mismo public_uuid del snippet
+timestamp: new Date().toISOString().slice(0, 19) + 'Z',  // ISO-8601 estricto, SIN milisegundos
+purposes: purposesObject,                // { "slug": true|false }
 };
 
 const res = await fetch(
-`https://api.nodoxspd.com/api/widget/${companyUuid}/consent`,
+`https://spd-service.nodox.cl/api/widget/${companyUuid}/consent`,
 {
 method: 'POST',
 headers: {
@@ -458,14 +462,15 @@ body: JSON.stringify(payload),
 );
 
 if (res.ok) {
+// 201 (recorded) o 200 (already_recorded): ambos son éxito
 // Guardar proof_hash localmente para futura auditoría
 const { data } = await res.json();
 localStorage.setItem(
 'nodox_consent_proof',
 JSON.stringify({
-proof_hash: data.hash,
-timestamp: data.timestamp,
+proof_hash: data.proof_hash,
 policy_hash: policyHash,
+saved_at: Date.now(),
 })
 );
 banner.remove(); // Ocultar banner tras consentir
@@ -474,6 +479,9 @@ banner.remove(); // Ocultar banner tras consentir
 
 
 Visitor UUID: El widget genera un UUID anónimo en el navegador (localStorage o cookie) para tracking de sesión. No contiene PII. Se envía como visitor_uuid para identity stitching posterior.
+
+
+Timestamp estricto: El backend valida date_format:Y-m-d\TH:i:s\Z &mdash;ISO-8601 sin milisegundos&mdash; y una ventana anti-replay: máximo 5 minutos en el futuro, máximo 1 hora en el pasado. new Date().toISOString() crudo incluye milisegundos (.123Z) y recibe 422. Siempre recortar: .slice(0, 19) + 'Z'. Un 422 en timestamp casi siempre es esto.
 
 
 Construcción del payload según acción del usuario

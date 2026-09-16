@@ -70,7 +70,7 @@ API Reference &mdash; Frontend Módulo 2
 Trece endpoints para la integración frontend del Trust Widget: configuración del banner, registro de consentimiento, catálogo de fines legales, preview dinámico de fines activos, generación de enlaces de firma (single/batch), sondeo de progreso de lotes, listado de consents pendientes, bóveda de auditoría, gestión de dominios CORS, personalización visual, Portal Cautivo (consulta + firma) y políticas publicadas.
 
 
-Base URL: https://api.tudominio.com
+Base URL: https://spd-service.nodox.cl
 Formato: JSON &middot; UTF-8
 Widget: Público (sin auth) &middot; Panel: Sanctum
 

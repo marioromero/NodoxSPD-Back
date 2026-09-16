@@ -122,6 +122,7 @@
             <li><a href="#cambio-4">Cambio 4 — CORS de producción</a></li>
             <li><a href="#cambio-5">Cambio 5 — Labels de fines legales reescritos</a></li>
             <li><a href="#cambio-6">Cambio 6 — Rutas públicas sin CSRF</a></li>
+            <li><a href="#cambio-7">Cambio 7 — Contrato Trust Widget alineado</a></li>
         </ul>
     </div>
     <div class="nav-section">
@@ -248,6 +249,26 @@
         <ul>
             <li><span class="badge badge-api">API Reference</span> <a href="frontend-api-reference.html#ep10">Endpoint 10 — POST /api/portal/consent/{token}/confirm</a> (nota de implementación: sin CSRF)</li>
             <li><span class="badge badge-front">Guía Frontend</span> <a href="frontend-guia-conceptual.html#caracter&iacute;stica-f">Caracter&iacute;stica F — Portal Cautivo</a> (nota CSRF en la sección POST)</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card" id="cambio-7">
+    <div class="change-meta">
+        <span class="change-num">Cambio 7</span>
+        <span class="change-date">16 de septiembre, 2026</span>
+    </div>
+    <h3>Contrato del Trust Widget alineado (widget_action + snippet + payload)</h3>
+    <p><strong>Problema:</strong> <code>GET /api/widget/{uuid}/config</code> no expon&iacute;a el campo <code>widget_action</code> en cada prop&oacute;sito (el campo exist&iacute;a en el cat&aacute;logo <code>ConsentPurpose</code> pero el controlador lo omit&iacute;a), por lo que la Tabla de Mapeo de Acciones de la gu&iacute;a no era implementable. Adem&aacute;s, los ejemplos de c&oacute;digo de la Caracter&iacute;stica A contradec&iacute;an el contrato real del backend: <code>purposes</code> como array de slugs en vez de objeto <code>{slug: boolean}</code>, <code>company_public_uuid</code> ausente del body (422 garantizado), <code>timestamp</code> con milisegundos (422 por <code>date_format</code> estricto), lectura de <code>data.hash</code> en vez de <code>data.proof_hash</code>, render iterando <code>purposes</code> como array cuando <code>/config</code> devuelve un objeto, atributo <code>data-widget-uuid</code> inconsistente con el Bloque 2 (<code>data-company</code>) y URLs placeholder (<code>api.nodoxspd.com</code>) en vez de la API real.</p>
+    <p><strong>Soluci&oacute;n backend:</strong> <code>WidgetConfigController</code> ahora incluye <code>widget_action</code> por prop&oacute;sito (inmutable del cat&aacute;logo, igual que <code>required</code>/<code>default</code>/<code>legal_basis</code>). Cubierto por el test feature <code>WidgetConfigTest</code>.</p>
+    <p><strong>Soluci&oacute;n docs:</strong> Gu&iacute;a Caracter&iacute;stica A corregida: snippet unificado con <code>data-company</code> (los atributos <code>data-position</code>/<code>data-primary-color</code> se eliminan: posici&oacute;n y color llegan desde <code>/config</code>), destructuring top-level (la respuesta del widget NO usa el envoltorio <code>{status, message, data}</code>), render con <code>Object.entries(purposes)</code>, <code>sendConsent</code> con <code>company_public_uuid</code> en el body, <code>timestamp</code> ISO-8601 estricto (<code>.slice(0, 19) + 'Z'</code>, ventana anti-replay: m&aacute;x 5 min futuro / 1 h pasado) y <code>data.proof_hash</code> como clave de la respuesta. URL real de la API: <code>https://spd-service.nodox.cl</code>. Nuevas notas: origen del <code>public_uuid</code> (autenticado, v&iacute;a <code>GET /api/me</code> &rarr; <code>data.company.public_uuid</code>), hosting de <code>widget.js</code> pendiente de decisi&oacute;n de infraestructura y estricto formato del timestamp.</p>
+    <p><strong>Acci&oacute;n frontend:</strong> Ninguna acci&oacute;n retroactiva: el widget embebible a&uacute;n no est&aacute; implementado. El contrato documentado ahora es el definitivo para construir <code>widget.js</code>.</p>
+
+    <div class="secciones-afectadas">
+        <p><strong>Secciones afectadas:</strong></p>
+        <ul>
+            <li><span class="badge badge-front">Guía Frontend</span> <a href="frontend-guia-conceptual.html#caracter&iacute;stica-a">Caracter&iacute;stica A — Trust Widget embebible</a> (inicialización, llamada a /config, render, envío de consentimiento)</li>
+            <li><span class="badge badge-api">API Reference</span> <a href="frontend-api-reference.html">Base URL real del API</a> (antes <code>api.tudominio.com</code> placeholder; ep1 ya documentaba <code>widget_action</code> correctamente, sin cambios)</li>
         </ul>
     </div>
 </div>

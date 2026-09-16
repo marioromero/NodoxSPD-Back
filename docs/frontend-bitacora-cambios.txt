@@ -34,6 +34,9 @@ Cambios aplicados
 - Cambio 6 — Rutas públicas sin CSRF
 
 
+- Cambio 7 — Contrato Trust Widget alineado
+
+
 Documentos relacionados
 
 
@@ -200,3 +203,31 @@ Secciones afectadas:
 
 
 - Guía Frontend Característica F — Portal Cautivo (nota CSRF en la sección POST)
+
+
+Cambio 7
+16 de septiembre, 2026
+
+
+Contrato del Trust Widget alineado (widget_action + snippet + payload)
+
+
+Problema: GET /api/widget/{uuid}/config no exponía el campo widget_action en cada propósito (el campo existía en el catálogo ConsentPurpose pero el controlador lo omitía), por lo que la Tabla de Mapeo de Acciones de la guía no era implementable. Además, los ejemplos de código de la Característica A contradecían el contrato real del backend: purposes como array de slugs en vez de objeto {slug: boolean}, company_public_uuid ausente del body (422 garantizado), timestamp con milisegundos (422 por date_format estricto), lectura de data.hash en vez de data.proof_hash, render iterando purposes como array cuando /config devuelve un objeto, atributo data-widget-uuid inconsistente con el Bloque 2 (data-company) y URLs placeholder (api.nodoxspd.com) en vez de la API real.
+
+
+Solución backend: WidgetConfigController ahora incluye widget_action por propósito (inmutable del catálogo, igual que required/default/legal_basis). Cubierto por el test feature WidgetConfigTest.
+
+
+Solución docs: Guía Característica A corregida: snippet unificado con data-company (los atributos data-position/data-primary-color se eliminan: posición y color llegan desde /config), destructuring top-level (la respuesta del widget NO usa el envoltorio {status, message, data}), render con Object.entries(purposes), sendConsent con company_public_uuid en el body, timestamp ISO-8601 estricto (.slice(0, 19) + 'Z', ventana anti-replay: máx 5 min futuro / 1 h pasado) y data.proof_hash como clave de la respuesta. URL real de la API: https://spd-service.nodox.cl. Nuevas notas: origen del public_uuid (autenticado, vía GET /api/me &rarr; data.company.public_uuid), hosting de widget.js pendiente de decisión de infraestructura y estricto formato del timestamp.
+
+
+Acción frontend: Ninguna acción retroactiva: el widget embebible aún no está implementado. El contrato documentado ahora es el definitivo para construir widget.js.
+
+
+Secciones afectadas:
+
+
+- Guía Frontend Característica A — Trust Widget embebible (inicialización, llamada a /config, render, envío de consentimiento)
+
+
+- API Reference Base URL real del API (antes api.tudominio.com placeholder; ep1 ya documentaba widget_action correctamente, sin cambios)
